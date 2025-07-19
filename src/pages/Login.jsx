@@ -29,13 +29,11 @@ export default function Login({ onLogin }) {
       <Paper sx={{ p: 4, minWidth: 320 }}>
         <Typography variant="h5" mb={2}>Login</Typography>
         {error && <Alert severity="error">{error}</Alert>}
-        <form onSubmit={handleSubmit}>
-          <TextField label="Email or Username" value={email} onChange={e => setEmail(e.target.value)} fullWidth margin="normal" required />
-          <TextField label="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} fullWidth margin="normal" required />
-          <Button type="submit" variant="contained" color="primary" fullWidth disabled={loading} sx={{ mt: 2 }}>
-            {loading ? 'Logging in...' : 'Login'}
-          </Button>
-        </form>
+        <TextField label="Email or Username" value={email} onChange={e => setEmail(e.target.value)} fullWidth margin="normal" required />
+        <TextField label="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} fullWidth margin="normal" required />
+        <Button onClick={handleSubmit} variant="contained" color="primary" fullWidth disabled={loading} sx={{ mt: 2 }}>
+          {loading ? 'Logging in...' : 'Login'}
+        </Button>
       </Paper>
     </Box>
   );
