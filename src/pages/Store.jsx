@@ -1,13 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField } from '@mui/material';
 
 export default function Store() {
   const [inventory, setInventory] = useState([]);
+  const [search, setSearch] = useState('');
   useEffect(() => { api.get('/store').then(r => setInventory(r.data)); }, []);
+  const filteredInventory = inventory.filter(s =>
+    s.item?.name?.toLowerCase().includes(search.toLowerCase())
+  );
   return (
     <Box p={2}>
       <Typography variant="h4" gutterBottom>Store Inventory</Typography>
+      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+        <TextField
+          label="Search Inventory"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          size="small"
+          sx={{ width: 300 }}
+        />
+      </Box>
       <TableContainer component={Paper} sx={{ mt: 2 }}>
         <Table>
           <TableHead>
@@ -17,7 +30,7 @@ export default function Store() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {inventory.map(s => (
+            {filteredInventory.map(s => (
               <TableRow key={s._id}>
                 <TableCell>{s.item?.name}</TableCell>
                 <TableCell>{s.remaining_quantity}</TableCell>

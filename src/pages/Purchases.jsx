@@ -51,6 +51,7 @@ export default function Purchases() {
   const handleRemoveRow = idx => setRows(rows => rows.length > 1 ? rows.filter((_, i) => i !== idx) : rows);
 
   const handleSubmit = async () => {
+    setOpen(false);
     try {
       // 1. Ensure all items exist in the items list
       const existingItemIds = items.map(i => i._id);
@@ -100,7 +101,6 @@ export default function Purchases() {
       }
       setSuccess('Purchase invoice saved');
       fetchPurchases();
-      setOpen(false);
     } catch (err) {
       setError(err.response?.data?.error || 'Error');
     }
@@ -108,8 +108,13 @@ export default function Purchases() {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this invoice?')) return;
-    // Not implemented: delete purchase API
-    setError('Delete not implemented yet');
+    try {
+      await api.delete(`/purchases/${id}`);
+      setSuccess('Invoice deleted successfully');
+      fetchPurchases();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Delete failed');
+    }
   };
 
   // Helper: get item name by id
@@ -124,6 +129,9 @@ export default function Purchases() {
       <Button variant="contained" color="primary" onClick={handleOpen} disabled={!items || items.length === 0}>Add Purchase</Button>
       <TableContainer component={Paper} sx={{ mt: 2 }}>
         <Table>
+          {success && (
+            <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>
+          )}
           <TableHead>
             <TableRow>
               <TableCell>Item</TableCell>

@@ -5,6 +5,7 @@ import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead
 
 export default function Items() {
   const [items, setItems] = useState([]);
+  const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: '', unit: '', category: '' });
   const [error, setError] = useState('');
@@ -62,10 +63,23 @@ export default function Items() {
   // Helper functions to get stock for each item
   const getWarehouseQty = (itemId) => warehouse.find(w => w.item?._id === itemId)?.quantity ?? 0;
   const getStoreQty = (itemId) => store.find(s => s.item?._id === itemId)?.remaining_quantity ?? 0;
+  const filteredItems = items.filter(item =>
+    item.name.toLowerCase().includes(search.toLowerCase()) ||
+    item.category?.toLowerCase().includes(search.toLowerCase())
+  );
   return (
     <Box p={2}>
       <Typography variant="h4" gutterBottom>Items Management</Typography>
-      <Button variant="contained" color="primary" onClick={() => handleOpen()}>Add Item</Button>
+      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+        <Button variant="contained" color="primary" onClick={() => handleOpen()}>Add Item</Button>
+        <TextField
+          label="Search Items"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          size="small"
+          sx={{ width: 300 }}
+        />
+      </Box>
       <TableContainer component={Paper} sx={{ mt: 2 }}>
         <Table>
           <TableHead>
@@ -83,7 +97,7 @@ export default function Items() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {items.map(item => {
+            {filteredItems.map(item => {
               const warehouseQty = getWarehouseQty(item._id);
               const storeQty = getStoreQty(item._id);
               const totalQty = warehouseQty + storeQty;

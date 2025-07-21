@@ -31,7 +31,12 @@ export default function Transfers() {
   const [success, setSuccess] = useState('');
   const { fetchInventory } = useInventory();
 
-  const fetchTransfers = () => api.get('/transfers').then(r => setTransfers(r.data));
+  const fetchTransfers = () =>
+    api.get('/transfers').then(r => {
+      // Sort by date descending (latest first)
+      const sorted = [...r.data].sort((a, b) => new Date(b.date) - new Date(a.date));
+      setTransfers(sorted);
+    });
   const fetchItems = () => api.get('/items').then(r => setItems(r.data));
 
   useEffect(() => { fetchTransfers(); fetchItems(); fetchTechnicians().then(setTechnicians); }, []);

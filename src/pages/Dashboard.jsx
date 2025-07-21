@@ -53,20 +53,24 @@ export default function Dashboard() {
           </Paper>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Paper elevation={2} sx={{ p: 2 }}>
+          <Paper elevation={2} sx={{ p: 2, height: 260, display: 'flex', flexDirection: 'column' }}>
             <Typography variant="h6">Slow Moving Items</Typography>
-            {slowMoving.length === 0 ? <Alert severity="success">No slow moving items</Alert> : slowMoving.map(item => (
-              <Alert severity="warning" key={item._id}>{item.name} (Last Sale: {item.last_sale_date ? new Date(item.last_sale_date).toLocaleDateString() : 'Never'})</Alert>
-            ))}
+            <Box sx={{ flex: 1, overflowY: 'auto', mt: 1 }}>
+              {slowMoving.length === 0 ? <Alert severity="success">No slow moving items</Alert> : slowMoving.map(item => (
+                <Alert severity="warning" key={item._id}>{item.name} (Last Sale: {item.last_sale_date ? new Date(item.last_sale_date).toLocaleDateString() : 'Never'})</Alert>
+              ))}
+            </Box>
           </Paper>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Paper elevation={2} sx={{ p: 2 }}>
+          <Paper elevation={2} sx={{ p: 2, height: 260, display: 'flex', flexDirection: 'column' }}>
             <Typography variant="h6">Low Stock</Typography>
-            {lowStock.warehouse.length === 0 && lowStock.store.length === 0 ? <Alert severity="success">Stock levels are healthy</Alert> : <>
-              {lowStock.warehouse.map(w => <Alert severity="error" key={w._id}>Warehouse: {w.item?.name} (Qty: {w.quantity})</Alert>)}
-              {lowStock.store.map(s => <Alert severity="error" key={s._id}>Store: {s.item?.name} (Qty: {s.remaining_quantity})</Alert>)}
-            </>}
+            <Box sx={{ flex: 1, overflowY: 'auto', mt: 1 }}>
+              {lowStock.warehouse.length === 0 && lowStock.store.length === 0 ? <Alert severity="success">Stock levels are healthy</Alert> : <>
+                {lowStock.warehouse.map(w => <Alert severity="error" key={w._id}>Warehouse: {w.item?.name} (Qty: {w.quantity})</Alert>)}
+                {lowStock.store.map(s => <Alert severity="error" key={s._id}>Store: {s.item?.name} (Qty: {s.remaining_quantity})</Alert>)}
+              </>}
+            </Box>
           </Paper>
         </Grid>
         <Grid item xs={12} md={12}>

@@ -47,6 +47,7 @@ export default function Sales() {
   const handleRemoveRow = idx => setRows(rows => rows.length > 1 ? rows.filter((_, i) => i !== idx) : rows);
 
   const handleSubmit = async () => {
+    setOpen(false);
     try {
       const itemsPayload = rows.map(r => ({ item: r.item, quantity: Number(r.quantity), price: Number(r.price) }));
       if (editId) {
@@ -64,7 +65,6 @@ export default function Sales() {
       }
       setSuccess('Sale invoice saved');
       fetchSales();
-      setOpen(false);
     } catch (err) {
       setError(err.response?.data?.error || 'Error');
     }
@@ -73,9 +73,23 @@ export default function Sales() {
   // Helper: get item name by id
   const getItemName = (id) => items.find(i => i._id === id)?.name || '';
 
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this invoice?')) return;
+    try {
+      await api.delete(`/sales/${id}`);
+      setSuccess('Invoice deleted successfully');
+      fetchSales();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Delete failed');
+    }
+  };
+
   return (
     <Box p={2}>
       <Typography variant="h4" gutterBottom>Sales Invoices</Typography>
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>
+      )}
       <Button variant="contained" color="primary" onClick={() => handleOpen()}>Add Sale Invoice</Button>
       <TableContainer component={Paper} sx={{ mt: 2 }}>
         <Table>
@@ -108,10 +122,10 @@ export default function Sales() {
                     <TableCell>{item.price?.toFixed(2) || ''}</TableCell>
                     <TableCell>{(item.quantity && item.price) ? (Number(item.quantity) * Number(item.price)).toFixed(2) : ''}</TableCell>
                     {idx === 0 && (
-                      <TableCell rowSpan={s.items.length}>
-                        <IconButton onClick={() => handleOpen(s)}><EditIcon /></IconButton>
-                        {/* <IconButton onClick={() => handleDelete(s._id)}><DeleteIcon /></IconButton> */}
-                      </TableCell>
+                    <TableCell rowSpan={s.items.length}>
+                      <IconButton onClick={() => handleOpen(s)}><EditIcon /></IconButton>
+                      <IconButton onClick={() => handleDelete(s._id)}><DeleteIcon /></IconButton>
+                    </TableCell>
                     )}
                   </TableRow>
                 ))}
