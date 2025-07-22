@@ -55,7 +55,10 @@ export default function Transfers() {
       await api.post('/transfers', { ...form, quantity: Number(form.quantity) });
       setSuccess('Transfer completed');
       fetchTransfers();
-      await fetchInventory(); // Refresh inventory everywhere
+      setTimeout(async () => {
+        await fetchInventory(); // Refresh inventory everywhere
+        window.dispatchEvent(new Event('inventoryChanged'));
+      }, 200);
       setOpen(false);
     } catch (err) {
       setError(err.response?.data?.error || 'Error');
@@ -63,24 +66,26 @@ export default function Transfers() {
   };
 
   return (
-    <Box p={2}>
-      <Typography variant="h4" gutterBottom>Transfer Stock to Store</Typography>
-      <Button variant="contained" color="primary" onClick={handleOpen}>Transfer Stock</Button>
-      <TableContainer component={Paper} sx={{ mt: 2 }}>
-        <Table>
+    <Box p={{ xs: 1, md: 3 }} sx={{ background: 'linear-gradient(135deg, #f4f6f8 60%, #e3eafc 100%)', minHeight: '100vh' }}>
+      <Typography variant="h4" gutterBottom sx={{ fontWeight: 900, letterSpacing: 1, color: 'primary.main', mb: 3 }}>
+        Transfers
+      </Typography>
+      <Button variant="contained" color="primary" onClick={handleOpen} sx={{ fontWeight: 700, px: 3, borderRadius: 2, mb: 2 }}>Transfer Stock</Button>
+      <TableContainer component={Paper} sx={{ mt: 2, maxHeight: 520, overflowY: 'auto', borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
+        <Table sx={{ minWidth: 900, '& tbody tr:nth-of-type(odd)': { backgroundColor: '#f9fafd' }, '& tbody tr:hover': { backgroundColor: '#e3eafc' } }}>
           <TableHead>
             <TableRow>
-              <TableCell>Item</TableCell>
-              <TableCell>Quantity</TableCell>
-              <TableCell>Technician</TableCell>
-              <TableCell>Type</TableCell>
-              <TableCell>Date</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, fontSize: '1.1rem', color: 'primary.main' }}>Item</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Quantity</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Technician</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Type</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Date</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {transfers.map(t => (
               <TableRow key={t._id}>
-                <TableCell>{t.item?.name}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{t.item?.name}</TableCell>
                 <TableCell>{t.quantity}</TableCell>
                 <TableCell>{t.technician?.name || ''}</TableCell>
                 <TableCell>{t.workType || ''}</TableCell>
@@ -90,24 +95,28 @@ export default function Transfers() {
           </TableBody>
         </Table>
       </TableContainer>
-      <Dialog open={open} onClose={handleClose}>
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>Transfer Stock</DialogTitle>
         <DialogContent>
           {error && <Alert severity="error">{error}</Alert>}
           {success && <Alert severity="success">{success}</Alert>}
-          <TextField select margin="dense" label="Item" name="item" value={form.item} onChange={handleChange} fullWidth required>
-            {items.map(i => <MenuItem key={i._id} value={i._id}>{i.name}</MenuItem>)}
-          </TextField>
-          <TextField margin="dense" label="Quantity" name="quantity" value={form.quantity} onChange={handleChange} type="number" fullWidth required />
-          <TextField select margin="dense" label="Technician" name="technician" value={form.technician} onChange={handleChange} fullWidth required>
-            <MenuItem value="">Select Technician</MenuItem>
-            {technicians.map(t => <MenuItem key={t._id} value={t._id}>{t.name}</MenuItem>)}
-          </TextField>
-          <TextField select margin="dense" label="Type" name="workType" value={form.workType} onChange={handleChange} fullWidth required>
-            <MenuItem value="">Select Type</MenuItem>
-            <MenuItem value="repair">Repair</MenuItem>
-            <MenuItem value="test">Test</MenuItem>
-          </TextField>
+          <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+            <TextField select margin="dense" label="Item" name="item" value={form.item} onChange={handleChange} fullWidth required sx={{ flex: 1 }}>
+              {items.map(i => <MenuItem key={i._id} value={i._id}>{i.name}</MenuItem>)}
+            </TextField>
+            <TextField margin="dense" label="Quantity" name="quantity" value={form.quantity} onChange={handleChange} type="number" fullWidth required sx={{ flex: 1 }} />
+          </Box>
+          <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+            <TextField select margin="dense" label="Technician" name="technician" value={form.technician} onChange={handleChange} fullWidth required sx={{ flex: 1 }}>
+              <MenuItem value="">Select Technician</MenuItem>
+              {technicians.map(t => <MenuItem key={t._id} value={t._id}>{t.name}</MenuItem>)}
+            </TextField>
+            <TextField select margin="dense" label="Type" name="workType" value={form.workType} onChange={handleChange} fullWidth required sx={{ flex: 1 }}>
+              <MenuItem value="">Select Type</MenuItem>
+              <MenuItem value="repair">Repair</MenuItem>
+              <MenuItem value="test">Test</MenuItem>
+            </TextField>
+          </Box>
           {/* Hidden direction field */}
           <input type="hidden" name="direction" value={form.direction} />
         </DialogContent>

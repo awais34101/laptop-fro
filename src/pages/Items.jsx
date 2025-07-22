@@ -68,32 +68,34 @@ export default function Items() {
     item.category?.toLowerCase().includes(search.toLowerCase())
   );
   return (
-    <Box p={2}>
-      <Typography variant="h4" gutterBottom>Items Management</Typography>
-      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-        <Button variant="contained" color="primary" onClick={() => handleOpen()}>Add Item</Button>
+    <Box p={{ xs: 1, md: 3 }} sx={{ background: 'linear-gradient(135deg, #f4f6f8 60%, #e3eafc 100%)', minHeight: '100vh' }}>
+      <Typography variant="h4" gutterBottom sx={{ fontWeight: 900, letterSpacing: 1, color: 'primary.main', mb: 3 }}>
+        Items Management
+      </Typography>
+      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+        <Button variant="contained" color="primary" onClick={() => handleOpen()} sx={{ fontWeight: 700, px: 3, borderRadius: 2 }}>Add Item</Button>
         <TextField
           label="Search Items"
           value={search}
           onChange={e => setSearch(e.target.value)}
           size="small"
-          sx={{ width: 300 }}
+          sx={{ width: 320, background: '#fff', borderRadius: 2 }}
         />
       </Box>
-      <TableContainer component={Paper} sx={{ mt: 2 }}>
-        <Table>
+      <TableContainer component={Paper} sx={{ mt: 2, maxHeight: 520, overflowY: 'auto', borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
+        <Table sx={{ minWidth: 900, '& tbody tr:nth-of-type(odd)': { backgroundColor: '#f9fafd' }, '& tbody tr:hover': { backgroundColor: '#e3eafc' } }}>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ whiteSpace: 'nowrap', maxWidth: 300, minWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>Name</TableCell>
-              <TableCell>Unit</TableCell>
-              <TableCell>Category</TableCell>
-              <TableCell>Avg Price</TableCell>
-              <TableCell>Store Inventory</TableCell>
-              <TableCell>Warehouse Inventory</TableCell>
-              <TableCell>Total Inventory</TableCell>
-              <TableCell>Total Value</TableCell>
-              <TableCell>Sale Count</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, whiteSpace: 'nowrap', maxWidth: 300, minWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 900, fontSize: '1.1rem', color: 'primary.main' }}>Name</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Unit</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Category</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Avg Price</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Store Inventory</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Warehouse Inventory</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Total Inventory</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Total Value</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Sale Count</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -104,8 +106,8 @@ export default function Items() {
               const avgPrice = item.average_price || 0;
               const totalValue = totalQty * avgPrice;
               return (
-                <TableRow key={item._id}>
-                  <TableCell sx={{ whiteSpace: 'nowrap', maxWidth: 300, minWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</TableCell>
+                <TableRow key={item._id} sx={{ transition: 'background 0.2s' }}>
+                  <TableCell sx={{ whiteSpace: 'nowrap', maxWidth: 300, minWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 600 }}>{item.name}</TableCell>
                   <TableCell>{item.unit}</TableCell>
                   <TableCell>{item.category}</TableCell>
                   <TableCell>{avgPrice.toFixed(2)}</TableCell>
@@ -116,13 +118,55 @@ export default function Items() {
                   <TableCell>{item.last_sale_date ? new Date(item.last_sale_date).toLocaleDateString() : '-'}</TableCell>
                   <TableCell>{item.sale_count}</TableCell>
                   <TableCell>
-                    <Button size="small" onClick={() => handleOpen(item)}>Edit</Button>
-                    <Button size="small" color="error" onClick={() => handleDelete(item._id)}>Delete</Button>
+                    <Button size="small" variant="outlined" sx={{ mr: 1, fontWeight: 600, borderRadius: 2 }} onClick={() => handleOpen(item)}>Edit</Button>
+                    <Button size="small" variant="contained" color="error" sx={{ fontWeight: 600, borderRadius: 2 }} onClick={() => handleDelete(item._id)}>Delete</Button>
                   </TableCell>
                 </TableRow>
               );
             })}
           </TableBody>
+          {/* Summary Row */}
+          <tfoot>
+            <TableRow>
+              <TableCell sx={{ fontWeight: 900, background: '#f0f4fa', color: 'primary.main' }}>Total</TableCell>
+              <TableCell sx={{ background: '#f0f4fa' }} />
+              <TableCell sx={{ background: '#f0f4fa' }} />
+              <TableCell sx={{ background: '#f0f4fa' }} />
+              {/* Store Inventory Total */}
+              <TableCell sx={{ fontWeight: 900, background: '#f0f4fa', color: 'primary.main' }}>
+                {filteredItems.reduce((sum, item) => {
+                  const storeQty = getStoreQty(item._id);
+                  return sum + storeQty;
+                }, 0)}
+              </TableCell>
+              {/* Warehouse Inventory Total */}
+              <TableCell sx={{ fontWeight: 900, background: '#f0f4fa', color: 'primary.main' }}>
+                {filteredItems.reduce((sum, item) => {
+                  const warehouseQty = getWarehouseQty(item._id);
+                  return sum + warehouseQty;
+                }, 0)}
+              </TableCell>
+              {/* Total Inventory */}
+              <TableCell sx={{ fontWeight: 900, background: '#f0f4fa', color: 'primary.main' }}>
+                {filteredItems.reduce((sum, item) => {
+                  const warehouseQty = getWarehouseQty(item._id);
+                  const storeQty = getStoreQty(item._id);
+                  return sum + warehouseQty + storeQty;
+                }, 0)}
+              </TableCell>
+              {/* Total Value */}
+              <TableCell sx={{ fontWeight: 900, background: '#f0f4fa', color: 'primary.main' }}>
+                {filteredItems.reduce((sum, item) => {
+                  const warehouseQty = getWarehouseQty(item._id);
+                  const storeQty = getStoreQty(item._id);
+                  const avgPrice = item.average_price || 0;
+                  return sum + (warehouseQty + storeQty) * avgPrice;
+                }, 0).toFixed(2)}
+              </TableCell>
+              <TableCell sx={{ background: '#f0f4fa' }} />
+              <TableCell sx={{ background: '#f0f4fa' }} />
+            </TableRow>
+          </tfoot>
         </Table>
       </TableContainer>
       <Dialog open={open} onClose={handleClose}>

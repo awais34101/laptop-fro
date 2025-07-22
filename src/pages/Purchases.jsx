@@ -3,6 +3,7 @@ import api from '../services/api';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Alert, IconButton } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { useInventory } from '../context/InventoryContext';
 
 
 
@@ -18,6 +19,7 @@ export default function Purchases() {
   const [editId, setEditId] = useState(null);
   const [warehouseStock, setWarehouseStock] = useState([]);
   const [storeStock, setStoreStock] = useState([]);
+  const { fetchInventory } = useInventory();
 
   const fetchPurchases = () => api.get('/purchases').then(r => setPurchases(r.data));
   const fetchItems = () => api.get('/items').then(r => setItems(Array.isArray(r.data) ? r.data : []));
@@ -101,6 +103,10 @@ export default function Purchases() {
       }
       setSuccess('Purchase invoice saved');
       fetchPurchases();
+        setTimeout(async () => {
+          await fetchInventory();
+          window.dispatchEvent(new Event('inventoryChanged'));
+        }, 200);
     } catch (err) {
       setError(err.response?.data?.error || 'Error');
     }
@@ -112,6 +118,10 @@ export default function Purchases() {
       await api.delete(`/purchases/${id}`);
       setSuccess('Invoice deleted successfully');
       fetchPurchases();
+        setTimeout(async () => {
+          await fetchInventory();
+          window.dispatchEvent(new Event('inventoryChanged'));
+        }, 200);
     } catch (err) {
       setError(err.response?.data?.error || 'Delete failed');
     }
@@ -124,32 +134,31 @@ export default function Purchases() {
   const getStoreQty = (id) => storeStock.find(s => s.item?._id === id)?.remaining_quantity ?? 0;
 
   return (
-    <Box p={2}>
-      <Typography variant="h4" gutterBottom>Add Purchase</Typography>
-      <Button variant="contained" color="primary" onClick={handleOpen} disabled={!items || items.length === 0}>Add Purchase</Button>
-      <TableContainer component={Paper} sx={{ mt: 2 }}>
-        <Table>
-          {success && (
-            <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>
-          )}
+    <Box p={{ xs: 1, md: 3 }} sx={{ background: 'linear-gradient(135deg, #f4f6f8 60%, #e3eafc 100%)', minHeight: '100vh' }}>
+      <Typography variant="h4" gutterBottom sx={{ fontWeight: 900, letterSpacing: 1, color: 'primary.main', mb: 3 }}>
+        Purchases
+      </Typography>
+      <Button variant="contained" color="primary" onClick={handleOpen} disabled={!items || items.length === 0} sx={{ fontWeight: 700, px: 3, borderRadius: 2, mb: 2 }}>Add Purchase</Button>
+      <TableContainer component={Paper} sx={{ mt: 2, maxHeight: 520, overflowY: 'auto', borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
+        <Table sx={{ minWidth: 900, '& tbody tr:nth-of-type(odd)': { backgroundColor: '#f9fafd' }, '& tbody tr:hover': { backgroundColor: '#e3eafc' } }}>
           <TableHead>
             <TableRow>
-              <TableCell>Item</TableCell>
-              <TableCell>Quantity</TableCell>
-              <TableCell>Price</TableCell>
-              <TableCell>Total</TableCell>
-              <TableCell>Supplier</TableCell>
-              <TableCell>Invoice #</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, fontSize: '1.1rem', color: 'primary.main' }}>Item</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Quantity</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Price</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Total</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Supplier</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Invoice #</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Date</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {(Array.isArray(purchases) ? purchases : []).map(p => (
               <React.Fragment key={p._id}>
                 {(Array.isArray(p.items) ? p.items : []).map((item, idx) => (
-                  <TableRow key={p._id + '-' + idx}>
-                    <TableCell>{item.item?.name || getItemName(item.item?._id || item.item)}</TableCell>
+                  <TableRow key={p._id + '-' + idx} sx={{ transition: 'background 0.2s' }}>
+                    <TableCell sx={{ fontWeight: 600 }}>{item.item?.name || getItemName(item.item?._id || item.item)}</TableCell>
                     <TableCell>{item.quantity}</TableCell>
                     <TableCell>{item.price}</TableCell>
                     <TableCell>{(item.quantity * item.price).toFixed(2)}</TableCell>
@@ -168,9 +177,9 @@ export default function Purchases() {
                 ))}
                 {/* Invoice total row */}
                 <TableRow>
-                  <TableCell colSpan={3} align="right"><b>Invoice Total</b></TableCell>
-                  <TableCell colSpan={5} align="left">
-                    <b>{(Array.isArray(p.items) ? p.items : []).reduce((sum, i) => sum + i.quantity * i.price, 0).toFixed(2)}</b>
+                  <TableCell colSpan={3} align="right" sx={{ background: '#f0f4fa', fontWeight: 700 }}>Invoice Total</TableCell>
+                  <TableCell colSpan={5} align="left" sx={{ background: '#f0f4fa', fontWeight: 700 }}>
+                    {(Array.isArray(p.items) ? p.items : []).reduce((sum, i) => sum + i.quantity * i.price, 0).toFixed(2)}
                   </TableCell>
                 </TableRow>
               </React.Fragment>

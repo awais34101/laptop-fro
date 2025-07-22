@@ -4,6 +4,10 @@ import { Alert, Box, Typography, Grid, Paper, TextField, Button } from '@mui/mat
 import { fetchTechnicianStats } from '../services/technicianStatsApi';
 
 
+
+import { useInventory } from '../context/InventoryContext';
+
+
 export default function Dashboard() {
   const [slowMoving, setSlowMoving] = useState([]);
   const [lowStock, setLowStock] = useState({ warehouse: [], store: [] });
@@ -11,13 +15,21 @@ export default function Dashboard() {
   const [techStats, setTechStats] = useState([]);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const { warehouse, store, items, fetchInventory, loading } = useInventory();
 
   useEffect(() => {
     api.get('/alerts/slow-moving').then(r => setSlowMoving(r.data));
     api.get('/alerts/low-stock').then(r => setLowStock(r.data));
     fetchSalesTotal();
     fetchTechnicianStats().then(setTechStats);
-  }, []);
+    // Listen for inventoryChanged event to refresh inventory
+    const handler = () => {
+      fetchInventory();
+      api.get('/alerts/low-stock').then(r => setLowStock(r.data));
+    };
+    window.addEventListener('inventoryChanged', handler);
+    return () => window.removeEventListener('inventoryChanged', handler);
+  }, [fetchInventory]);
 
   const fetchSalesTotal = async (f = from, t = to) => {
     let params = {};
@@ -37,66 +49,85 @@ export default function Dashboard() {
     setTechStats(stats);
   };
 
+  // Calculate total value of available stock (warehouse + store)
+  // Calculate total value of available stock (warehouse + store) exactly as in Items page
+  let totalStockValue = 0;
+  if (!loading && items.length > 0) {
+    totalStockValue = items.reduce((sum, item) => {
+      const warehouseQty = warehouse.find(w => w.item?._id === item._id)?.quantity ?? 0;
+      const storeQty = store.find(s => s.item?._id === item._id)?.remaining_quantity ?? 0;
+      const totalQty = warehouseQty + storeQty;
+      const avgPrice = item.average_price || 0;
+      const totalValue = totalQty * avgPrice;
+      return sum + totalValue;
+    }, 0);
+  }
+
   return (
-    <Box p={2}>
-      <Typography variant="h4" gutterBottom>Dashboard Alerts</Typography>
-      <Grid container spacing={2}>
+    <Box p={{ xs: 1, md: 3 }} sx={{ background: 'linear-gradient(135deg, #f4f6f8 60%, #e3eafc 100%)', minHeight: '100vh' }}>
+      <Typography variant="h4" gutterBottom sx={{ fontWeight: 900, letterSpacing: 1, color: 'primary.main', mb: 3 }}>
+        Dashboard
+      </Typography>
+      <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
-          <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
-            <Typography variant="h6">Total Sales</Typography>
-            <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
-              <TextField type="date" label="From" InputLabelProps={{ shrink: true }} value={from} onChange={e => setFrom(e.target.value)} size="small" />
-              <TextField type="date" label="To" InputLabelProps={{ shrink: true }} value={to} onChange={e => setTo(e.target.value)} size="small" />
-              <Button variant="contained" onClick={handleSalesFilter}>Filter</Button>
+          <Paper elevation={3} sx={{ p: 3, mb: 2, borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 1 }}>Total Sales</Typography>
+            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              <TextField type="date" label="From" InputLabelProps={{ shrink: true }} value={from} onChange={e => setFrom(e.target.value)} size="small" sx={{ flex: 1 }} />
+              <TextField type="date" label="To" InputLabelProps={{ shrink: true }} value={to} onChange={e => setTo(e.target.value)} size="small" sx={{ flex: 1 }} />
+              <Button variant="contained" onClick={handleSalesFilter} sx={{ minWidth: 90 }}>Filter</Button>
             </Box>
-            <Typography variant="h5" color="primary"><b>AED {totalSales.toFixed(2)}</b></Typography>
+            <Typography variant="h4" color="primary" sx={{ fontWeight: 900, mb: 1 }}>AED {totalSales.toFixed(2)}</Typography>
+            <Typography variant="subtitle1" color="secondary" sx={{ fontWeight: 700 }}>
+              Total Stock Value: {loading ? 'Loading...' : `AED ${totalStockValue.toFixed(2)}`}
+            </Typography>
           </Paper>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Paper elevation={2} sx={{ p: 2, height: 260, display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="h6">Slow Moving Items</Typography>
+          <Paper elevation={3} sx={{ p: 3, height: 280, display: 'flex', flexDirection: 'column', borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 1 }}>Slow Moving Items</Typography>
             <Box sx={{ flex: 1, overflowY: 'auto', mt: 1 }}>
               {slowMoving.length === 0 ? <Alert severity="success">No slow moving items</Alert> : slowMoving.map(item => (
-                <Alert severity="warning" key={item._id}>{item.name} (Last Sale: {item.last_sale_date ? new Date(item.last_sale_date).toLocaleDateString() : 'Never'})</Alert>
+                <Alert severity="warning" key={item._id} sx={{ mb: 1 }}>{item.name} (Last Sale: {item.last_sale_date ? new Date(item.last_sale_date).toLocaleDateString() : 'Never'})</Alert>
               ))}
             </Box>
           </Paper>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Paper elevation={2} sx={{ p: 2, height: 260, display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="h6">Low Stock</Typography>
+          <Paper elevation={3} sx={{ p: 3, height: 280, display: 'flex', flexDirection: 'column', borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 1 }}>Low Stock</Typography>
             <Box sx={{ flex: 1, overflowY: 'auto', mt: 1 }}>
               {lowStock.warehouse.length === 0 && lowStock.store.length === 0 ? <Alert severity="success">Stock levels are healthy</Alert> : <>
-                {lowStock.warehouse.map(w => <Alert severity="error" key={w._id}>Warehouse: {w.item?.name} (Qty: {w.quantity})</Alert>)}
-                {lowStock.store.map(s => <Alert severity="error" key={s._id}>Store: {s.item?.name} (Qty: {s.remaining_quantity})</Alert>)}
+                {lowStock.warehouse.map(w => <Alert severity="error" key={w._id} sx={{ mb: 1 }}>Warehouse: {w.item?.name} (Qty: {w.quantity})</Alert>)}
+                {lowStock.store.map(s => <Alert severity="error" key={s._id} sx={{ mb: 1 }}>Store: {s.item?.name} (Qty: {s.remaining_quantity})</Alert>)}
               </>}
             </Box>
           </Paper>
         </Grid>
         <Grid item xs={12} md={12}>
-          <Paper elevation={2} sx={{ p: 2, mt: 2 }}>
-            <Typography variant="h6">Technician Stats</Typography>
+          <Paper elevation={3} sx={{ p: 3, mt: 2, borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>Technician Stats</Typography>
             <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
               <TextField type="date" label="From" InputLabelProps={{ shrink: true }} value={from} onChange={e => setFrom(e.target.value)} />
               <TextField type="date" label="To" InputLabelProps={{ shrink: true }} value={to} onChange={e => setTo(e.target.value)} />
               <Button variant="contained" onClick={handleTechStatsFilter}>Filter</Button>
             </Box>
-            <Box>
+            <Box sx={{ overflowX: 'auto' }}>
               {techStats.length === 0 ? <Alert severity="info">No technician activity in selected range.</Alert> : (
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, borderRadius: 8, overflow: 'hidden', background: '#f9fafd' }}>
                   <thead>
-                    <tr>
-                      <th style={{ border: '1px solid #ccc', padding: 4 }}>Technician</th>
-                      <th style={{ border: '1px solid #ccc', padding: 4 }}>Repair</th>
-                      <th style={{ border: '1px solid #ccc', padding: 4 }}>Test</th>
+                    <tr style={{ background: '#f0f4fa' }}>
+                      <th style={{ border: 'none', padding: 8, fontWeight: 700, color: '#1976d2' }}>Technician</th>
+                      <th style={{ border: 'none', padding: 8, fontWeight: 700, color: '#1976d2' }}>Repair</th>
+                      <th style={{ border: 'none', padding: 8, fontWeight: 700, color: '#1976d2' }}>Test</th>
                     </tr>
                   </thead>
                   <tbody>
                     {techStats.map(t => (
-                      <tr key={t.name}>
-                        <td style={{ border: '1px solid #ccc', padding: 4 }}>{t.name}</td>
-                        <td style={{ border: '1px solid #ccc', padding: 4 }}>{t.repair}</td>
-                        <td style={{ border: '1px solid #ccc', padding: 4 }}>{t.test}</td>
+                      <tr key={t.name} style={{ background: '#fff', borderBottom: '1px solid #e0e0e0' }}>
+                        <td style={{ padding: 8 }}>{t.name}</td>
+                        <td style={{ padding: 8 }}>{t.repair}</td>
+                        <td style={{ padding: 8 }}>{t.test}</td>
                       </tr>
                     ))}
                   </tbody>

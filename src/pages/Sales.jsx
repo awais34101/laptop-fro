@@ -3,6 +3,7 @@ import api from '../services/api';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Alert, IconButton } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { useInventory } from '../context/InventoryContext';
 
 export default function Sales() {
   const [sales, setSales] = useState([]);
@@ -15,6 +16,7 @@ export default function Sales() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [editId, setEditId] = useState(null);
+  const { fetchInventory } = useInventory();
 
   const fetchSales = () => api.get('/sales').then(r => setSales(r.data));
   const fetchItems = () => api.get('/items').then(r => setItems(r.data));
@@ -65,6 +67,10 @@ export default function Sales() {
       }
       setSuccess('Sale invoice saved');
       fetchSales();
+      setTimeout(async () => {
+        await fetchInventory();
+        window.dispatchEvent(new Event('inventoryChanged'));
+      }, 200);
     } catch (err) {
       setError(err.response?.data?.error || 'Error');
     }
@@ -79,61 +85,67 @@ export default function Sales() {
       await api.delete(`/sales/${id}`);
       setSuccess('Invoice deleted successfully');
       fetchSales();
+      setTimeout(async () => {
+        await fetchInventory();
+        window.dispatchEvent(new Event('inventoryChanged'));
+      }, 200);
     } catch (err) {
       setError(err.response?.data?.error || 'Delete failed');
     }
   };
 
   return (
-    <Box p={2}>
-      <Typography variant="h4" gutterBottom>Sales Invoices</Typography>
+    <Box p={{ xs: 1, md: 3 }} sx={{ background: 'linear-gradient(135deg, #f4f6f8 60%, #e3eafc 100%)', minHeight: '100vh' }}>
+      <Typography variant="h4" gutterBottom sx={{ fontWeight: 900, letterSpacing: 1, color: 'primary.main', mb: 3 }}>
+        Sales Invoices
+      </Typography>
       {success && (
         <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>
       )}
-      <Button variant="contained" color="primary" onClick={() => handleOpen()}>Add Sale Invoice</Button>
-      <TableContainer component={Paper} sx={{ mt: 2 }}>
-        <Table>
+      <Button variant="contained" color="primary" onClick={() => handleOpen()} sx={{ fontWeight: 700, px: 3, borderRadius: 2, mb: 2 }}>Add Sale Invoice</Button>
+      <TableContainer component={Paper} sx={{ mt: 2, maxHeight: 520, overflowY: 'auto', borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
+        <Table sx={{ minWidth: 900, '& tbody tr:nth-of-type(odd)': { backgroundColor: '#f9fafd' }, '& tbody tr:hover': { backgroundColor: '#e3eafc' } }}>
           <TableHead>
             <TableRow>
-              <TableCell>Customer</TableCell>
-              <TableCell>Invoice #</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell>Item</TableCell>
-              <TableCell>Quantity</TableCell>
-              <TableCell>Price</TableCell>
-              <TableCell>Total</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, fontSize: '1.1rem', color: 'primary.main' }}>Customer</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Invoice #</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Date</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Item</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Quantity</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Price</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Total</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {sales.map(s => (
               <React.Fragment key={s._id}>
                 {s.items && s.items.map((item, idx) => (
-                  <TableRow key={s._id + '-' + idx}>
+                  <TableRow key={s._id + '-' + idx} sx={{ transition: 'background 0.2s' }}>
                     {idx === 0 && (
-                      <>
-                        <TableCell rowSpan={s.items.length}>{s.customer?.name || ''}</TableCell>
+                      <React.Fragment>
+                        <TableCell rowSpan={s.items.length} sx={{ fontWeight: 600 }}>{s.customer?.name || ''}</TableCell>
                         <TableCell rowSpan={s.items.length}>{s.invoice_number || ''}</TableCell>
                         <TableCell rowSpan={s.items.length}>{new Date(s.date).toLocaleDateString()}</TableCell>
-                      </>
+                      </React.Fragment>
                     )}
-                    <TableCell>{item.item?.name || getItemName(item.item?._id || item.item)}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{item.item?.name || getItemName(item.item?._id || item.item)}</TableCell>
                     <TableCell>{item.quantity}</TableCell>
                     <TableCell>{item.price?.toFixed(2) || ''}</TableCell>
                     <TableCell>{(item.quantity && item.price) ? (Number(item.quantity) * Number(item.price)).toFixed(2) : ''}</TableCell>
                     {idx === 0 && (
-                    <TableCell rowSpan={s.items.length}>
-                      <IconButton onClick={() => handleOpen(s)}><EditIcon /></IconButton>
-                      <IconButton onClick={() => handleDelete(s._id)}><DeleteIcon /></IconButton>
-                    </TableCell>
+                      <TableCell rowSpan={s.items.length}>
+                        <IconButton onClick={() => handleOpen(s)}><EditIcon /></IconButton>
+                        <IconButton onClick={() => handleDelete(s._id)}><DeleteIcon /></IconButton>
+                      </TableCell>
                     )}
                   </TableRow>
                 ))}
                 {/* Invoice total row */}
                 <TableRow>
-                  <TableCell colSpan={6} align="right"><b>Invoice Total</b></TableCell>
-                  <TableCell colSpan={2} align="left">
-                    <b>{s.items && s.items.reduce((sum, i) => sum + (Number(i.quantity) * (i.price || 0)), 0).toFixed(2)}</b>
+                  <TableCell colSpan={6} align="right" sx={{ background: '#f0f4fa', fontWeight: 700 }}>Invoice Total</TableCell>
+                  <TableCell colSpan={2} align="left" sx={{ background: '#f0f4fa', fontWeight: 700 }}>
+                    {s.items && s.items.reduce((sum, i) => sum + (Number(i.quantity) * (i.price || 0)), 0).toFixed(2)}
                   </TableCell>
                 </TableRow>
               </React.Fragment>
