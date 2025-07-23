@@ -114,24 +114,47 @@ export default function Dashboard() {
             </Box>
             <Box sx={{ overflowX: 'auto' }}>
               {techStats.length === 0 ? <Alert severity="info">No technician activity in selected range.</Alert> : (
-                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, borderRadius: 8, overflow: 'hidden', background: '#f9fafd' }}>
-                  <thead>
-                    <tr style={{ background: '#f0f4fa' }}>
-                      <th style={{ border: 'none', padding: 8, fontWeight: 700, color: '#1976d2' }}>Technician</th>
-                      <th style={{ border: 'none', padding: 8, fontWeight: 700, color: '#1976d2' }}>Repair</th>
-                      <th style={{ border: 'none', padding: 8, fontWeight: 700, color: '#1976d2' }}>Test</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {techStats.map(t => (
-                      <tr key={t.name} style={{ background: '#fff', borderBottom: '1px solid #e0e0e0' }}>
-                        <td style={{ padding: 8 }}>{t.name}</td>
-                        <td style={{ padding: 8 }}>{t.repair}</td>
-                        <td style={{ padding: 8 }}>{t.test}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                (() => {
+                  // Calculate totals
+                  const totalRepair = techStats.reduce((sum, t) => sum + (Number(t.repair) || 0), 0);
+                  const totalTest = techStats.reduce((sum, t) => sum + (Number(t.test) || 0), 0);
+                  // Calculate days in range
+                  let days = 0;
+                  if (from && to) {
+                    const fromDate = new Date(from);
+                    const toDate = new Date(to);
+                    days = Math.max(1, Math.ceil((toDate - fromDate) / (1000 * 60 * 60 * 24)) + 1);
+                  }
+                  return (
+                    <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, borderRadius: 8, overflow: 'hidden', background: '#f9fafd' }}>
+                      <thead>
+                        <tr style={{ background: '#f0f4fa' }}>
+                          <th style={{ border: 'none', padding: 8, fontWeight: 700, color: '#1976d2' }}>Technician</th>
+                          <th style={{ border: 'none', padding: 8, fontWeight: 700, color: '#1976d2' }}>Repair</th>
+                          <th style={{ border: 'none', padding: 8, fontWeight: 700, color: '#1976d2' }}>Test</th>
+                          <th style={{ border: 'none', padding: 8, fontWeight: 700, color: '#1976d2' }}>Total</th>
+                          {days > 1 && <th style={{ border: 'none', padding: 8, fontWeight: 700, color: '#1976d2' }}>Avg/Day</th>}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {techStats.map(t => (
+                          <tr key={t.name} style={{ background: '#fff', borderBottom: '1px solid #e0e0e0' }}>
+                            <td style={{ padding: 8 }}>{t.name}</td>
+                            <td style={{ padding: 8 }}>{t.repair}</td>
+                            <td style={{ padding: 8 }}>{t.test}</td>
+                            <td style={{ padding: 8 }}>{Number(t.repair) + Number(t.test)}</td>
+                            {days > 1 && <td style={{ padding: 8 }}>
+                              Repair: {(Number(t.repair) / days).toFixed(2)}<br />
+                              Test: {(Number(t.test) / days).toFixed(2)}<br />
+                              Total: {((Number(t.repair) + Number(t.test)) / days).toFixed(2)}
+                            </td>}
+                          </tr>
+                        ))}
+                        
+                      </tbody>
+                    </table>
+                  );
+                })()
               )}
             </Box>
           </Paper>

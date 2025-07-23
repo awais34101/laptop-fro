@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import Autocomplete from '@mui/material/Autocomplete';
 import { fetchTechnicians } from '../services/technicianApi';
 import { useInventory } from '../context/InventoryContext';
 import Box from '@mui/material/Box';
@@ -101,9 +102,17 @@ export default function Transfers() {
           {error && <Alert severity="error">{error}</Alert>}
           {success && <Alert severity="success">{success}</Alert>}
           <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-            <TextField select margin="dense" label="Item" name="item" value={form.item} onChange={handleChange} fullWidth required sx={{ flex: 1 }}>
-              {items.map(i => <MenuItem key={i._id} value={i._id}>{i.name}</MenuItem>)}
-            </TextField>
+            <Autocomplete
+              options={items}
+              getOptionLabel={option => option.name || ''}
+              value={items.find(i => i._id === form.item) || null}
+              onChange={(_, newValue) => setForm(f => ({ ...f, item: newValue ? newValue._id : '' }))}
+              renderInput={params => (
+                <TextField {...params} margin="dense" label="Item" fullWidth required />
+              )}
+              isOptionEqualToValue={(option, value) => option._id === value._id}
+              sx={{ flex: 1 }}
+            />
             <TextField margin="dense" label="Quantity" name="quantity" value={form.quantity} onChange={handleChange} type="number" fullWidth required sx={{ flex: 1 }} />
           </Box>
           <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Autocomplete } from '@mui/material';
 import api from '../services/api';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Alert, IconButton } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
@@ -179,9 +180,19 @@ export default function Sales() {
                 {rows.map((row, idx) => (
                   <TableRow key={idx}>
                     <TableCell>
-                      <TextField select value={row.item} onChange={e => handleRowChange(idx, 'item', e.target.value)} fullWidth required>
-                        {items.map(i => <MenuItem key={i._id} value={i._id}>{i.name}</MenuItem>)}
-                      </TextField>
+                      {/* Use Autocomplete for item selection */}
+                      <Box sx={{ minWidth: 200 }}>
+                        <Autocomplete
+                          options={items}
+                          getOptionLabel={option => option.name || ''}
+                          value={items.find(i => i._id === row.item) || null}
+                          onChange={(_, newValue) => handleRowChange(idx, 'item', newValue ? newValue._id : '')}
+                          renderInput={params => (
+                            <TextField {...params} label="Item" fullWidth required />
+                          )}
+                          isOptionEqualToValue={(option, value) => option._id === value._id}
+                        />
+                      </Box>
                     </TableCell>
                     <TableCell>
                       <TextField type="number" value={row.quantity} onChange={e => handleRowChange(idx, 'quantity', e.target.value)} fullWidth required />

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Autocomplete } from '@mui/material';
 import api from '../services/api';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Alert, IconButton } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
@@ -133,6 +134,8 @@ export default function Purchases() {
   const getWarehouseQty = (id) => warehouseStock.find(w => w.item?._id === id)?.quantity ?? 0;
   const getStoreQty = (id) => storeStock.find(s => s.item?._id === id)?.remaining_quantity ?? 0;
 
+  // Sort purchases by date descending (latest first)
+  const sortedPurchases = (Array.isArray(purchases) ? purchases.slice().sort((a, b) => new Date(b.date) - new Date(a.date)) : []);
   return (
     <Box p={{ xs: 1, md: 3 }} sx={{ background: 'linear-gradient(135deg, #f4f6f8 60%, #e3eafc 100%)', minHeight: '100vh' }}>
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 900, letterSpacing: 1, color: 'primary.main', mb: 3 }}>
@@ -154,7 +157,7 @@ export default function Purchases() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {(Array.isArray(purchases) ? purchases : []).map(p => (
+            {sortedPurchases.map(p => (
               <React.Fragment key={p._id}>
                 {(Array.isArray(p.items) ? p.items : []).map((item, idx) => (
                   <TableRow key={p._id + '-' + idx} sx={{ transition: 'background 0.2s' }}>
@@ -213,9 +216,20 @@ export default function Purchases() {
                 {rows.map((row, idx) => (
                   <TableRow key={idx}>
                     <TableCell>
-                      <TextField select value={row.item} onChange={e => handleRowChange(idx, 'item', e.target.value)} fullWidth required>
-                        {(items || []).map(i => <MenuItem key={i._id} value={i._id}>{i.name}</MenuItem>)}
-                      </TextField>
+                      {/* Use Autocomplete for item selection */}
+                      <Box sx={{ minWidth: 200 }}>
+                        {/* Autocomplete import moved to top of file */}
+                        <Autocomplete
+                          options={items}
+                          getOptionLabel={option => option.name || ''}
+                          value={items.find(i => i._id === row.item) || null}
+                          onChange={(_, newValue) => handleRowChange(idx, 'item', newValue ? newValue._id : '')}
+                          renderInput={params => (
+                            <TextField {...params} label="Item" fullWidth required />
+                          )}
+                          isOptionEqualToValue={(option, value) => option._id === value._id}
+                        />
+                      </Box>
                     </TableCell>
                     <TableCell>
                       <TextField type="number" value={row.quantity} onChange={e => handleRowChange(idx, 'quantity', e.target.value)} fullWidth required />
