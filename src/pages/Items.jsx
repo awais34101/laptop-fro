@@ -11,7 +11,7 @@ export default function Items() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [editId, setEditId] = useState(null);
-  const { warehouse, store, fetchInventory } = useInventory();
+  const { warehouse, store, store2, fetchInventory } = useInventory();
 
   const fetchItems = () => api.get('/items').then(r => setItems(r.data));
   useEffect(() => { fetchItems(); fetchInventory(); }, [fetchInventory]);
@@ -63,6 +63,7 @@ export default function Items() {
   // Helper functions to get stock for each item
   const getWarehouseQty = (itemId) => warehouse.find(w => w.item?._id === itemId)?.quantity ?? 0;
   const getStoreQty = (itemId) => store.find(s => s.item?._id === itemId)?.remaining_quantity ?? 0;
+  const getStore2Qty = (itemId) => store2.find(s => s.item?._id === itemId)?.remaining_quantity ?? 0;
   const filteredItems = items.filter(item =>
     item.name.toLowerCase().includes(search.toLowerCase()) ||
     item.category?.toLowerCase().includes(search.toLowerCase())
@@ -91,6 +92,7 @@ export default function Items() {
               <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Category</TableCell>
               <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Avg Price</TableCell>
               <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Store Inventory</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Store2 Inventory</TableCell>
               <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Warehouse Inventory</TableCell>
               <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Total Inventory</TableCell>
               <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Total Value</TableCell>
@@ -102,7 +104,8 @@ export default function Items() {
             {filteredItems.map(item => {
               const warehouseQty = getWarehouseQty(item._id);
               const storeQty = getStoreQty(item._id);
-              const totalQty = warehouseQty + storeQty;
+              const store2Qty = getStore2Qty(item._id);
+              const totalQty = warehouseQty + storeQty + store2Qty;
               const avgPrice = item.average_price || 0;
               const totalValue = totalQty * avgPrice;
               return (
@@ -112,6 +115,7 @@ export default function Items() {
                   <TableCell>{item.category}</TableCell>
                   <TableCell>{avgPrice.toFixed(2)}</TableCell>
                   <TableCell>{storeQty}</TableCell>
+                  <TableCell>{store2Qty}</TableCell>
                   <TableCell>{warehouseQty}</TableCell>
                   <TableCell>{totalQty}</TableCell>
                   <TableCell>{totalValue.toFixed(2)}</TableCell>

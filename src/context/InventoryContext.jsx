@@ -10,24 +10,27 @@ export function useInventory() {
 export function InventoryProvider({ children }) {
   const [warehouse, setWarehouse] = useState([]);
   const [store, setStore] = useState([]);
+  const [store2, setStore2] = useState([]);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const fetchInventory = useCallback(async () => {
     setLoading(true);
-    const [warehouseRes, storeRes, itemsRes] = await Promise.all([
+    const [warehouseRes, storeRes, store2Res, itemsRes] = await Promise.all([
       api.get('/warehouse'),
       api.get('/store'),
+      api.get('/store2'),
       api.get('/items'),
     ]);
     setWarehouse(warehouseRes.data);
     setStore(storeRes.data);
+    setStore2(store2Res.data);
     setItems(itemsRes.data);
     setLoading(false);
   }, []);
 
   return (
-    <InventoryContext.Provider value={{ warehouse, store, items, fetchInventory, loading }}>
+    <InventoryContext.Provider value={{ warehouse, store, store2, items, fetchInventory, loading }}>
       {children}
     </InventoryContext.Provider>
   );

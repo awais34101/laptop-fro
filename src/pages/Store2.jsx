@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField } from '@mui/material';
 
-export default function Store() {
+export default function Store2() {
   const [inventory, setInventory] = useState([]);
   const [search, setSearch] = useState('');
   const [slowMoving, setSlowMoving] = useState([]);
   useEffect(() => {
-    api.get('/store').then(r => setInventory(r.data));
-    api.get('/alerts/slow-moving').then(r => setSlowMoving(r.data.store || []));
+    api.get('/store2').then(r => setInventory(r.data));
+    api.get('/alerts/slow-moving').then(r => setSlowMoving(r.data.store2 || []));
   }, []);
   const filteredInventory = inventory.filter(s =>
     s.item?.name?.toLowerCase().includes(search.toLowerCase())
@@ -22,7 +22,7 @@ export default function Store() {
   ];
   return (
     <Box p={2}>
-      <Typography variant="h4" gutterBottom>Store Inventory</Typography>
+      <Typography variant="h4" gutterBottom>Store2 Inventory</Typography>
       <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
         <TextField
           label="Search Inventory"
