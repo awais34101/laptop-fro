@@ -19,7 +19,11 @@ export default function SalesStore2() {
   const [editId, setEditId] = useState(null);
   const { fetchInventory } = useInventory();
 
-  const fetchSales = () => api.get('/sales-store2').then(r => setSales(r.data));
+  const fetchSales = () => api.get('/sales-store2').then(r => {
+    // Sort by date descending (latest first)
+    const sorted = [...r.data].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    setSales(sorted);
+  });
   const fetchItems = () => api.get('/items').then(r => setItems(r.data));
   const fetchCustomers = () => api.get('/customers').then(r => setCustomers(r.data));
 

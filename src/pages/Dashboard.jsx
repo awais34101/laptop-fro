@@ -1,10 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
-import { Alert, Box, Typography, Grid, Paper, TextField, Button } from '@mui/material';
-import { fetchTechnicianStats } from '../services/technicianStatsApi';
-
-
-
+import { fetchSalesTotalByDate, fetchStore2SalesTotalByDate } from '../services/dashboardSalesApi';
+import { TextField, Button } from '@mui/material';
+import { Box, Typography, Grid, Paper, Alert } from '@mui/material';
 import { useInventory } from '../context/InventoryContext';
 
 
@@ -13,9 +12,11 @@ export default function Dashboard() {
   const [lowStock, setLowStock] = useState({ warehouse: [], store: [], store2: [] });
   const [totalSales, setTotalSales] = useState(0);
   const [store2Sales, setStore2Sales] = useState(0);
-  const [techStats, setTechStats] = useState([]);
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
+  const [salesFrom, setSalesFrom] = useState('');
+  const [salesTo, setSalesTo] = useState('');
+  const [store2From, setStore2From] = useState('');
+  const [store2To, setStore2To] = useState('');
+  // ...existing code...
   const { warehouse, store, store2, items, fetchInventory, loading } = useInventory();
 
   useEffect(() => {
@@ -23,7 +24,7 @@ export default function Dashboard() {
     api.get('/alerts/low-stock').then(r => setLowStock(r.data));
     fetchSalesTotal();
     fetchStore2SalesTotal();
-    fetchTechnicianStats().then(setTechStats);
+    // Technician stats moved to Technicians page
     // Listen for inventoryChanged event to refresh inventory
     const handler = () => {
       fetchInventory();
@@ -33,33 +34,28 @@ export default function Dashboard() {
     return () => window.removeEventListener('inventoryChanged', handler);
   }, [fetchInventory]);
 
-  const fetchSalesTotal = async (f = from, t = to) => {
-    let params = {};
-    if (f) params.from = f;
-    if (t) params.to = t;
-    const r = await api.get('/sales', { params });
-    const total = r.data.reduce((sum, sale) => sum + (sale.items ? sale.items.reduce((s, i) => s + (Number(i.quantity) * Number(i.price || 0)), 0) : 0), 0);
+
+  const fetchSalesTotal = async (from = '', to = '') => {
+    const r = await fetchSalesTotalByDate(from, to);
+    const total = r.reduce((sum, sale) => sum + (sale.items ? sale.items.reduce((s, i) => s + (Number(i.quantity) * Number(i.price || 0)), 0) : 0), 0);
     setTotalSales(total);
   };
 
-  const fetchStore2SalesTotal = async (f = from, t = to) => {
-    let params = {};
-    if (f) params.from = f;
-    if (t) params.to = t;
-    const r = await api.get('/sales-store2', { params });
-    const total = r.data.reduce((sum, sale) => sum + (sale.items ? sale.items.reduce((s, i) => s + (Number(i.quantity) * Number(i.price || 0)), 0) : 0), 0);
+  const fetchStore2SalesTotal = async (from = '', to = '') => {
+    const r = await fetchStore2SalesTotalByDate(from, to);
+    const total = r.reduce((sum, sale) => sum + (sale.items ? sale.items.reduce((s, i) => s + (Number(i.quantity) * Number(i.price || 0)), 0) : 0), 0);
     setStore2Sales(total);
   };
 
   const handleSalesFilter = () => {
-    fetchSalesTotal();
-    fetchStore2SalesTotal();
+    fetchSalesTotal(salesFrom, salesTo);
   };
 
-  const handleTechStatsFilter = async () => {
-    const stats = await fetchTechnicianStats(from, to);
-    setTechStats(stats);
+  const handleStore2SalesFilter = () => {
+    fetchStore2SalesTotal(store2From, store2To);
   };
+
+  // ...existing code...
 
   // Calculate total value of available stock (warehouse + store + store2)
   let totalStockValue = 0, warehouseValue = 0, storeValue = 0, store2Value = 0;
@@ -85,25 +81,29 @@ export default function Dashboard() {
       </Typography>
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
-          <Paper elevation={3} sx={{ p: 3, mb: 2, borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 1 }}>Store Sales</Typography>
-            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-              <TextField type="date" label="From" InputLabelProps={{ shrink: true }} value={from} onChange={e => setFrom(e.target.value)} size="small" sx={{ flex: 1 }} />
-              <TextField type="date" label="To" InputLabelProps={{ shrink: true }} value={to} onChange={e => setTo(e.target.value)} size="small" sx={{ flex: 1 }} />
-              <Button variant="contained" onClick={handleSalesFilter} sx={{ minWidth: 90 }}>Filter</Button>
+          <Paper elevation={3} sx={{ p: 3, mb: 2, borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 2, alignSelf: 'flex-start' }}>Store Sales</Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%', mb: 2 }}>
+              <Box sx={{ display: 'flex', gap: 1, width: '100%' }}>
+                <TextField type="date" size="small" label="From" InputLabelProps={{ shrink: true }} value={salesFrom} onChange={e => setSalesFrom(e.target.value)} sx={{ flex: 1, bgcolor: '#fff' }} />
+                <TextField type="date" size="small" label="To" InputLabelProps={{ shrink: true }} value={salesTo} onChange={e => setSalesTo(e.target.value)} sx={{ flex: 1, bgcolor: '#fff' }} />
+                <Button variant="contained" onClick={handleSalesFilter} sx={{ minWidth: 70, fontWeight: 700 }}>Filter</Button>
+              </Box>
             </Box>
-            <Typography variant="h4" color="primary" sx={{ fontWeight: 900, mb: 1 }}>AED {totalSales.toFixed(2)}</Typography>
+            <Typography variant="h4" color="primary" sx={{ fontWeight: 900, mb: 1 }}>{`AED ${totalSales.toFixed(2)}`}</Typography>
           </Paper>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Paper elevation={3} sx={{ p: 3, mb: 2, borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 1 }}>Store2 Sales</Typography>
-            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-              <TextField type="date" label="From" InputLabelProps={{ shrink: true }} value={from} onChange={e => setFrom(e.target.value)} size="small" sx={{ flex: 1 }} />
-              <TextField type="date" label="To" InputLabelProps={{ shrink: true }} value={to} onChange={e => setTo(e.target.value)} size="small" sx={{ flex: 1 }} />
-              <Button variant="contained" onClick={handleSalesFilter} sx={{ minWidth: 90 }}>Filter</Button>
+          <Paper elevation={3} sx={{ p: 3, mb: 2, borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 2, alignSelf: 'flex-start' }}>Store2 Sales</Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%', mb: 2 }}>
+              <Box sx={{ display: 'flex', gap: 1, width: '100%' }}>
+                <TextField type="date" size="small" label="From" InputLabelProps={{ shrink: true }} value={store2From} onChange={e => setStore2From(e.target.value)} sx={{ flex: 1, bgcolor: '#fff' }} />
+                <TextField type="date" size="small" label="To" InputLabelProps={{ shrink: true }} value={store2To} onChange={e => setStore2To(e.target.value)} sx={{ flex: 1, bgcolor: '#fff' }} />
+                <Button variant="contained" onClick={handleStore2SalesFilter} sx={{ minWidth: 70, fontWeight: 700 }}>Filter</Button>
+              </Box>
             </Box>
-            <Typography variant="h4" color="primary" sx={{ fontWeight: 900, mb: 1 }}>AED {store2Sales.toFixed(2)}</Typography>
+            <Typography variant="h4" color="primary" sx={{ fontWeight: 900, mb: 1 }}>{`AED ${store2Sales.toFixed(2)}`}</Typography>
           </Paper>
         </Grid>
         <Grid item xs={12} md={4}>
@@ -171,61 +171,7 @@ export default function Dashboard() {
             </Box>
           </Paper>
         </Grid>
-        <Grid item xs={12} md={12}>
-          <Paper elevation={3} sx={{ p: 3, mt: 2, borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>Technician Stats</Typography>
-            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-              <TextField type="date" label="From" InputLabelProps={{ shrink: true }} value={from} onChange={e => setFrom(e.target.value)} />
-              <TextField type="date" label="To" InputLabelProps={{ shrink: true }} value={to} onChange={e => setTo(e.target.value)} />
-              <Button variant="contained" onClick={handleTechStatsFilter}>Filter</Button>
-            </Box>
-            <Box sx={{ overflowX: 'auto' }}>
-              {techStats.length === 0 ? <Alert severity="info">No technician activity in selected range.</Alert> : (
-                (() => {
-                  // Calculate totals
-                  const totalRepair = techStats.reduce((sum, t) => sum + (Number(t.repair) || 0), 0);
-                  const totalTest = techStats.reduce((sum, t) => sum + (Number(t.test) || 0), 0);
-                  // Calculate days in range
-                  let days = 0;
-                  if (from && to) {
-                    const fromDate = new Date(from);
-                    const toDate = new Date(to);
-                    days = Math.max(1, Math.ceil((toDate - fromDate) / (1000 * 60 * 60 * 24)) + 1);
-                  }
-                  return (
-                    <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, borderRadius: 8, overflow: 'hidden', background: '#f9fafd' }}>
-                      <thead>
-                        <tr style={{ background: '#f0f4fa' }}>
-                          <th style={{ border: 'none', padding: 8, fontWeight: 700, color: '#1976d2' }}>Technician</th>
-                          <th style={{ border: 'none', padding: 8, fontWeight: 700, color: '#1976d2' }}>Repair</th>
-                          <th style={{ border: 'none', padding: 8, fontWeight: 700, color: '#1976d2' }}>Test</th>
-                          <th style={{ border: 'none', padding: 8, fontWeight: 700, color: '#1976d2' }}>Total</th>
-                          {days > 1 && <th style={{ border: 'none', padding: 8, fontWeight: 700, color: '#1976d2' }}>Avg/Day</th>}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {techStats.map(t => (
-                          <tr key={t.name} style={{ background: '#fff', borderBottom: '1px solid #e0e0e0' }}>
-                            <td style={{ padding: 8 }}>{t.name}</td>
-                            <td style={{ padding: 8 }}>{t.repair}</td>
-                            <td style={{ padding: 8 }}>{t.test}</td>
-                            <td style={{ padding: 8 }}>{Number(t.repair) + Number(t.test)}</td>
-                            {days > 1 && <td style={{ padding: 8 }}>
-                              Repair: {(Number(t.repair) / days).toFixed(2)}<br />
-                              Test: {(Number(t.test) / days).toFixed(2)}<br />
-                              Total: {((Number(t.repair) + Number(t.test)) / days).toFixed(2)}
-                            </td>}
-                          </tr>
-                        ))}
-                        
-                      </tbody>
-                    </table>
-                  );
-                })()
-              )}
-            </Box>
-          </Paper>
-        </Grid>
+        {/* Technician Stats moved to Technicians page */}
       </Grid>
     </Box>
   );

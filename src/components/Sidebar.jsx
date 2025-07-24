@@ -14,23 +14,25 @@ const drawerWidth = 220;
 
 
 const navItems = [
-  { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-  { text: 'Items', icon: <InventoryIcon />, path: '/items' },
-  { text: 'Purchases', icon: <ShoppingCartIcon />, path: '/purchases' },
-  { text: 'Warehouse', icon: <StoreIcon />, path: '/warehouse' },
-  { text: 'Transfers', icon: <CompareArrowsIcon />, path: '/transfers' },
-  { text: 'Store', icon: <StoreIcon />, path: '/store' },
-  { text: 'Store2', icon: <StoreIcon />, path: '/store2' },
-  { text: 'Sales', icon: <PointOfSaleIcon />, path: '/sales' },
-  { text: 'Sales Store2', icon: <PointOfSaleIcon />, path: '/sales-store2' },
-  { text: 'Customers', icon: <PeopleIcon />, path: '/customers' },
-  { text: 'Technicians', icon: <PeopleIcon />, path: '/technicians' },
-  { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
+  { text: 'Dashboard', icon: <DashboardIcon />, path: '/', perm: { section: 'dashboard', action: 'view' } },
+  { text: 'Items', icon: <InventoryIcon />, path: '/items', perm: { section: 'items', action: 'view' } },
+  { text: 'Purchases', icon: <ShoppingCartIcon />, path: '/purchases', perm: { section: 'purchases', action: 'view' } },
+  { text: 'Warehouse', icon: <StoreIcon />, path: '/warehouse', perm: { section: 'warehouse', action: 'view' } },
+  { text: 'Transfers', icon: <CompareArrowsIcon />, path: '/transfers', perm: { section: 'transfers', action: 'view' } },
+  { text: 'Store', icon: <StoreIcon />, path: '/store', perm: { section: 'store', action: 'view' } },
+  { text: 'Store2', icon: <StoreIcon />, path: '/store2', perm: { section: 'store2', action: 'view' } },
+  { text: 'Sales', icon: <PointOfSaleIcon />, path: '/sales', perm: { section: 'sales', action: 'view' } },
+  { text: 'Sales Store2', icon: <PointOfSaleIcon />, path: '/sales-store2', perm: { section: 'store2', action: 'view' } },
+  { text: 'Customers', icon: <PeopleIcon />, path: '/customers', perm: { section: 'customers', action: 'view' } },
+  { text: 'Technicians', icon: <PeopleIcon />, path: '/technicians', perm: { section: 'technicians', action: 'view' } },
+  { text: 'Settings', icon: <SettingsIcon />, path: '/settings', perm: { section: 'settings', action: 'view' } },
 ];
 
 export default function Sidebar() {
   const location = useLocation();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const permissions = user.permissions || {};
+  const isAdmin = user.role === 'admin';
   const token = localStorage.getItem('token');
 
   const handleLogout = () => {
@@ -63,7 +65,12 @@ export default function Sidebar() {
       </Toolbar>
       <Box sx={{ overflow: 'auto', height: '100%' }}>
         <List sx={{ mt: 2 }}>
-          {navItems.map(({ text, icon, path }) => (
+          {navItems.filter(({ perm }) => {
+            if (isAdmin) return true;
+            if (!perm) return true;
+            const { section, action } = perm;
+            return permissions[section]?.[action];
+          }).map(({ text, icon, path }) => (
             <ListItem
               button
               key={text}

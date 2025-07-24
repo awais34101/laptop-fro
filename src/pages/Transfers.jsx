@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Alert from '@mui/material/Alert';
 import Autocomplete from '@mui/material/Autocomplete';
 import { fetchTechnicians } from '../services/technicianApi';
+import TechnicianStatsBox from '../components/TechnicianStatsBox';
 import { useInventory } from '../context/InventoryContext';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -184,6 +185,7 @@ export default function Transfers() {
               <MenuItem value="store2">Store2</MenuItem>
             </TextField>
           </Box>
+          {/* Technician stats removed from transfer dialog as requested */}
           {form.items.map((it, idx) => (
             <Box key={idx} sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
               <Autocomplete
