@@ -1,9 +1,9 @@
 import axios from 'axios';
 
 // Auto-switch base URL based on environment
-const API_BASE_URL = window.location.hostname
+const API_BASE_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:5000/api'
-  : 'https://laptop-back.onrender.com/api'; 
+  : 'https://laptop-back.onrender.com/api'; // ✅ Live Render backend
 
 const api = axios.create({
   baseURL: API_BASE_URL,
