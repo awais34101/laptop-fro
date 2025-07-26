@@ -1,15 +1,17 @@
 
 import React, { useEffect, useState } from 'react';
+import { fetchTechnicians } from '../services/technicianApi';
 import { Box, Button, TextField, Typography, Alert, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, Switch, FormControlLabel, FormGroup, Checkbox } from '@mui/material';
 import api from '../services/api';
 
 export default function UsersList() {
   const [users, setUsers] = useState([]);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'staff', canViewFinancials: false, permissions: {} });
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'staff', canViewFinancials: false, permissions: {}, technicianId: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [editId, setEditId] = useState(null);
+  const [technicians, setTechnicians] = useState([]);
 
   const token = localStorage.getItem('token');
 
@@ -19,17 +21,26 @@ export default function UsersList() {
       .catch(() => setUsers([]));
   };
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => { fetchUsers(); fetchTechnicians().then(setTechnicians); }, []);
 
   const handleOpen = (user) => {
     if (user) {
+      let techId = '';
+      if (user.technicianId) {
+        if (typeof user.technicianId === 'object' && user.technicianId._id) {
+          techId = user.technicianId._id;
+        } else {
+          techId = user.technicianId;
+        }
+      }
       setForm({
         name: user.name,
         email: user.email,
         password: '',
         role: user.role,
         canViewFinancials: user.canViewFinancials,
-        permissions: user.permissions || {}
+        permissions: user.permissions || {},
+        technicianId: techId
       });
       setEditId(user._id);
     } else {
@@ -39,7 +50,8 @@ export default function UsersList() {
         password: '',
         role: 'staff',
         canViewFinancials: false,
-        permissions: {}
+        permissions: {},
+        technicianId: ''
       });
       setEditId(null);
     }
@@ -89,13 +101,15 @@ export default function UsersList() {
     setError('');
     setSuccess('');
     try {
+      const userPayload = {
+        role: form.role,
+        canViewFinancials: form.canViewFinancials,
+        isActive: true,
+        permissions: form.permissions,
+        technicianId: form.role === 'technician' ? form.technicianId : null
+      };
       if (editId) {
-        await api.put(`/users/${editId}/edit`, {
-          role: form.role,
-          canViewFinancials: form.canViewFinancials,
-          isActive: true,
-          permissions: form.permissions
-        }, { headers: { Authorization: `Bearer ${token}` } });
+        await api.put(`/users/${editId}/edit`, userPayload, { headers: { Authorization: `Bearer ${token}` } });
         setSuccess('User updated');
         // If editing your own user, fetch latest user data and update localStorage
         const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -109,10 +123,7 @@ export default function UsersList() {
           }
         }
       } else {
-        await api.post('/users/add-staff', {
-          ...form,
-          permissions: form.permissions
-        }, { headers: { Authorization: `Bearer ${token}` } });
+        await api.post('/users/add-staff', { ...form, ...userPayload }, { headers: { Authorization: `Bearer ${token}` } });
         setSuccess('User added');
       }
       fetchUsers();
@@ -186,6 +197,23 @@ export default function UsersList() {
               <MenuItem value="staff">Staff</MenuItem>
               <MenuItem value="technician">Technician</MenuItem>
             </TextField>
+            {form.role === 'technician' && (
+              <TextField
+                select
+                label="Link to Technician"
+                name="technicianId"
+                value={form.technicianId}
+                onChange={handleChange}
+                fullWidth
+                margin="normal"
+                required
+              >
+                <MenuItem value="">-- Select Technician --</MenuItem>
+                {technicians.map(t => (
+                  <MenuItem key={t._id} value={t._id}>{t.name}</MenuItem>
+                ))}
+              </TextField>
+            )}
             <FormControlLabel control={<Switch checked={form.canViewFinancials} onChange={handleChange} name="canViewFinancials" />} label="Can View Financials" />
             <Box mt={2} mb={1}>
               <Typography variant="subtitle1">Permissions</Typography>

@@ -1,3 +1,1 @@
-import api from './api';
-
-export const fetchTechnicians = () => api.get('/technicians').then(r => r.data);
+// This file has been removed as the technician login/system is no longer supported.

@@ -16,6 +16,31 @@ export default function Login({ onLogin }) {
       const res = await api.post('/users/login', { email, password });
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
+      // Redirect to first allowed page based on permissions
+      const perms = res.data.user.permissions || {};
+      if (perms.dashboard?.view) {
+        window.location.href = '/';
+      } else if (perms.items?.view) {
+        window.location.href = '/items';
+      } else if (perms.purchases?.view) {
+        window.location.href = '/purchases';
+      } else if (perms.warehouse?.view) {
+        window.location.href = '/warehouse';
+      } else if (perms.store?.view) {
+        window.location.href = '/store';
+      } else if (perms.store2?.view) {
+        window.location.href = '/store2';
+      } else if (perms.sales?.view) {
+        window.location.href = '/sales';
+      } else if (perms.customers?.view) {
+        window.location.href = '/customers';
+      } else if (perms.technicians?.view) {
+        window.location.href = '/technicians';
+      } else if (perms.settings?.view) {
+        window.location.href = '/settings';
+      } else {
+        window.location.href = '/login';
+      }
       if (onLogin) onLogin();
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed');

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Typography, TextField, Button, Alert } from '@mui/material';
 import { fetchTechnicianStats } from '../services/technicianStatsApi';
+import { fetchMyStats } from '../services/technicianSelfApi';
 
 export default function TechnicianStatsBox({ initialFrom = '', initialTo = '', technicianId = null }) {
   const [from, setFrom] = useState(initialFrom);
@@ -8,13 +9,22 @@ export default function TechnicianStatsBox({ initialFrom = '', initialTo = '', t
   const [techStats, setTechStats] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
   const handleTechStatsFilter = async () => {
     setLoading(true);
-    let stats = await fetchTechnicianStats(from, to);
-    if (technicianId) {
-      stats = stats.filter(t => t._id === technicianId || t.technicianId === technicianId);
+    if (user.role === 'technician') {
+      // For technician, use self endpoint and pass date filters
+      const stats = await fetchMyStats(from, to);
+      setTechStats(stats ? [stats] : []);
+    } else {
+      let stats = await fetchTechnicianStats(from, to);
+      if (technicianId) {
+        // Ensure filtering by technicianId matches backend expectations
+        stats = stats.filter(t => t._id === technicianId);
+      }
+      setTechStats(stats);
     }
-    setTechStats(stats);
     setLoading(false);
   };
 
@@ -53,7 +63,7 @@ export default function TechnicianStatsBox({ initialFrom = '', initialTo = '', t
             </thead>
             <tbody>
               {techStats.map(t => (
-                <tr key={t.name || t._id} style={{ background: '#fff', borderBottom: '1px solid #e0e0e0' }}>
+                <tr key={t._id} style={{ background: '#fff', borderBottom: '1px solid #e0e0e0' }}>
                   <td style={{ padding: 8 }}>{t.name}</td>
                   <td style={{ padding: 8 }}>{t.repair}</td>
                   <td style={{ padding: 8 }}>{t.test}</td>

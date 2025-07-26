@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Alert from '@mui/material/Alert';
 import Autocomplete from '@mui/material/Autocomplete';
-import { fetchTechnicians } from '../services/technicianApi';
 import TechnicianStatsBox from '../components/TechnicianStatsBox';
 import { useInventory } from '../context/InventoryContext';
 import Box from '@mui/material/Box';
@@ -53,7 +52,10 @@ export default function Transfers() {
     });
   const fetchItems = () => api.get('/items').then(r => setItems(r.data));
 
-  useEffect(() => { fetchTransfers(); fetchItems(); fetchTechnicians().then(setTechnicians); }, []);
+  const fetchTechnicians = () =>
+    api.get('/technicians').then(r => setTechnicians(r.data)).catch(() => setTechnicians([]));
+
+  useEffect(() => { fetchTransfers(); fetchItems(); fetchTechnicians(); }, []);
 
   const handleOpen = () => {
     setForm({ from: 'warehouse', to: 'store', items: [{ item: '', quantity: '' }], technician: '', workType: '' });

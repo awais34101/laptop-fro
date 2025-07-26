@@ -23,6 +23,23 @@ import { Box, Toolbar, CssBaseline } from '@mui/material';
 
 const drawerWidth = 220;
 
+
+
+import { useInventory } from './context/InventoryContext';
+import { useEffect } from 'react';
+
+// This component will trigger fetchInventory on app load if logged in
+function InventoryInitializer() {
+  const token = localStorage.getItem('token');
+  const { fetchInventory } = useInventory();
+  useEffect(() => {
+    if (token && fetchInventory) {
+      fetchInventory();
+    }
+  }, [token, fetchInventory]);
+  return null;
+}
+
 function App() {
   const location = useLocation();
   const token = localStorage.getItem('token');
@@ -32,8 +49,11 @@ function App() {
   const hideSidebar = location.pathname === '/login';
 
   const navigate = useNavigate();
+
+
   return (
     <InventoryProvider>
+      <InventoryInitializer />
       <Box sx={{ display: 'flex' }}>
         <CssBaseline />
         {!hideSidebar && <Sidebar />}
