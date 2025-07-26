@@ -124,14 +124,12 @@ export default function Technicians() {
   };
 
   // Get assigned item IDs to prevent duplicates
-  const assignedItemIds = assignments.flatMap(a => 
-    Array.isArray(a.itemIds) ? a.itemIds.map(item => 
-      typeof item === 'object' ? item._id : item
-    ) : []
-  );
+  const assignedItemIds = assignments
+    .filter(a => a && Array.isArray(a.itemIds))
+    .flatMap(a => a.itemIds.filter(item => item && (typeof item === 'object' ? item._id : item)).map(item => typeof item === 'object' ? item._id : item));
 
   // Show ALL warehouse items (both assigned and unassigned) for assignment dialog
-  const allWarehouseItems = warehouseItems.map(w => {
+  const allWarehouseItems = (warehouseItems || []).filter(w => w && w.item && w.item._id).map(w => {
     const isAssigned = assignedItemIds.includes(w.item._id);
     return {
       ...w,
@@ -258,7 +256,7 @@ export default function Technicians() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {technicians.map(t => (
+                {(technicians || []).filter(t => t && t._id).map(t => (
                   <TableRow key={t._id}>
                     <TableCell>{t.name}</TableCell>
                     <TableCell>{t.email}</TableCell>
@@ -291,11 +289,11 @@ export default function Technicians() {
                 <MenuItem value="">
                   <em>Select a technician</em>
                 </MenuItem>
-                {technicians.length > 0 ? technicians.map(tech => (
+                {technicians.length > 0 ? (technicians.filter(tech => tech && tech._id).map(tech => (
                   <MenuItem key={tech._id} value={tech._id}>
                     {tech.name} - {tech.specialization}
                   </MenuItem>
-                )) : (
+                ))) : (
                   <MenuItem disabled>
                     <em>No technicians available</em>
                   </MenuItem>
@@ -315,14 +313,12 @@ export default function Technicians() {
               {/* Show only assigned items for the selected technician */}
               {viewSelectedTechnician ? (
                 (() => {
-                  const selectedAssignment = assignments.find(a => 
-                    (a.technicianId?._id || a.technicianId) === viewSelectedTechnician
-                  );
+                  const selectedAssignment = (assignments || []).find(a => a && (a.technicianId?._id || a.technicianId) === viewSelectedTechnician);
                   const assignedIds = selectedAssignment && Array.isArray(selectedAssignment.itemIds)
-                    ? selectedAssignment.itemIds.map(item => typeof item === 'object' ? item._id : item)
+                    ? selectedAssignment.itemIds.filter(item => item && (typeof item === 'object' ? item._id : item)).map(item => typeof item === 'object' ? item._id : item)
                     : [];
 
-                  const technicianItems = warehouseItems.filter(w => assignedIds.includes(w.item._id));
+                  const technicianItems = (warehouseItems || []).filter(w => w && w.item && assignedIds.includes(w.item._id));
 
                   return (
                     <Box>
@@ -331,10 +327,10 @@ export default function Technicians() {
                       </Typography>
                       <List dense>
                         {technicianItems.length > 0 ? (
-                          technicianItems.map((w) => {
+                          technicianItems.filter(w => w && w.item && w.item._id).map((w) => {
                             // Find the comment for this item
                             const savedComment = selectedAssignment?.itemComments?.find(
-                              c => (c.itemId?._id || c.itemId) === w.item._id
+                              c => c && (c.itemId?._id || c.itemId) === w.item._id
                             )?.comment || '';
                             
                             // Use local state if available, otherwise use saved comment
@@ -422,7 +418,7 @@ export default function Technicians() {
                   label="Select Technician"
                   onChange={(e) => setSelectedTechnician(e.target.value)}
                 >
-                  {technicians.map(tech => (
+                  {(technicians || []).filter(tech => tech && tech._id).map(tech => (
                     <MenuItem key={tech._id} value={tech._id}>
                       {tech.name} - {tech.specialization}
                     </MenuItem>
@@ -444,7 +440,7 @@ export default function Technicians() {
               </Typography>
               <Paper variant="outlined" sx={{ maxHeight: 300, overflow: 'auto', p: 1 }}>
                 <List dense>
-                  {filteredWarehouseItems.map(warehouseItem => {
+                  {(filteredWarehouseItems || []).filter(warehouseItem => warehouseItem && warehouseItem.item && warehouseItem.item._id).map(warehouseItem => {
                     const isAssigned = assignedItemIds.includes(warehouseItem.item._id);
                     const isSelected = selectedItems.includes(warehouseItem.item._id);
                     
