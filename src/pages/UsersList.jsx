@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { fetchTechnicians } from '../services/technicianApi';
+// import { fetchTechnicians } from '../services/technicianApi';
 import { Box, Button, TextField, Typography, Alert, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, Switch, FormControlLabel, FormGroup, Checkbox } from '@mui/material';
 import api from '../services/api';
 
@@ -21,7 +21,12 @@ export default function UsersList() {
       .catch(() => setUsers([]));
   };
 
-  useEffect(() => { fetchUsers(); fetchTechnicians().then(setTechnicians); }, []);
+  useEffect(() => {
+    fetchUsers();
+    api.get('/technicians', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => setTechnicians(r.data))
+      .catch(() => setTechnicians([]));
+  }, []);
 
   const handleOpen = (user) => {
     if (user) {
