@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Autocomplete } from '@mui/material';
 import api from '../services/api';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Alert, IconButton } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Alert, IconButton, Backdrop, CircularProgress } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useInventory } from '../context/InventoryContext';
@@ -10,6 +10,10 @@ import { useInventory } from '../context/InventoryContext';
 
 export default function Purchases() {
   const [purchases, setPurchases] = useState([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [items, setItems] = useState([]);
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState([{ item: '', quantity: '', price: '' }]);
@@ -22,12 +26,28 @@ export default function Purchases() {
   const [storeStock, setStoreStock] = useState([]);
   const { fetchInventory } = useInventory();
 
-  const fetchPurchases = () => api.get('/purchases').then(r => setPurchases(r.data));
+  const PAGE_SIZE = 1;
+  const fetchPurchases = async (p = page) => {
+    setLoading(true);
+    try {
+      const r = await api.get(`/purchases?page=${p}&limit=${PAGE_SIZE}`);
+      if (Array.isArray(r.data)) {
+        // backward compatibility with old response
+        setPurchases(r.data);
+        setTotalPages(1);
+      } else {
+        setPurchases(r.data.data || []);
+        setTotalPages(r.data.totalPages || 1);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
   const fetchItems = () => api.get('/items').then(r => setItems(Array.isArray(r.data) ? r.data : []));
   const fetchWarehouse = () => api.get('/warehouse').then(r => setWarehouseStock(r.data));
   const fetchStore = () => api.get('/store').then(r => setStoreStock(r.data));
 
-  useEffect(() => { fetchPurchases(); fetchItems(); fetchWarehouse(); fetchStore(); }, []);
+  useEffect(() => { fetchPurchases(1); fetchItems(); fetchWarehouse(); fetchStore(); }, []);
 
   const handleOpen = (purchase) => {
     if (purchase) {
@@ -54,47 +74,33 @@ export default function Purchases() {
   const handleRemoveRow = idx => setRows(rows => rows.length > 1 ? rows.filter((_, i) => i !== idx) : rows);
 
   const handleSubmit = async () => {
-    setOpen(false);
+    // Basic validation to avoid mistakes
+    setError('');
+    const invalidRow = rows.find(r => !r.item || Number(r.quantity) <= 0 || Number.isNaN(Number(r.quantity)) || Number(r.price) < 0 || Number.isNaN(Number(r.price)));
+    if (!supplier || !invoiceNumber) {
+      setError('Supplier and Invoice Number are required.');
+      return;
+    }
+    if (invalidRow) {
+      setError('Please select an item and enter valid quantity (> 0) and price (>= 0) for all rows.');
+      return;
+    }
+
+    setSaving(true);
     try {
-      // 1. Ensure all items exist in the items list
-      const existingItemIds = items.map(i => i._id);
-      for (const row of rows) {
-        // If item is not in the items list (by _id), try to add it
-        if (!existingItemIds.includes(row.item)) {
-          // Try to find by name (in case user typed a name instead of selecting _id)
-          const found = items.find(i => i.name === row.item);
-          if (!found) {
-            // Add new item with default unit/category if missing
-            const newItem = await api.post('/items', {
-              name: row.item,
-              unit: 'pcs', // default unit
-              category: 'General', // default category
-              average_price: Number(row.price) || 0
-            });
-            // Update the row's item to the new _id
-            row.item = newItem.data._id;
-          } else {
-            row.item = found._id;
-          }
-        }
-      }
-      // Refresh items list after adding new items
-      await fetchItems();
-      // 2. Prepare payload for purchase
+      // Prepare payload for purchase
       const itemsPayload = rows.map(r => ({
         item: r.item,
         quantity: Number(r.quantity),
         price: Number(r.price)
       }));
+
       if (editId) {
-        // Implement update purchase
-        await api.put(`/purchases/${editId}`,
-          {
-            items: itemsPayload,
-            supplier,
-            invoice_number: invoiceNumber
-          }
-        );
+        await api.put(`/purchases/${editId}`, {
+          items: itemsPayload,
+          supplier,
+          invoice_number: invoiceNumber
+        });
       } else {
         await api.post('/purchases', {
           items: itemsPayload,
@@ -102,14 +108,20 @@ export default function Purchases() {
           invoice_number: invoiceNumber
         });
       }
+
       setSuccess('Purchase invoice saved');
-      fetchPurchases();
-        setTimeout(async () => {
-          await fetchInventory();
-          window.dispatchEvent(new Event('inventoryChanged'));
-        }, 200);
+      await fetchPurchases(1);
+      setPage(1);
+      setTimeout(async () => {
+        await fetchInventory();
+        window.dispatchEvent(new Event('inventoryChanged'));
+      }, 200);
+      // Close only on success
+      setOpen(false);
     } catch (err) {
       setError(err.response?.data?.error || 'Error');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -118,7 +130,8 @@ export default function Purchases() {
     try {
       await api.delete(`/purchases/${id}`);
       setSuccess('Invoice deleted successfully');
-      fetchPurchases();
+  await fetchPurchases(1);
+  setPage(1);
         setTimeout(async () => {
           await fetchInventory();
           window.dispatchEvent(new Event('inventoryChanged'));
@@ -134,16 +147,23 @@ export default function Purchases() {
   const getWarehouseQty = (id) => warehouseStock.find(w => w.item?._id === id)?.quantity ?? 0;
   const getStoreQty = (id) => storeStock.find(s => s.item?._id === id)?.remaining_quantity ?? 0;
 
-  // Sort purchases by date descending (latest first)
+  // Already sorted by backend; keep fallback sort
   const sortedPurchases = (Array.isArray(purchases) ? purchases.slice().sort((a, b) => new Date(b.date) - new Date(a.date)) : []);
   return (
     <Box p={{ xs: 1, md: 3 }} sx={{ background: 'linear-gradient(135deg, #f4f6f8 60%, #e3eafc 100%)', minHeight: '100vh' }}>
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 900, letterSpacing: 1, color: 'primary.main', mb: 3 }}>
         Purchases
       </Typography>
-      <Button variant="contained" color="primary" onClick={handleOpen} disabled={!items || items.length === 0} sx={{ fontWeight: 700, px: 3, borderRadius: 2, mb: 2 }}>Add Purchase</Button>
+      <Button variant="contained" color="primary" onClick={handleOpen} disabled={!items || items.length === 0 || saving} sx={{ fontWeight: 700, px: 3, borderRadius: 2, mb: 2 }}>
+        Add Purchase
+      </Button>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Button variant="outlined" disabled={loading || page <= 1} onClick={() => { const p = Math.max(1, page - 1); setPage(p); fetchPurchases(p); }}>Prev</Button>
+        <Typography variant="body2">Page {page} / {totalPages}</Typography>
+        <Button variant="outlined" disabled={loading || page >= totalPages} onClick={() => { const p = Math.min(totalPages, page + 1); setPage(p); fetchPurchases(p); }}>Next</Button>
+      </Box>
       <TableContainer component={Paper} sx={{ mt: 2, maxHeight: 520, overflowY: 'auto', borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
-        <Table sx={{ minWidth: 900, '& tbody tr:nth-of-type(odd)': { backgroundColor: '#f9fafd' }, '& tbody tr:hover': { backgroundColor: '#e3eafc' } }}>
+  <Table sx={{ minWidth: 900, '& tbody tr:nth-of-type(odd)': { backgroundColor: '#f9fafd' }, '& tbody tr:hover': { backgroundColor: '#e3eafc' } }}>
           <TableHead>
             <TableRow>
               <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, fontSize: '1.1rem', color: 'primary.main' }}>Item</TableCell>
@@ -157,7 +177,11 @@ export default function Purchases() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {sortedPurchases.map(p => (
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={8}>Loading...</TableCell>
+              </TableRow>
+            ) : sortedPurchases.map(p => (
               <React.Fragment key={p._id}>
                 {(Array.isArray(p.items) ? p.items : []).map((item, idx) => (
                   <TableRow key={p._id + '-' + idx} sx={{ transition: 'background 0.2s' }}>
@@ -190,14 +214,14 @@ export default function Purchases() {
           </TableBody>
         </Table>
       </TableContainer>
-      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-        <DialogTitle>Add Purchase Invoice</DialogTitle>
-        <DialogContent>
+  <Dialog open={open} onClose={saving ? undefined : handleClose} maxWidth="md" fullWidth>
+  <DialogTitle>{editId ? 'Edit Purchase Invoice' : 'Add Purchase Invoice'}</DialogTitle>
+  <DialogContent onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); } }}>
           {error && <Alert severity="error">{error}</Alert>}
           {success && <Alert severity="success">{success}</Alert>}
           <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-            <TextField label="Supplier" value={supplier} onChange={e => setSupplier(e.target.value)} fullWidth required />
-            <TextField label="Invoice Number" value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} fullWidth required />
+            <TextField label="Supplier" value={supplier} onChange={e => setSupplier(e.target.value)} fullWidth required disabled={saving} />
+            <TextField label="Invoice Number" value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} fullWidth required disabled={saving} />
           </Box>
           <TableContainer component={Paper} sx={{ mb: 2 }}>
             <Table size="small">
@@ -224,6 +248,8 @@ export default function Purchases() {
                           getOptionLabel={option => option.name || ''}
                           value={items.find(i => i._id === row.item) || null}
                           onChange={(_, newValue) => handleRowChange(idx, 'item', newValue ? newValue._id : '')}
+                          disableClearable
+                          disabled={saving}
                           renderInput={params => (
                             <TextField {...params} label="Item" fullWidth required />
                           )}
@@ -232,10 +258,10 @@ export default function Purchases() {
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <TextField type="number" value={row.quantity} onChange={e => handleRowChange(idx, 'quantity', e.target.value)} fullWidth required />
+                      <TextField type="number" value={row.quantity} onChange={e => handleRowChange(idx, 'quantity', e.target.value)} fullWidth required disabled={saving} />
                     </TableCell>
                     <TableCell>
-                      <TextField type="number" value={row.price} onChange={e => handleRowChange(idx, 'price', e.target.value)} fullWidth required />
+                      <TextField type="number" value={row.price} onChange={e => handleRowChange(idx, 'price', e.target.value)} fullWidth required disabled={saving} />
                     </TableCell>
                     <TableCell>
                       {(row.quantity && row.price) ? (Number(row.quantity) * Number(row.price)).toFixed(2) : ''}
@@ -247,7 +273,7 @@ export default function Purchases() {
                       {row.item ? getStoreQty(row.item) : ''}
                     </TableCell>
                     <TableCell>
-                      <Button onClick={() => handleRemoveRow(idx)} color="error" disabled={rows.length === 1}>Remove</Button>
+                      <Button onClick={() => handleRemoveRow(idx)} color="error" disabled={rows.length === 1 || saving}>Remove</Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -261,12 +287,19 @@ export default function Purchases() {
               </TableBody>
             </Table>
           </TableContainer>
-          <Button onClick={handleAddRow} color="primary">Add Item</Button>
+          <Button onClick={handleAddRow} color="primary" disabled={saving}>Add Item</Button>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">Add Invoice</Button>
+          <Button onClick={handleClose} disabled={saving}>Cancel</Button>
+          <Button onClick={handleSubmit} variant="contained" disabled={saving}
+            startIcon={saving ? <CircularProgress color="inherit" size={18} /> : null}
+          >
+            {editId ? (saving ? 'Saving...' : 'Update Invoice') : (saving ? 'Saving...' : 'Add Invoice')}
+          </Button>
         </DialogActions>
+        <Backdrop open={saving} sx={{ zIndex: theme => theme.zIndex.modal + 1, color: '#fff' }}>
+          <CircularProgress color="inherit" />
+        </Backdrop>
       </Dialog>
     </Box>
   );

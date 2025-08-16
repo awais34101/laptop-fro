@@ -119,7 +119,6 @@ export default function Items() {
                   <TableCell>{warehouseQty}</TableCell>
                   <TableCell>{totalQty}</TableCell>
                   <TableCell>{totalValue.toFixed(2)}</TableCell>
-                  <TableCell>{item.last_sale_date ? new Date(item.last_sale_date).toLocaleDateString() : '-'}</TableCell>
                   <TableCell>{item.sale_count}</TableCell>
                   <TableCell>
                     <Button size="small" variant="outlined" sx={{ mr: 1, fontWeight: 600, borderRadius: 2 }} onClick={() => handleOpen(item)}>Edit</Button>
@@ -138,33 +137,29 @@ export default function Items() {
               <TableCell sx={{ background: '#f0f4fa' }} />
               {/* Store Inventory Total */}
               <TableCell sx={{ fontWeight: 900, background: '#f0f4fa', color: 'primary.main' }}>
-                {filteredItems.reduce((sum, item) => {
-                  const storeQty = getStoreQty(item._id);
-                  return sum + storeQty;
-                }, 0)}
+                {filteredItems.reduce((sum, item) => sum + getStoreQty(item._id), 0)}
+              </TableCell>
+              {/* Store2 Inventory Total */}
+              <TableCell sx={{ fontWeight: 900, background: '#f0f4fa', color: 'primary.main' }}>
+                {filteredItems.reduce((sum, item) => sum + getStore2Qty(item._id), 0)}
               </TableCell>
               {/* Warehouse Inventory Total */}
               <TableCell sx={{ fontWeight: 900, background: '#f0f4fa', color: 'primary.main' }}>
-                {filteredItems.reduce((sum, item) => {
-                  const warehouseQty = getWarehouseQty(item._id);
-                  return sum + warehouseQty;
-                }, 0)}
+                {filteredItems.reduce((sum, item) => sum + getWarehouseQty(item._id), 0)}
               </TableCell>
               {/* Total Inventory */}
               <TableCell sx={{ fontWeight: 900, background: '#f0f4fa', color: 'primary.main' }}>
                 {filteredItems.reduce((sum, item) => {
-                  const warehouseQty = getWarehouseQty(item._id);
-                  const storeQty = getStoreQty(item._id);
-                  return sum + warehouseQty + storeQty;
+                  const totalQty = getWarehouseQty(item._id) + getStoreQty(item._id) + getStore2Qty(item._id);
+                  return sum + totalQty;
                 }, 0)}
               </TableCell>
               {/* Total Value */}
               <TableCell sx={{ fontWeight: 900, background: '#f0f4fa', color: 'primary.main' }}>
                 {filteredItems.reduce((sum, item) => {
-                  const warehouseQty = getWarehouseQty(item._id);
-                  const storeQty = getStoreQty(item._id);
+                  const totalQty = getWarehouseQty(item._id) + getStoreQty(item._id) + getStore2Qty(item._id);
                   const avgPrice = item.average_price || 0;
-                  return sum + (warehouseQty + storeQty) * avgPrice;
+                  return sum + totalQty * avgPrice;
                 }, 0).toFixed(2)}
               </TableCell>
               <TableCell sx={{ background: '#f0f4fa' }} />

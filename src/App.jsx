@@ -12,6 +12,9 @@ import Store2 from './pages/Store2';
 import Sales from './pages/Sales';
 import SalesStore2 from './pages/SalesStore2';
 import Customers from './pages/Customers';
+import Expenses from './pages/Expenses';
+import PartsRequests from './pages/PartsRequests';
+import PartsInventory from './pages/PartsInventory';
 import Settings from './pages/Settings';
 import Technicians from './pages/Technicians';
 import Login from './pages/Login';
@@ -72,6 +75,9 @@ function App() {
             <Route path="/store2" element={<ProtectedRoute><Store2 /></ProtectedRoute>} />
             <Route path="/sales" element={<ProtectedRoute><Sales /></ProtectedRoute>} />
             <Route path="/sales-store2" element={<ProtectedRoute><SalesStore2 /></ProtectedRoute>} />
+            <Route path="/parts-inventory" element={<ProtectedRoute><PartsInventory /></ProtectedRoute>} />
+            <Route path="/parts-requests" element={<ProtectedRoute><PartsRequests /></ProtectedRoute>} />
+            <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
             <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
             <Route path="/technicians" element={<ProtectedRoute><Technicians /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

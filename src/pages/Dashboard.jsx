@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import { fetchSalesTotalByDate, fetchStore2SalesTotalByDate } from '../services/dashboardSalesApi';
+import { listExpenses } from '../services/expensesApi';
 import { TextField, Button } from '@mui/material';
 import { Box, Typography, Grid, Paper, Alert } from '@mui/material';
 import { useInventory } from '../context/InventoryContext';
@@ -12,10 +13,14 @@ export default function Dashboard() {
   const [lowStock, setLowStock] = useState({ warehouse: [], store: [], store2: [] });
   const [totalSales, setTotalSales] = useState(0);
   const [store2Sales, setStore2Sales] = useState(0);
+  const [storeExpenses, setStoreExpenses] = useState(0);
+  const [store2Expenses, setStore2Expenses] = useState(0);
   const [salesFrom, setSalesFrom] = useState('');
   const [salesTo, setSalesTo] = useState('');
   const [store2From, setStore2From] = useState('');
   const [store2To, setStore2To] = useState('');
+  const [expFrom, setExpFrom] = useState('');
+  const [expTo, setExpTo] = useState('');
   // ...existing code...
   const { warehouse, store, store2, items, fetchInventory, loading } = useInventory();
 
@@ -23,7 +28,8 @@ export default function Dashboard() {
     api.get('/alerts/slow-moving').then(r => setSlowMoving({ store: r.data.store || [], store2: r.data.store2 || [] }));
     api.get('/alerts/low-stock').then(r => setLowStock(r.data));
     fetchSalesTotal();
-    fetchStore2SalesTotal();
+  fetchStore2SalesTotal();
+  fetchExpensesTotals();
     // Technician stats moved to Technicians page
     // Listen for inventoryChanged event to refresh inventory
     const handler = () => {
@@ -36,14 +42,12 @@ export default function Dashboard() {
 
 
   const fetchSalesTotal = async (from = '', to = '') => {
-    const r = await fetchSalesTotalByDate(from, to);
-    const total = r.reduce((sum, sale) => sum + (sale.items ? sale.items.reduce((s, i) => s + (Number(i.quantity) * Number(i.price || 0)), 0) : 0), 0);
+    const total = await fetchSalesTotalByDate(from, to);
     setTotalSales(total);
   };
 
   const fetchStore2SalesTotal = async (from = '', to = '') => {
-    const r = await fetchStore2SalesTotalByDate(from, to);
-    const total = r.reduce((sum, sale) => sum + (sale.items ? sale.items.reduce((s, i) => s + (Number(i.quantity) * Number(i.price || 0)), 0) : 0), 0);
+    const total = await fetchStore2SalesTotalByDate(from, to);
     setStore2Sales(total);
   };
 
@@ -53,6 +57,25 @@ export default function Dashboard() {
 
   const handleStore2SalesFilter = () => {
     fetchStore2SalesTotal(store2From, store2To);
+  };
+
+  const fetchExpensesTotals = async (from = '', to = '') => {
+    try {
+      const [s, s2] = await Promise.all([
+        listExpenses({ store: 'store', from, to, page: 1, limit: 1000 }).then(r => r.data || []).catch(() => []),
+        listExpenses({ store: 'store2', from, to, page: 1, limit: 1000 }).then(r => r.data || []).catch(() => []),
+      ]);
+      const sum = (arr) => arr.reduce((t, doc) => t + (doc.items||[]).reduce((s,i)=> s + Number(i.amount||0), 0), 0);
+      setStoreExpenses(sum(s));
+      setStore2Expenses(sum(s2));
+    } catch {
+      setStoreExpenses(0);
+      setStore2Expenses(0);
+    }
+  };
+
+  const handleExpensesFilter = () => {
+    fetchExpensesTotals(expFrom, expTo);
   };
 
   // ...existing code...
@@ -104,6 +127,18 @@ export default function Dashboard() {
               </Box>
             </Box>
             <Typography variant="h4" color="primary" sx={{ fontWeight: 900, mb: 1 }}>{`AED ${store2Sales.toFixed(2)}`}</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Paper elevation={3} sx={{ p: 3, mb: 2, borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 2, alignSelf: 'flex-start' }}>Expenses (Store & Store2)</Typography>
+            <Box sx={{ display: 'flex', gap: 1, width: '100%', mb: 2 }}>
+              <TextField type="date" size="small" label="From" InputLabelProps={{ shrink: true }} value={expFrom} onChange={e => setExpFrom(e.target.value)} sx={{ flex: 1, bgcolor: '#fff' }} />
+              <TextField type="date" size="small" label="To" InputLabelProps={{ shrink: true }} value={expTo} onChange={e => setExpTo(e.target.value)} sx={{ flex: 1, bgcolor: '#fff' }} />
+              <Button variant="contained" onClick={handleExpensesFilter} sx={{ minWidth: 70, fontWeight: 700 }}>Filter</Button>
+            </Box>
+            <Typography variant="body1" sx={{ fontWeight: 700 }}>Store: AED {storeExpenses.toFixed(2)}</Typography>
+            <Typography variant="body1" sx={{ fontWeight: 700 }}>Store2: AED {store2Expenses.toFixed(2)}</Typography>
           </Paper>
         </Grid>
         <Grid item xs={12} md={4}>

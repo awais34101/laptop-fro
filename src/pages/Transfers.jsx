@@ -36,26 +36,42 @@ export default function Transfers() {
     }
   };
   const [transfers, setTransfers] = useState([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
   const [technicians, setTechnicians] = useState([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ from: 'warehouse', to: 'store', items: [{ item: '', quantity: '' }], technician: '', workType: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const { fetchInventory } = useInventory();
 
-  const fetchTransfers = () =>
-    api.get('/transfers').then(r => {
-      // Sort by date descending (latest first)
-      const sorted = [...r.data].sort((a, b) => new Date(b.date) - new Date(a.date));
-      setTransfers(sorted);
-    });
+  const PAGE_SIZE = 1;
+  const fetchTransfers = async (p = page) => {
+    setLoading(true);
+    try {
+      const r = await api.get(`/transfers?page=${p}&limit=${PAGE_SIZE}`);
+      if (Array.isArray(r.data)) {
+        // backward compatibility
+        const sorted = [...r.data].sort((a, b) => new Date(b.date) - new Date(a.date));
+        setTransfers(sorted.slice(0, 1));
+        setTotalPages(sorted.length ? sorted.length : 1);
+      } else {
+        setTransfers(r.data.data || []);
+        setTotalPages(r.data.totalPages || 1);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
   const fetchItems = () => api.get('/items').then(r => setItems(r.data));
 
   const fetchTechnicians = () =>
     api.get('/technicians').then(r => setTechnicians(r.data)).catch(() => setTechnicians([]));
 
-  useEffect(() => { fetchTransfers(); fetchItems(); fetchTechnicians(); }, []);
+  useEffect(() => { fetchTransfers(1); fetchItems(); fetchTechnicians(); }, []);
 
   const handleOpen = () => {
     setForm({ from: 'warehouse', to: 'store', items: [{ item: '', quantity: '' }], technician: '', workType: '' });
@@ -79,6 +95,7 @@ export default function Transfers() {
 
   const handleSubmit = async () => {
     try {
+      setSubmitting(true);
       const payload = {
         from: form.from,
         to: form.to,
@@ -93,14 +110,19 @@ export default function Transfers() {
         await api.post('/transfers', payload);
         setSuccess('Transfer completed');
       }
+      // Refresh list and inventory, then close dialog
       fetchTransfers();
       setTimeout(async () => {
         await fetchInventory(); // Refresh inventory everywhere
         window.dispatchEvent(new Event('inventoryChanged'));
       }, 200);
+      // Reset form and close
+      setForm({ from: 'warehouse', to: 'store', items: [{ item: '', quantity: '' }], technician: '', workType: '' });
       setOpen(false);
     } catch (err) {
       setError(err.response?.data?.error || 'Error');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -125,6 +147,11 @@ export default function Transfers() {
       </Typography>
       <Button variant="contained" color="primary" onClick={handleOpen} sx={{ fontWeight: 700, px: 3, borderRadius: 2, mb: 2 }}>Transfer Stock</Button>
       <TableContainer component={Paper} sx={{ mt: 2, maxHeight: 520, overflowY: 'auto', borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
+          <Button variant="outlined" disabled={loading || page <= 1} onClick={() => { const p = Math.max(1, page - 1); setPage(p); fetchTransfers(p); }}>Prev</Button>
+          <Typography variant="body2">Page {page} / {totalPages}</Typography>
+          <Button variant="outlined" disabled={loading || page >= totalPages} onClick={() => { const p = Math.min(totalPages, page + 1); setPage(p); fetchTransfers(p); }}>Next</Button>
+        </Box>
         <Table sx={{ minWidth: 900, '& tbody tr:nth-of-type(odd)': { backgroundColor: '#f9fafd' }, '& tbody tr:hover': { backgroundColor: '#e3eafc' } }}>
           <TableHead>
             <TableRow>
@@ -139,7 +166,11 @@ export default function Transfers() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {transfers.map(t => (
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={8}>Loading...</TableCell>
+              </TableRow>
+            ) : transfers.map(t => (
               <TableRow key={t._id}>
                 <TableCell sx={{ fontWeight: 600 }}>
                   {Array.isArray(t.items) && t.items.length > 0
@@ -170,7 +201,7 @@ export default function Transfers() {
           </TableBody>
         </Table>
       </TableContainer>
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+  <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>Transfer Stock</DialogTitle>
         <DialogContent>
           {error && <Alert severity="error">{error}</Alert>}
@@ -207,11 +238,11 @@ export default function Transfers() {
           ))}
           <Button onClick={handleAddItem} sx={{ mb: 2 }}>Add Another Item</Button>
           <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-            <TextField select margin="dense" label="Technician" name="technician" value={form.technician} onChange={handleChange} fullWidth required sx={{ flex: 1 }}>
+            <TextField select margin="dense" label="Technician" name="technician" value={form.technician} onChange={handleChange} fullWidth sx={{ flex: 1 }}>
               <MenuItem value="">Select Technician</MenuItem>
               {technicians.map(t => <MenuItem key={t._id} value={t._id}>{t.name}</MenuItem>)}
             </TextField>
-            <TextField select margin="dense" label="Type" name="workType" value={form.workType} onChange={handleChange} fullWidth required sx={{ flex: 1 }}>
+            <TextField select margin="dense" label="Type" name="workType" value={form.workType} onChange={handleChange} fullWidth sx={{ flex: 1 }}>
               <MenuItem value="">Select Type</MenuItem>
               <MenuItem value="repair">Repair</MenuItem>
               <MenuItem value="test">Test</MenuItem>
@@ -219,8 +250,8 @@ export default function Transfers() {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">Transfer</Button>
+          <Button onClick={handleClose} disabled={submitting}>Cancel</Button>
+          <Button onClick={handleSubmit} variant="contained" disabled={submitting}>{submitting ? 'Transferring...' : 'Transfer'}</Button>
         </DialogActions>
       </Dialog>
     </Box>

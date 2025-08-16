@@ -8,6 +8,9 @@ import { useInventory } from '../context/InventoryContext';
 
 export default function SalesStore2() {
   const [sales, setSales] = useState([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [open, setOpen] = useState(false);
@@ -17,17 +20,30 @@ export default function SalesStore2() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [editId, setEditId] = useState(null);
+  const [saving, setSaving] = useState(false);
   const { fetchInventory } = useInventory();
 
-  const fetchSales = () => api.get('/sales-store2').then(r => {
-    // Sort by date descending (latest first)
-    const sorted = [...r.data].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-    setSales(sorted);
-  });
+  const PAGE_SIZE = 1;
+  const fetchSales = async (p = page) => {
+    setLoading(true);
+    try {
+      const r = await api.get(`/sales-store2?page=${p}&limit=${PAGE_SIZE}`);
+      if (Array.isArray(r.data)) {
+        const sorted = [...r.data].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+        setSales(sorted.slice(0, 1));
+        setTotalPages(sorted.length ? sorted.length : 1);
+      } else {
+        setSales(r.data.data || []);
+        setTotalPages(r.data.totalPages || 1);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
   const fetchItems = () => api.get('/items').then(r => setItems(r.data));
   const fetchCustomers = () => api.get('/customers').then(r => setCustomers(r.data));
 
-  useEffect(() => { fetchSales(); fetchItems(); fetchCustomers(); }, []);
+  useEffect(() => { fetchSales(1); fetchItems(); fetchCustomers(); }, []);
 
   const handleOpen = (sale) => {
     if (sale) {
@@ -54,7 +70,7 @@ export default function SalesStore2() {
   const handleRemoveRow = idx => setRows(rows => rows.length > 1 ? rows.filter((_, i) => i !== idx) : rows);
 
   const handleSubmit = async () => {
-    setOpen(false);
+    setSaving(true);
     try {
       const itemsPayload = rows.map(r => ({ item: r.item, quantity: Number(r.quantity), price: Number(r.price) }));
       if (editId) {
@@ -71,6 +87,7 @@ export default function SalesStore2() {
         });
       }
       setSuccess('Sale invoice saved');
+      setOpen(false);
       fetchSales();
       setTimeout(async () => {
         await fetchInventory();
@@ -78,6 +95,8 @@ export default function SalesStore2() {
       }, 200);
     } catch (err) {
       setError(err.response?.data?.error || 'Error');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -109,6 +128,11 @@ export default function SalesStore2() {
       )}
       <Button variant="contained" color="primary" onClick={() => handleOpen()} sx={{ fontWeight: 700, px: 3, borderRadius: 2, mb: 2 }}>Add Sale Invoice</Button>
       <TableContainer component={Paper} sx={{ mt: 2, maxHeight: 520, overflowY: 'auto', borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
+          <Button variant="outlined" disabled={loading || page <= 1} onClick={() => { const p = Math.max(1, page - 1); setPage(p); fetchSales(p); }}>Prev</Button>
+          <Typography variant="body2">Page {page} / {totalPages}</Typography>
+          <Button variant="outlined" disabled={loading || page >= totalPages} onClick={() => { const p = Math.min(totalPages, page + 1); setPage(p); fetchSales(p); }}>Next</Button>
+        </Box>
         <Table sx={{ minWidth: 900, '& tbody tr:nth-of-type(odd)': { backgroundColor: '#f9fafd' }, '& tbody tr:hover': { backgroundColor: '#e3eafc' } }}>
           <TableHead>
             <TableRow>
@@ -123,7 +147,11 @@ export default function SalesStore2() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {sales.map(sale => sale.items.map((row, idx) => (
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={8}>Loading...</TableCell>
+              </TableRow>
+            ) : sales.map(sale => sale.items.map((row, idx) => (
               <TableRow key={sale._id + '-' + idx}>
                 <TableCell>{sale.customer?.name || '-'}</TableCell>
                 <TableCell>{sale.invoice_number}</TableCell>
@@ -137,7 +165,7 @@ export default function SalesStore2() {
                   <IconButton onClick={() => handleDelete(sale._id)}><DeleteIcon /></IconButton>
                 </TableCell>
               </TableRow>
-            )))}
+            ))) }
           </TableBody>
         </Table>
       </TableContainer>
@@ -191,7 +219,7 @@ export default function SalesStore2() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained" color="primary">Save</Button>
+          <Button onClick={handleSubmit} variant="contained" color="primary" disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
         </DialogActions>
       </Dialog>
       {error && (
