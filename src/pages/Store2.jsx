@@ -1,14 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField, CircularProgress, Alert } from '@mui/material';
 
 export default function Store2() {
   const [inventory, setInventory] = useState([]);
   const [search, setSearch] = useState('');
   const [slowMoving, setSlowMoving] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   useEffect(() => {
-    api.get('/store2').then(r => setInventory(r.data));
-    api.get('/alerts/slow-moving').then(r => setSlowMoving(r.data.store2 || []));
+    const load = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const [inv, alerts] = await Promise.all([
+          api.get('/store2'),
+          api.get('/alerts/slow-moving')
+        ]);
+        setInventory(Array.isArray(inv.data) ? inv.data : (inv.data?.data || []));
+        setSlowMoving(alerts.data.store2 || []);
+      } catch (e) {
+        setError(e.response?.data?.error || 'Failed to load store2 inventory');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, []);
   const filteredInventory = inventory.filter(s =>
     s.item?.name?.toLowerCase().includes(search.toLowerCase())
@@ -23,6 +40,7 @@ export default function Store2() {
   return (
     <Box p={2}>
       <Typography variant="h4" gutterBottom>Store2 Inventory</Typography>
+  {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
         <TextField
           label="Search Inventory"
@@ -50,7 +68,22 @@ export default function Store2() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {sortedInventory.map(s => (
+            {loading && (
+              <TableRow>
+                <TableCell colSpan={2} align="center">
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: 'center', py: 2 }}>
+                    <CircularProgress size={24} />
+                    <span>Loading inventory...</span>
+                  </Box>
+                </TableCell>
+              </TableRow>
+            )}
+            {!loading && sortedInventory.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={2} align="center">No items found</TableCell>
+              </TableRow>
+            )}
+            {!loading && sortedInventory.map(s => (
               <TableRow key={s._id} sx={slowIds.has(s.item?._id) ? { bgcolor: '#ffeaea' } : {}}>
                 <TableCell sx={slowIds.has(s.item?._id) ? { color: '#d32f2f', fontWeight: 700 } : {}}>{s.item?.name}</TableCell>
                 <TableCell>{s.remaining_quantity}</TableCell>

@@ -20,6 +20,7 @@ import Technicians from './pages/Technicians';
 import Login from './pages/Login';
 import ChangePassword from './pages/ChangePassword';
 import UsersList from './pages/UsersList';
+import Documents from './pages/Documents';
 import Sidebar from './components/Sidebar';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Box, Toolbar, CssBaseline } from '@mui/material';
@@ -77,6 +78,7 @@ function App() {
             <Route path="/sales-store2" element={<ProtectedRoute><SalesStore2 /></ProtectedRoute>} />
             <Route path="/parts-inventory" element={<ProtectedRoute><PartsInventory /></ProtectedRoute>} />
             <Route path="/parts-requests" element={<ProtectedRoute><PartsRequests /></ProtectedRoute>} />
+            <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
             <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
             <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
             <Route path="/technicians" element={<ProtectedRoute><Technicians /></ProtectedRoute>} />

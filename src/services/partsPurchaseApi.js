@@ -7,3 +7,4 @@ export const listPartsPurchases = async (params={}) => {
 };
 
 export const createPartsPurchase = async (payload) => (await api.post('/parts-purchases', payload)).data;
+export const deletePartsPurchase = async (id) => (await api.delete(`/parts-purchases/${id}`)).data;

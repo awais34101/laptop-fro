@@ -8,6 +8,7 @@ import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import PeopleIcon from '@mui/icons-material/People';
 import SettingsIcon from '@mui/icons-material/Settings';
+import DescriptionIcon from '@mui/icons-material/Description';
 import { Link, useLocation } from 'react-router-dom';
 
 const drawerWidth = 220;
@@ -25,6 +26,7 @@ const navItems = [
   { text: 'Sales Store2', icon: <PointOfSaleIcon />, path: '/sales-store2', perm: { section: 'sales', action: 'view' } },
   { text: 'Parts Inventory', icon: <InventoryIcon />, path: '/parts-inventory', perm: { section: 'partsInventory', action: 'view' } },
   { text: 'Parts Requests', icon: <ShoppingCartIcon />, path: '/parts-requests', perm: { section: 'parts', action: 'view' } },
+  { text: 'Documents', icon: <DescriptionIcon />, path: '/documents', perm: { section: 'documents', action: 'view' } },
   { text: 'Expenses', icon: <ShoppingCartIcon />, path: '/expenses', perm: { section: 'expenses', action: 'view' } },
   { text: 'Customers', icon: <PeopleIcon />, path: '/customers', perm: { section: 'customers', action: 'view' } },
   { text: 'Technicians', icon: <PeopleIcon />, path: '/technicians', perm: { section: 'technicians', action: 'view' } },

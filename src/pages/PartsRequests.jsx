@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Paper, Button, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Alert } from '@mui/material';
+import { Box, Typography, Paper, Button, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Alert, Autocomplete } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { listPartRequests, createPartRequest, updatePartRequestStatus, deletePartRequest, getItemPriceHistory } from '../services/partsApi';
+import { listParts } from '../services/partsInventoryApi';
 import api from '../services/api';
 
 const STATUS = ['requested','approved','ordered','received','rejected','cancelled'];
@@ -16,9 +17,10 @@ export default function PartsRequests() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const [items, setItems] = useState([]);
+  const [parts, setParts] = useState([]);
   const [open, setOpen] = useState(false);
   const [item, setItem] = useState('');
+  const [itemModel, setItemModel] = useState('Part');
   const [quantity, setQuantity] = useState('1');
   const [note, setNote] = useState('');
 
@@ -36,14 +38,14 @@ export default function PartsRequests() {
     finally { setLoading(false); }
   };
 
-  useEffect(()=>{ load(1); api.get('/items').then(r=>setItems(r.data||[])); },[]);
+  useEffect(()=>{ load(1); listParts().then(p=>setParts(p||[])).catch(()=>setParts([])); },[]);
 
-  const openDialog = () => { setItem(''); setQuantity('1'); setNote(''); setError(''); setSuccess(''); setOpen(true); };
+  const openDialog = () => { setItem(''); setItemModel('Part'); setQuantity('1'); setNote(''); setError(''); setSuccess(''); setOpen(true); };
   const closeDialog = () => setOpen(false);
 
   const save = async () => {
     try {
-      await createPartRequest({ item, quantity: Number(quantity), note });
+      await createPartRequest({ item, itemModel, quantity: Number(quantity), note });
       setSuccess('Request submitted');
       setOpen(false);
       load();
@@ -78,10 +80,10 @@ export default function PartsRequests() {
 
       <TableContainer component={Paper} sx={{ borderRadius:3 }}>
         <Table size="small">
-          <TableHead>
+        <TableHead>
             <TableRow>
               <TableCell>Date</TableCell>
-              <TableCell>Item</TableCell>
+          <TableCell>Part</TableCell>
               <TableCell>Qty</TableCell>
               <TableCell>Note</TableCell>
               <TableCell>Status</TableCell>
@@ -92,7 +94,7 @@ export default function PartsRequests() {
             {loading ? <TableRow><TableCell colSpan={6}>Loading...</TableCell></TableRow> : (data||[]).map(d => (
               <TableRow key={d._id}>
                 <TableCell>{new Date(d.createdAt||d.date).toLocaleString()}</TableCell>
-                <TableCell>{d.item?.name || ''} <Button size="small" onClick={()=>openHistory(d.item?._id || d.item)}>Price history</Button></TableCell>
+                <TableCell>{d.item?.name || ''}</TableCell>
                 <TableCell>{d.quantity}</TableCell>
                 <TableCell>{d.note||''}</TableCell>
                 <TableCell>
@@ -112,11 +114,17 @@ export default function PartsRequests() {
       <Dialog open={open} onClose={closeDialog} maxWidth="sm" fullWidth>
         <DialogTitle>New Part Request</DialogTitle>
         <DialogContent>
-          <Box sx={{ display:'flex', gap:2, my:1 }}>
-            <TextField select label="Item" value={item} onChange={e=>setItem(e.target.value)} fullWidth>
-              {items.map(i=> <MenuItem key={i._id} value={i._id}>{i.name}</MenuItem>)}
-            </TextField>
-            <TextField type="number" label="Quantity" value={quantity} onChange={e=>setQuantity(e.target.value)} sx={{ maxWidth: 140 }} />
+          <Box sx={{ display:'flex', gap:2, my:1, alignItems:'center', flexWrap:'wrap' }}>
+            <Autocomplete
+              options={parts}
+              getOptionLabel={(option)=> option ? `${option.name}${option.sku ? ` (${option.sku})` : ''}` : ''}
+              isOptionEqualToValue={(opt, val)=>opt?._id === val?._id}
+              value={parts.find(p=>p._id===item) || null}
+              onChange={(e, val)=>setItem(val? val._id : '')}
+              renderInput={(params)=>(<TextField {...params} label="Part" />)}
+              sx={{ flex: '2 1 360px', minWidth: 260 }}
+            />
+            <TextField type="number" label="Quantity" value={quantity} onChange={e=>setQuantity(e.target.value)} sx={{ width: 140 }} />
           </Box>
           <TextField label="Note" value={note} onChange={e=>setNote(e.target.value)} fullWidth multiline rows={2} />
         </DialogContent>

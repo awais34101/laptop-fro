@@ -1,11 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField, CircularProgress, Alert } from '@mui/material';
 
 export default function Warehouse() {
   const [stock, setStock] = useState([]);
   const [search, setSearch] = useState('');
-  useEffect(() => { api.get('/warehouse').then(r => setStock(r.data)); }, []);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const r = await api.get('/warehouse');
+        setStock(Array.isArray(r.data) ? r.data : (r.data?.data || []));
+      } catch (e) {
+        setError(e.response?.data?.error || 'Failed to load warehouse inventory');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
   const filteredStock = stock.filter(s =>
     s.item?.name?.toLowerCase().includes(search.toLowerCase())
   );
@@ -14,6 +31,9 @@ export default function Warehouse() {
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 900, letterSpacing: 1, color: 'primary.main', mb: 3 }}>
         Warehouse Stock
       </Typography>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
+      )}
       <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
         <TextField
           label="Search Inventory"
@@ -32,7 +52,22 @@ export default function Warehouse() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredStock.map(s => (
+            {loading && (
+              <TableRow>
+                <TableCell colSpan={2} align="center">
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: 'center', py: 2 }}>
+                    <CircularProgress size={24} />
+                    <span>Loading inventory...</span>
+                  </Box>
+                </TableCell>
+              </TableRow>
+            )}
+            {!loading && filteredStock.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={2} align="center">No items found</TableCell>
+              </TableRow>
+            )}
+            {!loading && filteredStock.map(s => (
               <TableRow key={s._id} sx={{ transition: 'background 0.2s' }}>
                 <TableCell sx={{ fontWeight: 600 }}>{s.item?.name}</TableCell>
                 <TableCell>{s.quantity}</TableCell>

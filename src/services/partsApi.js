@@ -9,8 +9,8 @@ export const listPartRequests = async ({ status, page=1, limit=20 } = {}) => {
   return r.data;
 };
 
-export const createPartRequest = async ({ item, quantity, note }) => {
-  const r = await api.post('/parts', { item, quantity, note });
+export const createPartRequest = async (payload) => {
+  const r = await api.post('/parts', payload);
   return r.data;
 };
 

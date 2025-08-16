@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import { useInventory } from '../context/InventoryContext';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Alert } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Alert, CircularProgress } from '@mui/material';
 
 export default function Items() {
   const [items, setItems] = useState([]);
@@ -11,9 +11,20 @@ export default function Items() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [editId, setEditId] = useState(null);
+  const [loading, setLoading] = useState(false);
   const { warehouse, store, store2, fetchInventory } = useInventory();
 
-  const fetchItems = () => api.get('/items').then(r => setItems(r.data));
+  const fetchItems = async () => {
+    setLoading(true);
+    try {
+      const r = await api.get('/items');
+      setItems(Array.isArray(r.data) ? r.data : (r.data?.data || []));
+    } catch (e) {
+      setError(e.response?.data?.error || 'Failed to load items');
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => { fetchItems(); fetchInventory(); }, [fetchInventory]);
 
   const handleOpen = (item) => {
@@ -84,7 +95,7 @@ export default function Items() {
         />
       </Box>
       <TableContainer component={Paper} sx={{ mt: 2, maxHeight: 520, overflowY: 'auto', borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
-        <Table sx={{ minWidth: 900, '& tbody tr:nth-of-type(odd)': { backgroundColor: '#f9fafd' }, '& tbody tr:hover': { backgroundColor: '#e3eafc' } }}>
+  <Table sx={{ minWidth: 900, '& tbody tr:nth-of-type(odd)': { backgroundColor: '#f9fafd' }, '& tbody tr:hover': { backgroundColor: '#e3eafc' } }}>
           <TableHead>
             <TableRow>
               <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, whiteSpace: 'nowrap', maxWidth: 300, minWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 900, fontSize: '1.1rem', color: 'primary.main' }}>Name</TableCell>
@@ -101,7 +112,22 @@ export default function Items() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredItems.map(item => {
+            {loading && (
+              <TableRow>
+                <TableCell colSpan={11} align="center">
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: 'center', py: 2 }}>
+                    <CircularProgress size={24} />
+                    <span>Loading items...</span>
+                  </Box>
+                </TableCell>
+              </TableRow>
+            )}
+            {!loading && filteredItems.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={11} align="center">No items found</TableCell>
+              </TableRow>
+            )}
+            {!loading && filteredItems.map(item => {
               const warehouseQty = getWarehouseQty(item._id);
               const storeQty = getStoreQty(item._id);
               const store2Qty = getStore2Qty(item._id);
