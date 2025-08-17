@@ -5,6 +5,7 @@ import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useInventory } from '../context/InventoryContext';
+import { hasPerm } from '../utils/permissions';
 
 export default function Sales() {
   const [sales, setSales] = useState([]);
@@ -36,12 +37,30 @@ export default function Sales() {
         setSales(r.data.data || []);
         setTotalPages(r.data.totalPages || 1);
       }
+    } catch (e) {
+      setSales([]);
+      setError(e.response?.data?.error || e.message);
     } finally {
       setLoading(false);
     }
   };
-  const fetchItems = () => api.get('/items').then(r => setItems(r.data));
-  const fetchCustomers = () => api.get('/customers').then(r => setCustomers(r.data));
+  const fetchItems = async () => {
+    try {
+      const r = await api.get('/items');
+      setItems(r.data);
+    } catch (e) {
+      // If no permission to view items, keep empty list
+      setItems([]);
+    }
+  };
+  const fetchCustomers = async () => {
+    try {
+      const r = await api.get('/customers');
+      setCustomers(r.data);
+    } catch (e) {
+      setCustomers([]);
+    }
+  };
 
   useEffect(() => { fetchSales(1); fetchItems(); fetchCustomers(); }, []);
 
@@ -126,7 +145,9 @@ export default function Sales() {
       {success && (
         <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>
       )}
-      <Button variant="contained" color="primary" onClick={() => handleOpen()} sx={{ fontWeight: 700, px: 3, borderRadius: 2, mb: 2 }}>Add Sale Invoice</Button>
+      {hasPerm('sales','view') && (
+        <Button variant="contained" color="primary" onClick={() => handleOpen()} sx={{ fontWeight: 700, px: 3, borderRadius: 2, mb: 2 }}>Add Sale Invoice</Button>
+      )}
       <TableContainer component={Paper} sx={{ mt: 2, maxHeight: 520, overflowY: 'auto', borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
           <Button variant="outlined" disabled={loading || page <= 1} onClick={() => { const p = Math.max(1, page - 1); setPage(p); fetchSales(p); }}>Prev</Button>
@@ -168,8 +189,12 @@ export default function Sales() {
                     <TableCell>{(item.quantity && item.price) ? (Number(item.quantity) * Number(item.price)).toFixed(2) : ''}</TableCell>
                     {idx === 0 && (
                       <TableCell rowSpan={s.items.length}>
-                        <IconButton onClick={() => handleOpen(s)}><EditIcon /></IconButton>
-                        <IconButton onClick={() => handleDelete(s._id)}><DeleteIcon /></IconButton>
+                        {hasPerm('sales','edit') && (
+                          <IconButton onClick={() => handleOpen(s)}><EditIcon /></IconButton>
+                        )}
+                        {hasPerm('sales','delete') && (
+                          <IconButton onClick={() => handleDelete(s._id)}><DeleteIcon /></IconButton>
+                        )}
                       </TableCell>
                     )}
                   </TableRow>
@@ -212,25 +237,25 @@ export default function Sales() {
                 {rows.map((row, idx) => (
                   <TableRow key={idx}>
                     <TableCell>
-                      {/* Use Autocomplete for item selection */}
-                      <Box sx={{ minWidth: 200 }}>
+                      {/* Wider item selector */}
+                      <Box sx={{ minWidth: 300, width: 380, maxWidth: '100%' }}>
                         <Autocomplete
                           options={items}
                           getOptionLabel={option => option.name || ''}
                           value={items.find(i => i._id === row.item) || null}
                           onChange={(_, newValue) => handleRowChange(idx, 'item', newValue ? newValue._id : '')}
                           renderInput={params => (
-                            <TextField {...params} label="Item" fullWidth required />
+                            <TextField {...params} label="Item" required />
                           )}
                           isOptionEqualToValue={(option, value) => option._id === value._id}
                         />
                       </Box>
                     </TableCell>
-                    <TableCell>
-                      <TextField type="number" value={row.quantity} onChange={e => handleRowChange(idx, 'quantity', e.target.value)} fullWidth required />
+                    <TableCell sx={{ width: 140 }}>
+                      <TextField type="number" value={row.quantity} onChange={e => handleRowChange(idx, 'quantity', e.target.value)} required sx={{ width: 120 }} />
                     </TableCell>
-                    <TableCell>
-                      <TextField type="number" value={row.price} onChange={e => handleRowChange(idx, 'price', e.target.value)} fullWidth required />
+                    <TableCell sx={{ width: 160 }}>
+                      <TextField type="number" value={row.price} onChange={e => handleRowChange(idx, 'price', e.target.value)} required sx={{ width: 120 }} />
                     </TableCell>
                     <TableCell>
                       {(row.quantity && row.price) ? (Number(row.quantity) * Number(row.price)).toFixed(2) : ''}
@@ -254,7 +279,9 @@ export default function Sales() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained" disabled={saving}>{saving ? 'Saving…' : 'Add Invoice'}</Button>
+          {hasPerm('sales','view') && (
+            <Button onClick={handleSubmit} variant="contained" disabled={saving}>{saving ? 'Saving…' : (editId ? 'Save' : 'Add Invoice')}</Button>
+          )}
         </DialogActions>
       </Dialog>
     </Box>

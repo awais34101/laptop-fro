@@ -20,6 +20,7 @@ import DialogActions from '@mui/material/DialogActions';
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
 import api from '../services/api';
+import { hasPerm } from '../utils/permissions';
 
 export default function Transfers() {
   const handleDelete = async (id) => {
@@ -62,11 +63,22 @@ export default function Transfers() {
         setTransfers(r.data.data || []);
         setTotalPages(r.data.totalPages || 1);
       }
+    } catch (e) {
+      setError(e.response?.data?.error || e.message);
+      setTransfers([]);
     } finally {
       setLoading(false);
     }
   };
-  const fetchItems = () => api.get('/items').then(r => setItems(r.data));
+  const fetchItems = async () => {
+    try {
+      const r = await api.get('/items');
+      setItems(r.data);
+    } catch (err) {
+      // If the user lacks permission to view items, don't block the page
+      setItems([]);
+    }
+  };
 
   const fetchTechnicians = () =>
     api.get('/technicians').then(r => setTechnicians(r.data)).catch(() => setTechnicians([]));
@@ -145,8 +157,13 @@ export default function Transfers() {
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 900, letterSpacing: 1, color: 'primary.main', mb: 3 }}>
         Transfers
       </Typography>
-      <Button variant="contained" color="primary" onClick={handleOpen} sx={{ fontWeight: 700, px: 3, borderRadius: 2, mb: 2 }}>Transfer Stock</Button>
+      {hasPerm('transfers', 'view') && (
+        <Button variant="contained" color="primary" onClick={handleOpen} sx={{ fontWeight: 700, px: 3, borderRadius: 2, mb: 2 }}>Transfer Stock</Button>
+      )}
       <TableContainer component={Paper} sx={{ mt: 2, maxHeight: 520, overflowY: 'auto', borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
+        {error && (
+          <Alert severity="error" sx={{ m:2 }}>{error}</Alert>
+        )}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
           <Button variant="outlined" disabled={loading || page <= 1} onClick={() => { const p = Math.max(1, page - 1); setPage(p); fetchTransfers(p); }}>Prev</Button>
           <Typography variant="body2">Page {page} / {totalPages}</Typography>
@@ -193,8 +210,12 @@ export default function Transfers() {
                 <TableCell>{t.workType || ''}</TableCell>
                 <TableCell>{new Date(t.date).toLocaleDateString()}</TableCell>
                 <TableCell>
-                  <Button size="small" color="primary" onClick={() => handleEdit(t)}>Edit</Button>
-                  <Button size="small" color="error" onClick={() => handleDelete(t._id)}>Delete</Button>
+                  {hasPerm('transfers', 'edit') && (
+                    <Button size="small" color="primary" onClick={() => handleEdit(t)}>Edit</Button>
+                  )}
+                  {hasPerm('transfers', 'delete') && (
+                    <Button size="small" color="error" onClick={() => handleDelete(t._id)}>Delete</Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -251,7 +272,9 @@ export default function Transfers() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} disabled={submitting}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained" disabled={submitting}>{submitting ? 'Transferring...' : 'Transfer'}</Button>
+          {hasPerm('transfers', 'edit') && (
+            <Button onClick={handleSubmit} variant="contained" disabled={submitting}>{submitting ? 'Transferring...' : 'Transfer'}</Button>
+          )}
         </DialogActions>
       </Dialog>
     </Box>

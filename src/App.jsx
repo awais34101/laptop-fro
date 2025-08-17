@@ -21,6 +21,7 @@ import Login from './pages/Login';
 import ChangePassword from './pages/ChangePassword';
 import UsersList from './pages/UsersList';
 import Documents from './pages/Documents';
+import Time from './pages/Time';
 import Sidebar from './components/Sidebar';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Box, Toolbar, CssBaseline } from '@mui/material';
@@ -71,17 +72,47 @@ function App() {
             <Route path="/items" element={<ProtectedRoute><Items /></ProtectedRoute>} />
             <Route path="/purchases" element={<ProtectedRoute><Purchases /></ProtectedRoute>} />
             <Route path="/warehouse" element={<ProtectedRoute><Warehouse /></ProtectedRoute>} />
-            <Route path="/transfers" element={<ProtectedRoute><Transfers /></ProtectedRoute>} />
+            {/* Require explicit permission to view Transfers */}
+            <Route
+              path="/transfers"
+              element={
+                <ProtectedRoute permission={{ section: 'transfers', action: 'view' }}>
+                  <Transfers />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/store" element={<ProtectedRoute><Store /></ProtectedRoute>} />
             <Route path="/store2" element={<ProtectedRoute><Store2 /></ProtectedRoute>} />
-            <Route path="/sales" element={<ProtectedRoute><Sales /></ProtectedRoute>} />
-            <Route path="/sales-store2" element={<ProtectedRoute><SalesStore2 /></ProtectedRoute>} />
+            <Route
+              path="/sales"
+              element={
+                <ProtectedRoute permission={{ section: 'sales', action: 'view' }}>
+                  <Sales />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/sales-store2"
+              element={
+                <ProtectedRoute permission={{ section: 'sales', action: 'view' }}>
+                  <SalesStore2 />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/parts-inventory" element={<ProtectedRoute><PartsInventory /></ProtectedRoute>} />
             <Route path="/parts-requests" element={<ProtectedRoute><PartsRequests /></ProtectedRoute>} />
             <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
+            <Route path="/time" element={<ProtectedRoute><Time /></ProtectedRoute>} />
             <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
             <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
-            <Route path="/technicians" element={<ProtectedRoute><Technicians /></ProtectedRoute>} />
+            <Route
+              path="/technicians"
+              element={
+                <ProtectedRoute permission={{ section: 'technicians', action: 'view' }}>
+                  <Technicians />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           </Routes>
         </Box>

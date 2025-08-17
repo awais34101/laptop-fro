@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, Typography, Paper, Button, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, Alert, Snackbar } from '@mui/material';
 import Autocomplete from '@mui/material/Autocomplete';
 import { listDocuments, createDocument, updateDocument, deleteDocument, listDocumentCategories } from '../services/documentsApi';
+import { hasPerm } from '../utils/permissions';
 
 export default function Documents() {
   const [data, setData] = useState([]);
@@ -63,7 +64,9 @@ export default function Documents() {
           <Button variant="text" onClick={()=>{ setQ(''); setCategoryFilter(''); setExpiringInDays(''); load(1); }}>Clear</Button>
           <Box sx={{ flex:1 }} />
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>{total} results</Typography>
-          <Button variant="contained" onClick={openNew}>New Document</Button>
+          {hasPerm('documents','edit') && (
+            <Button variant="contained" onClick={openNew}>New Document</Button>
+          )}
         </Box>
       </Paper>
 
@@ -93,8 +96,12 @@ export default function Documents() {
                 <TableCell>{d.expiryDate ? new Date(d.expiryDate).toLocaleDateString() : ''}</TableCell>
                 <TableCell>{d.note||''}</TableCell>
                 <TableCell>
-                  <Button size="small" onClick={()=>openEdit(d)}>Edit</Button>
-                  <Button size="small" color="error" onClick={()=>remove(d._id)}>Delete</Button>
+                  {hasPerm('documents','edit') && (
+                    <Button size="small" onClick={()=>openEdit(d)}>Edit</Button>
+                  )}
+                  {hasPerm('documents','delete') && (
+                    <Button size="small" color="error" onClick={()=>remove(d._id)}>Delete</Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -129,7 +136,9 @@ export default function Documents() {
         </DialogContent>
         <DialogActions>
           <Button onClick={()=>setOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={save}>Save</Button>
+          {hasPerm('documents','edit') && (
+            <Button variant="contained" onClick={save}>Save</Button>
+          )}
         </DialogActions>
       </Dialog>
 

@@ -5,6 +5,7 @@ import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useInventory } from '../context/InventoryContext';
+import { hasPerm } from '../utils/permissions';
 
 export default function SalesStore2() {
   const [sales, setSales] = useState([]);
@@ -36,12 +37,29 @@ export default function SalesStore2() {
         setSales(r.data.data || []);
         setTotalPages(r.data.totalPages || 1);
       }
+    } catch (e) {
+      setSales([]);
+      setError(e.response?.data?.error || e.message);
     } finally {
       setLoading(false);
     }
   };
-  const fetchItems = () => api.get('/items').then(r => setItems(r.data));
-  const fetchCustomers = () => api.get('/customers').then(r => setCustomers(r.data));
+  const fetchItems = async () => {
+    try {
+      const r = await api.get('/items');
+      setItems(r.data);
+    } catch {
+      setItems([]);
+    }
+  };
+  const fetchCustomers = async () => {
+    try {
+      const r = await api.get('/customers');
+      setCustomers(r.data);
+    } catch {
+      setCustomers([]);
+    }
+  };
 
   useEffect(() => { fetchSales(1); fetchItems(); fetchCustomers(); }, []);
 
@@ -126,7 +144,9 @@ export default function SalesStore2() {
       {success && (
         <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>
       )}
-      <Button variant="contained" color="primary" onClick={() => handleOpen()} sx={{ fontWeight: 700, px: 3, borderRadius: 2, mb: 2 }}>Add Sale Invoice</Button>
+  {hasPerm('sales','view') && (
+        <Button variant="contained" color="primary" onClick={() => handleOpen()} sx={{ fontWeight: 700, px: 3, borderRadius: 2, mb: 2 }}>Add Sale Invoice</Button>
+      )}
       <TableContainer component={Paper} sx={{ mt: 2, maxHeight: 520, overflowY: 'auto', borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
           <Button variant="outlined" disabled={loading || page <= 1} onClick={() => { const p = Math.max(1, page - 1); setPage(p); fetchSales(p); }}>Prev</Button>
@@ -156,13 +176,17 @@ export default function SalesStore2() {
                 <TableCell>{sale.customer?.name || '-'}</TableCell>
                 <TableCell>{sale.invoice_number}</TableCell>
                 <TableCell>{sale.date ? new Date(sale.date).toLocaleDateString() : '-'}</TableCell>
-                <TableCell>{getItemName(row.item)}</TableCell>
+                <TableCell>{row.item?.name || getItemName(row.item?._id || row.item)}</TableCell>
                 <TableCell>{row.quantity}</TableCell>
                 <TableCell>{row.price}</TableCell>
                 <TableCell>{(row.quantity * row.price).toFixed(2)}</TableCell>
                 <TableCell>
-                  <IconButton onClick={() => handleOpen(sale)}><EditIcon /></IconButton>
-                  <IconButton onClick={() => handleDelete(sale._id)}><DeleteIcon /></IconButton>
+                  {hasPerm('sales','edit') && (
+                    <IconButton onClick={() => handleOpen(sale)}><EditIcon /></IconButton>
+                  )}
+                  {hasPerm('sales','delete') && (
+                    <IconButton onClick={() => handleDelete(sale._id)}><DeleteIcon /></IconButton>
+                  )}
                 </TableCell>
               </TableRow>
             ))) }
@@ -219,7 +243,9 @@ export default function SalesStore2() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained" color="primary" disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
+          {hasPerm('sales','view') && (
+            <Button onClick={handleSubmit} variant="contained" color="primary" disabled={saving}>{saving ? 'Saving…' : (editId ? 'Save' : 'Add Invoice')}</Button>
+          )}
         </DialogActions>
       </Dialog>
       {error && (

@@ -3,6 +3,7 @@ import { Box, Typography, Paper, Button, TextField, Table, TableBody, TableCell,
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { listExpenses, createExpense, updateExpense, deleteExpense } from '../services/expensesApi';
+import { hasPerm } from '../utils/permissions';
 
 export default function Expenses() {
   const [store, setStore] = useState('store');
@@ -98,7 +99,9 @@ export default function Expenses() {
           <TextField type="date" label="To" InputLabelProps={{ shrink: true }} value={to} onChange={e => setTo(e.target.value)} />
           <Button variant="contained" onClick={() => load(1)}>Filter</Button>
           <Box sx={{ flex: 1 }} />
-          <Button variant="contained" onClick={() => openDialog(null)}>Add Expense</Button>
+          {hasPerm('expenses','edit') && (
+            <Button variant="contained" onClick={() => openDialog(null)}>Add Expense</Button>
+          )}
         </Box>
       </Paper>
 
@@ -132,8 +135,12 @@ export default function Expenses() {
                   <TableCell>{d.note||''}</TableCell>
                   <TableCell>AED {total.toFixed(2)}</TableCell>
                   <TableCell>
-                    <IconButton onClick={()=>openDialog(d)}><EditIcon/></IconButton>
-                    <IconButton onClick={()=>del(d._id)} color="error"><DeleteIcon/></IconButton>
+                    {hasPerm('expenses','edit') && (
+                      <IconButton onClick={()=>openDialog(d)}><EditIcon/></IconButton>
+                    )}
+                    {hasPerm('expenses','delete') && (
+                      <IconButton onClick={()=>del(d._id)} color="error"><DeleteIcon/></IconButton>
+                    )}
                   </TableCell>
                 </TableRow>
               );
@@ -176,7 +183,9 @@ export default function Expenses() {
         </DialogContent>
         <DialogActions>
           <Button onClick={closeDialog}>Cancel</Button>
-          <Button variant="contained" onClick={save}>{editId?'Save':'Create'}</Button>
+          {hasPerm('expenses','edit') && (
+            <Button variant="contained" onClick={save}>{editId?'Save':'Create'}</Button>
+          )}
         </DialogActions>
       </Dialog>
     </Box>

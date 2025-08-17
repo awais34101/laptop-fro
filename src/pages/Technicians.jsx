@@ -5,6 +5,7 @@ import { fetchTechnicianAssignments, assignItemsToTechnician, unassignItemsFromT
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Alert, Grid, List, ListItem, ListItemText, Checkbox, FormControl, InputLabel, Select, MenuItem, IconButton } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
 import TechnicianStatsBox from '../components/TechnicianStatsBox';
+import { hasPerm } from '../utils/permissions';
 
 export default function Technicians() {
   const [technicians, setTechnicians] = useState([]);
@@ -237,8 +238,12 @@ export default function Technicians() {
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       
       <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
-        <Button variant="contained" onClick={() => handleOpen()}>Add Technician</Button>
-        <Button variant="outlined" onClick={handleAssignmentOpen}>Assign Items</Button>
+        {hasPerm('technicians','edit') && (
+          <>
+            <Button variant="contained" onClick={() => handleOpen()}>Add Technician</Button>
+            <Button variant="outlined" onClick={handleAssignmentOpen}>Assign Items</Button>
+          </>
+        )}
       </Box>
 
       <Grid container spacing={3}>
@@ -252,7 +257,9 @@ export default function Technicians() {
                   <TableCell>Email</TableCell>
                   <TableCell>Phone</TableCell>
                   <TableCell>Specialization</TableCell>
-                  <TableCell>Actions</TableCell>
+                  {(hasPerm('technicians','edit') || hasPerm('technicians','delete')) && (
+                    <TableCell>Actions</TableCell>
+                  )}
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -262,10 +269,16 @@ export default function Technicians() {
                     <TableCell>{t.email}</TableCell>
                     <TableCell>{t.phone}</TableCell>
                     <TableCell>{t.specialization}</TableCell>
-                    <TableCell>
-                      <Button size="small" onClick={() => handleOpen(t)}>Edit</Button>
-                      <Button size="small" color="error" onClick={() => handleDelete(t._id)}>Delete</Button>
-                    </TableCell>
+                    {(hasPerm('technicians','edit') || hasPerm('technicians','delete')) && (
+                      <TableCell>
+                        {hasPerm('technicians','edit') && (
+                          <Button size="small" onClick={() => handleOpen(t)}>Edit</Button>
+                        )}
+                        {hasPerm('technicians','delete') && (
+                          <Button size="small" color="error" onClick={() => handleDelete(t._id)}>Delete</Button>
+                        )}
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -346,14 +359,16 @@ export default function Technicians() {
                                     primary={w.item.name}
                                     secondary={`Category: ${w.item.category} | Unit: ${w.item.unit} | Qty: ${w.quantity}`}
                                   />
-                                  <IconButton
-                                    size="small"
-                                    color="error"
-                                    onClick={() => handleUnassignItem(viewSelectedTechnician, w.item._id)}
-                                    sx={{ ml: 1 }}
-                                  >
-                                    <DeleteIcon fontSize="small" />
-                                  </IconButton>
+                                  {hasPerm('technicians','edit') && (
+                                    <IconButton
+                                      size="small"
+                                      color="error"
+                                      onClick={() => handleUnassignItem(viewSelectedTechnician, w.item._id)}
+                                      sx={{ ml: 1 }}
+                                    >
+                                      <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                  )}
                                 </ListItem>
                                 <TextField
                                   size="small"
@@ -366,6 +381,7 @@ export default function Technicians() {
                                   }}
                                   multiline
                                   rows={2}
+                                  disabled={!hasPerm('technicians','edit')}
                                   sx={{ mt: 1 }}
                                 />
                               </Box>
@@ -401,7 +417,9 @@ export default function Technicians() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">Save</Button>
+          {hasPerm('technicians','edit') && (
+            <Button onClick={handleSubmit} variant="contained">Save</Button>
+          )}
         </DialogActions>
       </Dialog>
 
@@ -480,13 +498,15 @@ export default function Technicians() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleAssignmentClose}>Cancel</Button>
-          <Button 
-            onClick={handleAssignItems} 
-            variant="contained"
-            disabled={!selectedTechnician || selectedItems.length === 0}
-          >
-            Assign Selected Items ({selectedItems.length})
-          </Button>
+          {hasPerm('technicians','edit') && (
+            <Button 
+              onClick={handleAssignItems} 
+              variant="contained"
+              disabled={!selectedTechnician || selectedItems.length === 0}
+            >
+              Assign Selected Items ({selectedItems.length})
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 

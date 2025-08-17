@@ -71,20 +71,25 @@ export default function UsersList() {
     setForm(f => ({ ...f, [name]: type === 'checkbox' ? checked : value }));
   };
 
-  // Permissions UI logic
+  // Permissions UI logic (labelled + ordered to match sidebar)
   const sections = [
-    { key: 'dashboard', actions: ['view'] },
-    { key: 'items', actions: ['view', 'edit', 'delete'] },
-    { key: 'purchases', actions: ['view', 'edit', 'delete'] },
-    { key: 'warehouse', actions: ['view', 'edit', 'delete'] },
-    { key: 'sales', actions: ['view', 'edit', 'delete'] },
-    { key: 'customers', actions: ['view', 'edit', 'delete'] },
-    { key: 'technicians', actions: ['view', 'edit', 'delete'] },
-    { key: 'transfers', actions: ['view', 'edit', 'delete'] },
-    { key: 'store', actions: ['view', 'edit', 'delete'] },
-    { key: 'store2', actions: ['view', 'edit', 'delete'] },
-    { key: 'settings', actions: ['view', 'edit'] },
-    { key: 'users', actions: ['view', 'edit', 'delete'] },
+    { key: 'dashboard', label: 'Dashboard', actions: ['view'] },
+    { key: 'items', label: 'Items', actions: ['view', 'edit', 'delete'] },
+    { key: 'purchases', label: 'Purchases', actions: ['view', 'edit', 'delete'] },
+    { key: 'warehouse', label: 'Warehouse', actions: ['view', 'edit', 'delete'] },
+    { key: 'transfers', label: 'Transfers', actions: ['view', 'edit', 'delete'] },
+    { key: 'store', label: 'Store', actions: ['view', 'edit', 'delete'] },
+    { key: 'store2', label: 'Store2', actions: ['view', 'edit', 'delete'] },
+    { key: 'sales', label: 'Sales', actions: ['view', 'edit', 'delete'] },
+    { key: 'partsInventory', label: 'Parts Inventory', actions: ['view', 'edit', 'delete'] },
+    { key: 'parts', label: 'Parts Requests', actions: ['view', 'edit', 'delete'] },
+    { key: 'documents', label: 'Documents', actions: ['view', 'edit', 'delete'] },
+    { key: 'expenses', label: 'Expenses', actions: ['view', 'edit', 'delete'] },
+    { key: 'customers', label: 'Customers', actions: ['view', 'edit', 'delete'] },
+    { key: 'technicians', label: 'Technicians', actions: ['view', 'edit', 'delete'] },
+    { key: 'settings', label: 'Settings', actions: ['view', 'edit'] },
+    { key: 'users', label: 'Users (Admin UI)', actions: ['view', 'edit', 'delete'] },
+    { key: 'time', label: 'Time', actions: ['view', 'edit', 'delete'] },
   ];
 
   const handlePermissionChange = (section, action) => e => {
@@ -224,7 +229,7 @@ export default function UsersList() {
               <Typography variant="subtitle1">Permissions</Typography>
               {sections.map(sec => (
                 <Box key={sec.key} mb={1}>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{sec.key.charAt(0).toUpperCase() + sec.key.slice(1)}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{sec.label || (sec.key.charAt(0).toUpperCase() + sec.key.slice(1))}</Typography>
                   <FormGroup row>
                     {sec.actions.map(action => (
                       <FormControlLabel

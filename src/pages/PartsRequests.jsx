@@ -5,6 +5,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { listPartRequests, createPartRequest, updatePartRequestStatus, deletePartRequest, getItemPriceHistory } from '../services/partsApi';
 import { listParts } from '../services/partsInventoryApi';
 import api from '../services/api';
+import { hasPerm } from '../utils/permissions';
 
 const STATUS = ['requested','approved','ordered','received','rejected','cancelled'];
 
@@ -103,7 +104,9 @@ export default function PartsRequests() {
                   </TextField>
                 </TableCell>
                 <TableCell>
-                  <IconButton onClick={()=>del(d._id)} color="error"><DeleteIcon/></IconButton>
+                  {hasPerm('parts','delete') && (
+                    <IconButton onClick={()=>del(d._id)} color="error"><DeleteIcon/></IconButton>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

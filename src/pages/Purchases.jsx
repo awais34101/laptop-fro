@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Autocomplete } from '@mui/material';
 import api from '../services/api';
+import { hasPerm } from '../utils/permissions';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Alert, IconButton, Backdrop, CircularProgress } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -196,7 +197,9 @@ export default function Purchases() {
                         <TableCell rowSpan={p.items?.length || 1}>{new Date(p.date).toLocaleDateString()}</TableCell>
                         <TableCell rowSpan={p.items?.length || 1}>
                           <IconButton onClick={() => handleOpen(p)}><EditIcon /></IconButton>
-                          <IconButton onClick={() => handleDelete(p._id)}><DeleteIcon /></IconButton>
+                            {hasPerm('purchases','delete') && (
+                              <IconButton onClick={() => handleDelete(p._id)}><DeleteIcon /></IconButton>
+                            )}
                         </TableCell>
                       </>
                     )}

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Alert } from '@mui/material';
+import { hasPerm } from '../utils/permissions';
 
 export default function Customers() {
   const [customers, setCustomers] = useState([]);
@@ -78,8 +79,12 @@ export default function Customers() {
                 <TableCell>{c.email}</TableCell>
                 <TableCell>{new Date(c.created_at).toLocaleDateString()}</TableCell>
                 <TableCell>
-                  <Button size="small" onClick={() => handleOpen(c)}>Edit</Button>
-                  <Button size="small" color="error" onClick={() => handleDelete(c._id)}>Delete</Button>
+                  {hasPerm('customers','edit') && (
+                    <Button size="small" onClick={() => handleOpen(c)}>Edit</Button>
+                  )}
+                  {hasPerm('customers','delete') && (
+                    <Button size="small" color="error" onClick={() => handleDelete(c._id)}>Delete</Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import { useInventory } from '../context/InventoryContext';
+import { hasPerm } from '../utils/permissions';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Alert, CircularProgress } from '@mui/material';
 
 export default function Items() {
@@ -85,7 +86,9 @@ export default function Items() {
         Items Management
       </Typography>
       <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-        <Button variant="contained" color="primary" onClick={() => handleOpen()} sx={{ fontWeight: 700, px: 3, borderRadius: 2 }}>Add Item</Button>
+        {hasPerm('items','edit') && (
+          <Button variant="contained" color="primary" onClick={() => handleOpen()} sx={{ fontWeight: 700, px: 3, borderRadius: 2 }}>Add Item</Button>
+        )}
         <TextField
           label="Search Items"
           value={search}
@@ -147,8 +150,12 @@ export default function Items() {
                   <TableCell>{totalValue.toFixed(2)}</TableCell>
                   <TableCell>{item.sale_count}</TableCell>
                   <TableCell>
-                    <Button size="small" variant="outlined" sx={{ mr: 1, fontWeight: 600, borderRadius: 2 }} onClick={() => handleOpen(item)}>Edit</Button>
-                    <Button size="small" variant="contained" color="error" sx={{ fontWeight: 600, borderRadius: 2 }} onClick={() => handleDelete(item._id)}>Delete</Button>
+                    {hasPerm('items','edit') && (
+                      <Button size="small" variant="outlined" sx={{ mr: 1, fontWeight: 600, borderRadius: 2 }} onClick={() => handleOpen(item)}>Edit</Button>
+                    )}
+                    {hasPerm('items','delete') && (
+                      <Button size="small" variant="contained" color="error" sx={{ fontWeight: 600, borderRadius: 2 }} onClick={() => handleDelete(item._id)}>Delete</Button>
+                    )}
                   </TableCell>
                 </TableRow>
               );
@@ -205,7 +212,9 @@ export default function Items() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">{editId ? 'Update' : 'Add'}</Button>
+          {hasPerm('items','edit') && (
+            <Button onClick={handleSubmit} variant="contained">{editId ? 'Update' : 'Add'}</Button>
+          )}
         </DialogActions>
       </Dialog>
     </Box>

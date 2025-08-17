@@ -28,6 +28,7 @@ const navItems = [
   { text: 'Parts Requests', icon: <ShoppingCartIcon />, path: '/parts-requests', perm: { section: 'parts', action: 'view' } },
   { text: 'Documents', icon: <DescriptionIcon />, path: '/documents', perm: { section: 'documents', action: 'view' } },
   { text: 'Expenses', icon: <ShoppingCartIcon />, path: '/expenses', perm: { section: 'expenses', action: 'view' } },
+  { text: 'Time', icon: <PeopleIcon />, path: '/time', perm: { section: 'time', action: 'view' } },
   { text: 'Customers', icon: <PeopleIcon />, path: '/customers', perm: { section: 'customers', action: 'view' } },
   { text: 'Technicians', icon: <PeopleIcon />, path: '/technicians', perm: { section: 'technicians', action: 'view' } },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings', perm: { section: 'settings', action: 'view' } },
