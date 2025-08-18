@@ -99,7 +99,7 @@ export default function Expenses() {
           <TextField type="date" label="To" InputLabelProps={{ shrink: true }} value={to} onChange={e => setTo(e.target.value)} />
           <Button variant="contained" onClick={() => load(1)}>Filter</Button>
           <Box sx={{ flex: 1 }} />
-          {hasPerm('expenses','edit') && (
+          {(hasPerm('expenses','edit') || hasPerm('expenses','view')) && (
             <Button variant="contained" onClick={() => openDialog(null)}>Add Expense</Button>
           )}
         </Box>
@@ -183,7 +183,9 @@ export default function Expenses() {
         </DialogContent>
         <DialogActions>
           <Button onClick={closeDialog}>Cancel</Button>
-          {hasPerm('expenses','edit') && (
+          {(
+            (!editId && hasPerm('expenses','view')) || (editId && hasPerm('expenses','edit'))
+          ) && (
             <Button variant="contained" onClick={save}>{editId?'Save':'Create'}</Button>
           )}
         </DialogActions>

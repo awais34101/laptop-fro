@@ -64,7 +64,7 @@ export default function Documents() {
           <Button variant="text" onClick={()=>{ setQ(''); setCategoryFilter(''); setExpiringInDays(''); load(1); }}>Clear</Button>
           <Box sx={{ flex:1 }} />
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>{total} results</Typography>
-          {hasPerm('documents','edit') && (
+          {(hasPerm('documents','edit') || hasPerm('documents','view')) && (
             <Button variant="contained" onClick={openNew}>New Document</Button>
           )}
         </Box>
@@ -136,7 +136,10 @@ export default function Documents() {
         </DialogContent>
         <DialogActions>
           <Button onClick={()=>setOpen(false)}>Cancel</Button>
-          {hasPerm('documents','edit') && (
+          {(
+            // Allow Save for create when user has 'view'; require 'edit' for editing existing documents
+            (!edit && hasPerm('documents','view')) || (edit && hasPerm('documents','edit'))
+          ) && (
             <Button variant="contained" onClick={save}>Save</Button>
           )}
         </DialogActions>

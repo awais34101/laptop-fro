@@ -272,7 +272,10 @@ export default function Transfers() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} disabled={submitting}>Cancel</Button>
-          {hasPerm('transfers', 'edit') && (
+          {(
+            // Allow creating transfers with 'view'; require 'edit' to update existing ones
+            (!form._id && hasPerm('transfers','view')) || (form._id && hasPerm('transfers','edit'))
+          ) && (
             <Button onClick={handleSubmit} variant="contained" disabled={submitting}>{submitting ? 'Transferring...' : 'Transfer'}</Button>
           )}
         </DialogActions>

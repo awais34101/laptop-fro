@@ -4,6 +4,7 @@ import { listParts, createPart, updatePart, deletePart, getInventory, transferPa
 import { createPartsPurchase, listPartsPurchases, deletePartsPurchase } from '../services/partsPurchaseApi';
 import { useParts, listPartsUsage, deletePartsUsage } from '../services/partsUsageApi';
 import api from '../services/api';
+import { hasPerm } from '../utils/permissions';
 
 export default function PartsInventory() {
   const [parts, setParts] = useState([]);
@@ -129,7 +130,9 @@ export default function PartsInventory() {
 
       <Paper elevation={3} sx={{ p:2, mb:2, borderRadius:3 }}>
         <Box sx={{ display:'flex', gap:2, flexWrap:'wrap', alignItems:'center' }}>
-          <Button variant="contained" onClick={openNew}>New Part</Button>
+          {(hasPerm('partsInventory','edit') || hasPerm('partsInventory','view')) && (
+            <Button variant="contained" onClick={openNew}>New Part</Button>
+          )}
           <Button variant="outlined" onClick={()=>{ setOpenTransfer(true); setError(''); setSuccess(''); }}>Transfer Parts</Button>
           <Button variant="outlined" onClick={()=>{ setOpenBuy(true); setError(''); setSuccess(''); }}>Buy Parts</Button>
           <Button variant="outlined" color="secondary" onClick={()=>{ setOpenUse(true); setError(''); setSuccess(''); }}>Use Parts</Button>
@@ -188,7 +191,9 @@ export default function PartsInventory() {
                 <TableCell>{p.supplier||''}</TableCell>
                 <TableCell>{p.items.map((it,idx)=> <div key={idx}>{it.part?.name} - {it.quantity} x AED {Number(it.price).toFixed(2)}</div>)}</TableCell>
                 <TableCell>
-                  <Button size="small" color="error" onClick={async ()=>{ if(window.confirm('Delete this purchase record? This will not change inventory.')){ await deletePartsPurchase(p._id); loadPurchases({ page: purchasesPage, q: purchasesSearch }); } }}>Delete</Button>
+                  {hasPerm('partsInventory','delete') && (
+                    <Button size="small" color="error" onClick={async ()=>{ if(window.confirm('Delete this purchase record? This will not change inventory.')){ await deletePartsPurchase(p._id); loadPurchases({ page: purchasesPage, q: purchasesSearch }); } }}>Delete</Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -353,7 +358,9 @@ export default function PartsInventory() {
                 <TableCell>{u.items.map((it,idx)=> <div key={idx}>{it.part?.name} ({it.quantity})</div>)}</TableCell>
                 <TableCell>{u.note||''}</TableCell>
                 <TableCell>
-                  <Button size="small" color="error" onClick={async ()=>{ if(window.confirm('Delete this usage record? This will not change inventory.')){ await deletePartsUsage(u._id); loadUsage({ page: usagePage, q: usageSearch }); } }}>Delete</Button>
+                  {hasPerm('partsInventory','delete') && (
+                    <Button size="small" color="error" onClick={async ()=>{ if(window.confirm('Delete this usage record? This will not change inventory.')){ await deletePartsUsage(u._id); loadUsage({ page: usagePage, q: usageSearch }); } }}>Delete</Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -395,8 +402,12 @@ export default function PartsInventory() {
                 <TableCell>{findQty(inv.store2, p._id)}</TableCell>
                 <TableCell>{p.minStock||0}</TableCell>
                 <TableCell>
-                  <Button size="small" onClick={()=>openEdit(p)}>Edit</Button>
-                  <Button size="small" color="error" onClick={()=>removePart(p._id)}>Delete</Button>
+                  {hasPerm('partsInventory','edit') && (
+                    <Button size="small" onClick={()=>openEdit(p)}>Edit</Button>
+                  )}
+                  {hasPerm('partsInventory','delete') && (
+                    <Button size="small" color="error" onClick={()=>removePart(p._id)}>Delete</Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
