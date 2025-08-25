@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { Autocomplete } from '@mui/material';
 import api from '../services/api';
 import { hasPerm } from '../utils/permissions';
@@ -144,6 +146,49 @@ export default function Purchases() {
 
   // Helper: get item name by id
   const getItemName = (id) => items.find(i => i._id === id)?.name || '';
+
+  // PDF Generation for Purchase Invoice
+  const generatePDF = (purchase) => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text('Purchase Invoice', 14, 16);
+    doc.setFontSize(12);
+    doc.text(`Supplier: ${purchase.supplier || ''}`, 14, 28);
+    doc.text(`Invoice #: ${purchase.invoice_number || ''}`, 14, 36);
+    doc.text(`Date: ${purchase.date ? new Date(purchase.date).toLocaleDateString() : ''}`, 14, 44);
+
+    const tableColumn = ['Item', 'Quantity', 'Price', 'Total'];
+    const tableRows = (purchase.items || []).map(item => [
+      item.item?.name || getItemName(item.item?._id || item.item),
+      item.quantity,
+      item.price,
+      (item.quantity * item.price).toFixed(2)
+    ]);
+
+    // Add table using autoTable
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 50,
+    });
+
+    // Invoice total
+    const total = (purchase.items || []).reduce((sum, i) => sum + i.quantity * i.price, 0).toFixed(2);
+    const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 60;
+    doc.text(`Invoice Total: ${total}`, 14, finalY + 10);
+
+    return doc;
+  };
+
+  const handleDownloadPDF = (purchase) => {
+    const doc = generatePDF(purchase);
+    doc.save(`Purchase_Invoice_${purchase.invoice_number || ''}.pdf`);
+  };
+
+  const handleViewPDF = (purchase) => {
+    const doc = generatePDF(purchase);
+    window.open(doc.output('bloburl'), '_blank');
+  };
   // Helper: get warehouse/store stock for item
   const getWarehouseQty = (id) => warehouseStock.find(w => w.item?._id === id)?.quantity ?? 0;
   const getStoreQty = (id) => storeStock.find(s => s.item?._id === id)?.remaining_quantity ?? 0;
@@ -196,10 +241,18 @@ export default function Purchases() {
                         <TableCell rowSpan={p.items?.length || 1}>{p.invoice_number}</TableCell>
                         <TableCell rowSpan={p.items?.length || 1}>{new Date(p.date).toLocaleDateString()}</TableCell>
                         <TableCell rowSpan={p.items?.length || 1}>
-                          <IconButton onClick={() => handleOpen(p)}><EditIcon /></IconButton>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <IconButton onClick={() => handleOpen(p)}><EditIcon /></IconButton>
+                            <Button size="small" variant="outlined" sx={{ mb: 0.5 }} onClick={() => handleViewPDF(p)}>
+                              View PDF
+                            </Button>
+                            <Button size="small" variant="outlined" sx={{ mb: 0.5 }} onClick={() => handleDownloadPDF(p)}>
+                              Download PDF
+                            </Button>
                             {hasPerm('purchases','delete') && (
                               <IconButton onClick={() => handleDelete(p._id)}><DeleteIcon /></IconButton>
                             )}
+                          </Box>
                         </TableCell>
                       </>
                     )}

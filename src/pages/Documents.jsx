@@ -42,11 +42,13 @@ export default function Documents() {
   const openNew = () => { setEdit(null); setForm({ name: '', category: '', number: '', issueDate: '', expiryDate: '', note: '' }); setOpen(true); setError(''); setSuccess(''); };
   const openEdit = (d) => { setEdit(d); setForm({ name: d.name, category: d.category, number: d.number || '', issueDate: d.issueDate ? d.issueDate.substring(0,10) : '', expiryDate: d.expiryDate ? d.expiryDate.substring(0,10) : '', note: d.note || '' }); setOpen(true); setError(''); setSuccess(''); };
   const save = async () => {
+    setLoading(true);
     try {
       const payload = { ...form, issueDate: form.issueDate || null, expiryDate: form.expiryDate || null };
-  if (edit) await updateDocument(edit._id, payload); else await createDocument(payload);
-  setOpen(false); setEdit(null); setSuccess('Saved'); setSnackOpen(true); load();
+      if (edit) await updateDocument(edit._id, payload); else await createDocument(payload);
+      setOpen(false); setEdit(null); setSuccess('Saved'); setSnackOpen(true); load();
     } catch (e) { setError(e.response?.data?.error || e.message); }
+    finally { setLoading(false); }
   };
   const remove = async (id) => { if (!window.confirm('Delete document?')) return; await deleteDocument(id); load(); };
 
@@ -140,7 +142,9 @@ export default function Documents() {
             // Allow Save for create when user has 'view'; require 'edit' for editing existing documents
             (!edit && hasPerm('documents','view')) || (edit && hasPerm('documents','edit'))
           ) && (
-            <Button variant="contained" onClick={save}>Save</Button>
+            <Button variant="contained" onClick={save} disabled={loading}>
+              {loading ? 'Saving...' : 'Save'}
+            </Button>
           )}
         </DialogActions>
       </Dialog>

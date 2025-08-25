@@ -5,6 +5,9 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Items from './pages/Items';
 import Purchases from './pages/Purchases';
+// import Returns from './pages/Returns';
+import ReturnsStore from './pages/ReturnsStore';
+import ReturnsStore2 from './pages/ReturnsStore2';
 import Warehouse from './pages/Warehouse';
 import Transfers from './pages/Transfers';
 import Store from './pages/Store';
@@ -71,6 +74,9 @@ function App() {
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/items" element={<ProtectedRoute><Items /></ProtectedRoute>} />
             <Route path="/purchases" element={<ProtectedRoute><Purchases /></ProtectedRoute>} />
+            {/* <Route path="/returns" element={<ProtectedRoute><Returns /></ProtectedRoute>} /> */}
+            <Route path="/returns-store" element={<ProtectedRoute><ReturnsStore /></ProtectedRoute>} />
+            <Route path="/returns-store2" element={<ProtectedRoute><ReturnsStore2 /></ProtectedRoute>} />
             <Route path="/warehouse" element={<ProtectedRoute><Warehouse /></ProtectedRoute>} />
             {/* Require explicit permission to view Transfers */}
             <Route

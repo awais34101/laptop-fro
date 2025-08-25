@@ -67,8 +67,9 @@ export default function Items() {
     try {
       await api.delete(`/items/${id}`);
       fetchItems();
+      setError('');
     } catch (err) {
-      setError('Delete failed');
+      setError(err.response?.data?.error || 'Delete failed');
     }
   };
 
@@ -82,6 +83,9 @@ export default function Items() {
   );
   return (
     <Box p={{ xs: 1, md: 3 }} sx={{ background: 'linear-gradient(135deg, #f4f6f8 60%, #e3eafc 100%)', minHeight: '100vh' }}>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
+      )}
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 900, letterSpacing: 1, color: 'primary.main', mb: 3 }}>
         Items Management
       </Typography>

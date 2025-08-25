@@ -3,6 +3,7 @@ import { Drawer, List, ListItem, ListItemIcon, ListItemText, Toolbar, Box, Divid
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
 import StoreIcon from '@mui/icons-material/Store';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
@@ -14,24 +15,58 @@ import { Link, useLocation } from 'react-router-dom';
 const drawerWidth = 220;
 
 
-const navItems = [
-  { text: 'Dashboard', icon: <DashboardIcon />, path: '/', perm: { section: 'dashboard', action: 'view' } },
-  { text: 'Items', icon: <InventoryIcon />, path: '/items', perm: { section: 'items', action: 'view' } },
-  { text: 'Purchases', icon: <ShoppingCartIcon />, path: '/purchases', perm: { section: 'purchases', action: 'view' } },
-  { text: 'Warehouse', icon: <StoreIcon />, path: '/warehouse', perm: { section: 'warehouse', action: 'view' } },
-  { text: 'Transfers', icon: <CompareArrowsIcon />, path: '/transfers', perm: { section: 'transfers', action: 'view' } },
-  { text: 'Store', icon: <StoreIcon />, path: '/store', perm: { section: 'store', action: 'view' } },
-  { text: 'Store2', icon: <StoreIcon />, path: '/store2', perm: { section: 'store2', action: 'view' } },
-  { text: 'Sales', icon: <PointOfSaleIcon />, path: '/sales', perm: { section: 'sales', action: 'view' } },
-  { text: 'Sales Store2', icon: <PointOfSaleIcon />, path: '/sales-store2', perm: { section: 'sales', action: 'view' } },
-  { text: 'Parts Inventory', icon: <InventoryIcon />, path: '/parts-inventory', perm: { section: 'partsInventory', action: 'view' } },
-  { text: 'Parts Requests', icon: <ShoppingCartIcon />, path: '/parts-requests', perm: { section: 'parts', action: 'view' } },
-  { text: 'Documents', icon: <DescriptionIcon />, path: '/documents', perm: { section: 'documents', action: 'view' } },
-  { text: 'Expenses', icon: <ShoppingCartIcon />, path: '/expenses', perm: { section: 'expenses', action: 'view' } },
-  { text: 'Time', icon: <PeopleIcon />, path: '/time', perm: { section: 'time', action: 'view' } },
-  { text: 'Customers', icon: <PeopleIcon />, path: '/customers', perm: { section: 'customers', action: 'view' } },
-  { text: 'Technicians', icon: <PeopleIcon />, path: '/technicians', perm: { section: 'technicians', action: 'view' } },
-  { text: 'Settings', icon: <SettingsIcon />, path: '/settings', perm: { section: 'settings', action: 'view' } },
+
+const navSections = [
+  {
+    label: 'Main',
+    items: [
+      { text: 'Dashboard', icon: <DashboardIcon />, path: '/', perm: { section: 'dashboard', action: 'view' } },
+      { text: 'Items', icon: <InventoryIcon />, path: '/items', perm: { section: 'items', action: 'view' } },
+    ]
+  },
+  {
+    label: 'Purchasing',
+    items: [
+      { text: 'Purchases', icon: <ShoppingCartIcon />, path: '/purchases', perm: { section: 'purchases', action: 'view' } },
+  // { text: 'Returns', icon: <AssignmentReturnIcon />, path: '/returns', perm: { section: 'purchases', action: 'view' } },
+      { text: 'Warehouse', icon: <StoreIcon />, path: '/warehouse', perm: { section: 'warehouse', action: 'view' } },
+      { text: 'Transfers', icon: <CompareArrowsIcon />, path: '/transfers', perm: { section: 'transfers', action: 'view' } },
+    ]
+  },
+  {
+    label: 'Store 1',
+    items: [
+      { text: 'Store', icon: <StoreIcon />, path: '/store', perm: { section: 'store', action: 'view' } },
+      { text: 'Returns Store', icon: <AssignmentReturnIcon />, path: '/returns-store', perm: { section: 'purchases', action: 'view' } },
+      { text: 'Sales', icon: <PointOfSaleIcon />, path: '/sales', perm: { section: 'sales', action: 'view' } },
+    ]
+  },
+  {
+    label: 'Store 2',
+    items: [
+      { text: 'Store2', icon: <StoreIcon />, path: '/store2', perm: { section: 'store2', action: 'view' } },
+      { text: 'Returns Store2', icon: <AssignmentReturnIcon />, path: '/returns-store2', perm: { section: 'purchases', action: 'view' } },
+      { text: 'Sales Store2', icon: <PointOfSaleIcon />, path: '/sales-store2', perm: { section: 'sales', action: 'view' } },
+    ]
+  },
+  {
+    label: 'Parts',
+    items: [
+      { text: 'Parts Inventory', icon: <InventoryIcon />, path: '/parts-inventory', perm: { section: 'partsInventory', action: 'view' } },
+      { text: 'Parts Requests', icon: <ShoppingCartIcon />, path: '/parts-requests', perm: { section: 'parts', action: 'view' } },
+    ]
+  },
+  {
+    label: 'Other',
+    items: [
+      { text: 'Documents', icon: <DescriptionIcon />, path: '/documents', perm: { section: 'documents', action: 'view' } },
+      { text: 'Expenses', icon: <ShoppingCartIcon />, path: '/expenses', perm: { section: 'expenses', action: 'view' } },
+      { text: 'Time', icon: <PeopleIcon />, path: '/time', perm: { section: 'time', action: 'view' } },
+      { text: 'Customers', icon: <PeopleIcon />, path: '/customers', perm: { section: 'customers', action: 'view' } },
+      { text: 'Technicians', icon: <PeopleIcon />, path: '/technicians', perm: { section: 'technicians', action: 'view' } },
+      { text: 'Settings', icon: <SettingsIcon />, path: '/settings', perm: { section: 'settings', action: 'view' } },
+    ]
+  }
 ];
 
 export default function Sidebar() {
@@ -71,33 +106,43 @@ export default function Sidebar() {
       </Toolbar>
       <Box sx={{ overflow: 'auto', height: '100%' }}>
         <List sx={{ mt: 2 }}>
-          {navItems.filter(({ perm }) => {
-            if (isAdmin) return true;
-            if (!perm) return true;
-            const { section, action } = perm;
-            return permissions[section]?.[action];
-          }).map(({ text, icon, path }) => (
-            <ListItem
-              button
-              key={text}
-              component={Link}
-              to={path}
-              selected={location.pathname === path}
-              sx={{
-                my: 0.5,
-                borderRadius: 2,
-                background: location.pathname === path ? 'rgba(255,255,255,0.12)' : 'none',
-                '&:hover': {
-                  background: 'rgba(255,255,255,0.18)',
-                },
-                color: '#fff',
-              }}
-            >
-              <ListItemIcon sx={{ color: '#fff', minWidth: 36 }}>{icon}</ListItemIcon>
-              <ListItemText primary={text} sx={{ '.MuiTypography-root': { fontWeight: location.pathname === path ? 700 : 500 } }} />
-            </ListItem>
-          ))}
-          <Divider sx={{ my: 1 }} />
+          {navSections.map(section => {
+            // Filter items by permission
+            const visibleItems = section.items.filter(({ perm }) => {
+              if (isAdmin) return true;
+              if (!perm) return true;
+              const { section: sec, action } = perm;
+              return permissions[sec]?.[action];
+            });
+            if (visibleItems.length === 0) return null;
+            return (
+              <React.Fragment key={section.label}>
+                <Typography variant="caption" sx={{ color: '#bbdefb', pl: 2, pt: 2, fontWeight: 700, letterSpacing: 1 }}>{section.label}</Typography>
+                {visibleItems.map(({ text, icon, path }) => (
+                  <ListItem
+                    button
+                    key={text}
+                    component={Link}
+                    to={path}
+                    selected={location.pathname === path}
+                    sx={{
+                      my: 0.5,
+                      borderRadius: 2,
+                      background: location.pathname === path ? 'rgba(255,255,255,0.12)' : 'none',
+                      '&:hover': {
+                        background: 'rgba(255,255,255,0.18)',
+                      },
+                      color: '#fff',
+                    }}
+                  >
+                    <ListItemIcon sx={{ color: '#fff', minWidth: 36 }}>{icon}</ListItemIcon>
+                    <ListItemText primary={text} sx={{ '.MuiTypography-root': { fontWeight: location.pathname === path ? 700 : 500 } }} />
+                  </ListItem>
+                ))}
+                <Divider sx={{ my: 1 }} />
+              </React.Fragment>
+            );
+          })}
           {/* Settings section extra links */}
           {location.pathname.startsWith('/settings') && (
             <>
