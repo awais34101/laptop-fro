@@ -3,6 +3,7 @@ import React from 'react';
 import { InventoryProvider } from './context/InventoryContext';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
+import Closing from './pages/Closing';
 import Items from './pages/Items';
 import Purchases from './pages/Purchases';
 // import Returns from './pages/Returns';
@@ -120,6 +121,8 @@ function App() {
               }
             />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/closing/store1" element={<ProtectedRoute><Closing storeType="store1" /></ProtectedRoute>} />
+            <Route path="/closing/store2" element={<ProtectedRoute><Closing storeType="store2" /></ProtectedRoute>} />
           </Routes>
         </Box>
       </Box>

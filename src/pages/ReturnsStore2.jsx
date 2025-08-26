@@ -105,44 +105,71 @@ export default function ReturnsStore2() {
     }
   };
 
+  // Helper to calculate total value for a return
+  const getTotalValue = (ret) => (ret.items || []).reduce((sum, i) => sum + (Number(i.quantity) * Number(i.price)), 0);
+  const getItemName = (id) => items.find(i => i._id === id)?.name || '';
+
   return (
-    <Box p={2}>
-      <Typography variant="h5" gutterBottom>Returns Store2</Typography>
-      <Button variant="contained" color="primary" onClick={handleOpen}>Add Return</Button>
-      <Box display="flex" alignItems="center" gap={2} mt={2}>
-        <Button onClick={() => { if (page > 1) { setPage(page - 1); fetchReturns(page - 1); } }} disabled={page === 1} variant="outlined">Prev</Button>
-        <Typography>Page {page} / {totalPages}</Typography>
-        <Button onClick={() => { if (page < totalPages) { setPage(page + 1); fetchReturns(page + 1); } }} disabled={page === totalPages} variant="outlined">Next</Button>
-      </Box>
-      <TableContainer component={Paper} sx={{ mt: 2 }}>
-        <Table>
+    <Box p={{ xs: 1, md: 3 }} sx={{ background: 'linear-gradient(135deg, #f4f6f8 60%, #e3eafc 100%)', minHeight: '100vh' }}>
+      <Typography variant="h4" gutterBottom sx={{ fontWeight: 900, letterSpacing: 1, color: 'primary.main', mb: 3 }}>
+        Returns Store2
+      </Typography>
+      <Button variant="contained" color="primary" onClick={handleOpen} sx={{ fontWeight: 700, px: 3, borderRadius: 2, mb: 2 }}>Add Return</Button>
+      <TableContainer component={Paper} sx={{ mt: 2, maxHeight: 520, overflowY: 'auto', borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
+          <Button variant="outlined" disabled={page <= 1} onClick={() => { const p = Math.max(1, page - 1); setPage(p); fetchReturns(p); }}>Prev</Button>
+          <Typography variant="body2">Page {page} / {totalPages}</Typography>
+          <Button variant="outlined" disabled={page >= totalPages} onClick={() => { const p = Math.min(totalPages, page + 1); setPage(p); fetchReturns(p); }}>Next</Button>
+        </Box>
+        <Table sx={{ minWidth: 900, '& tbody tr:nth-of-type(odd)': { backgroundColor: '#f9fafd' }, '& tbody tr:hover': { backgroundColor: '#e3eafc' } }}>
           <TableHead>
             <TableRow>
-              <TableCell>Customer</TableCell>
-              <TableCell>Invoice #</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell>Items</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, fontSize: '1.1rem', color: 'primary.main' }}>Customer</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Invoice #</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Date</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Item</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Quantity</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Price</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Total</TableCell>
+              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {returns.map(ret => (
-              <TableRow key={ret._id}>
-                <TableCell>{ret.customer}</TableCell>
-                <TableCell>{ret.invoice_number}</TableCell>
-                <TableCell>{new Date(ret.date).toLocaleString()}</TableCell>
-                <TableCell>
-                  {(ret.items || []).map((i, idx) => (
-                    <div key={idx}>
-                      {items.find(it => it._id === (i.item?._id || i.item))?.name || i.item?.name || i.item} x{i.quantity} @ {i.price}
-                    </div>
-                  ))}
-                </TableCell>
-                <TableCell>
-                  <Button size="small" onClick={() => handleView(ret)}><VisibilityIcon /></Button>
-                  <Button size="small" color="error" onClick={() => handleDelete(ret._id)}><DeleteIcon /></Button>
-                </TableCell>
-              </TableRow>
+              <React.Fragment key={ret._id}>
+                {(ret.items && ret.items.length > 0) ? ret.items.map((item, idx) => (
+                  <TableRow key={ret._id + '-' + idx} sx={{ transition: 'background 0.2s' }}>
+                    {idx === 0 && (
+                      <React.Fragment>
+                        <TableCell rowSpan={ret.items.length} sx={{ fontWeight: 600 }}>{ret.customer}</TableCell>
+                        <TableCell rowSpan={ret.items.length}>{ret.invoice_number}</TableCell>
+                        <TableCell rowSpan={ret.items.length}>{new Date(ret.date).toLocaleDateString()}</TableCell>
+                      </React.Fragment>
+                    )}
+                    <TableCell sx={{ fontWeight: 600 }}>{item.item?.name || getItemName(item.item?._id || item.item) || item.item}</TableCell>
+                    <TableCell>{item.quantity}</TableCell>
+                    <TableCell>{item.price?.toFixed(2) || ''}</TableCell>
+                    <TableCell>{(item.quantity && item.price) ? (Number(item.quantity) * Number(item.price)).toFixed(2) : ''}</TableCell>
+                    {idx === 0 && (
+                      <TableCell rowSpan={ret.items.length}>
+                        <Button size="small" onClick={() => handleView(ret)}><VisibilityIcon /></Button>
+                        <Button size="small" color="error" onClick={() => handleDelete(ret._id)}><DeleteIcon /></Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                )) : (
+                  <TableRow>
+                    <TableCell colSpan={8}>No items</TableCell>
+                  </TableRow>
+                )}
+                {/* Invoice total row */}
+                <TableRow>
+                  <TableCell colSpan={6} align="right" sx={{ background: '#f0f4fa', fontWeight: 700 }}>Invoice Total</TableCell>
+                  <TableCell colSpan={2} align="left" sx={{ background: '#f0f4fa', fontWeight: 700 }}>
+                    {getTotalValue(ret).toFixed(2)}
+                  </TableCell>
+                </TableRow>
+              </React.Fragment>
             ))}
           </TableBody>
         </Table>
@@ -192,6 +219,7 @@ export default function ReturnsStore2() {
                   </li>
                 ))}
               </ul>
+              <Typography sx={{mt:1}}><b>Total Value:</b> {getTotalValue(selectedInvoice).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</Typography>
             </Box>
           )}
         </DialogContent>

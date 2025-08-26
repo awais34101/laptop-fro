@@ -39,6 +39,7 @@ const navSections = [
       { text: 'Store', icon: <StoreIcon />, path: '/store', perm: { section: 'store', action: 'view' } },
       { text: 'Returns Store', icon: <AssignmentReturnIcon />, path: '/returns-store', perm: { section: 'purchases', action: 'view' } },
       { text: 'Sales', icon: <PointOfSaleIcon />, path: '/sales', perm: { section: 'sales', action: 'view' } },
+  { text: 'Closing', icon: <PointOfSaleIcon />, path: '/closing/store1', perm: { section: 'sales', action: 'view' } },
     ]
   },
   {
@@ -47,6 +48,7 @@ const navSections = [
       { text: 'Store2', icon: <StoreIcon />, path: '/store2', perm: { section: 'store2', action: 'view' } },
       { text: 'Returns Store2', icon: <AssignmentReturnIcon />, path: '/returns-store2', perm: { section: 'purchases', action: 'view' } },
       { text: 'Sales Store2', icon: <PointOfSaleIcon />, path: '/sales-store2', perm: { section: 'sales', action: 'view' } },
+  { text: 'Closing', icon: <PointOfSaleIcon />, path: '/closing/store2', perm: { section: 'sales', action: 'view' } },
     ]
   },
   {
