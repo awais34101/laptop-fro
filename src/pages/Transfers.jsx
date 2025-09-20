@@ -47,7 +47,22 @@ export default function Transfers() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const { fetchInventory } = useInventory();
+  const { warehouse, store, store2, items: inventoryItems, fetchInventory } = useInventory();
+
+  // Helper functions to get inventory quantities
+  const getWarehouseQty = (itemId) => warehouse.find(w => w.item?._id === itemId)?.quantity ?? 0;
+  const getStoreQty = (itemId) => store.find(s => s.item?._id === itemId)?.remaining_quantity ?? 0;
+  const getStore2Qty = (itemId) => store2.find(s => s.item?._id === itemId)?.remaining_quantity ?? 0;
+
+  // Get quantity for specific location
+  const getLocationQty = (location, itemId) => {
+    switch(location) {
+      case 'warehouse': return getWarehouseQty(itemId);
+      case 'store': return getStoreQty(itemId);
+      case 'store2': return getStore2Qty(itemId);
+      default: return 0;
+    }
+  };
 
   const PAGE_SIZE = 1;
   const fetchTransfers = async (p = page) => {
@@ -83,7 +98,12 @@ export default function Transfers() {
   const fetchTechnicians = () =>
     api.get('/technicians').then(r => setTechnicians(r.data)).catch(() => setTechnicians([]));
 
-  useEffect(() => { fetchTransfers(1); fetchItems(); fetchTechnicians(); }, []);
+  useEffect(() => { 
+    fetchTransfers(1); 
+    fetchItems(); 
+    fetchTechnicians(); 
+    fetchInventory(); // Load inventory data on component mount
+  }, []);
 
   const handleOpen = () => {
     setForm({ from: 'warehouse', to: 'store', items: [{ item: '', quantity: '' }], technician: '', workType: '' });
@@ -222,8 +242,27 @@ export default function Transfers() {
           </TableBody>
         </Table>
       </TableContainer>
-  <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle>Transfer Stock</DialogTitle>
+  <Dialog 
+    open={open} 
+    onClose={handleClose} 
+    maxWidth="lg" 
+    fullWidth
+    sx={{
+      '& .MuiDialog-paper': {
+        borderRadius: '12px',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+      }
+    }}
+  >
+        <DialogTitle sx={{ 
+          background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', 
+          color: 'white', 
+          fontWeight: 700,
+          fontSize: '1.2rem',
+          textAlign: 'center'
+        }}>
+          Transfer Stock
+        </DialogTitle>
         <DialogContent>
           {error && <Alert severity="error">{error}</Alert>}
           {success && <Alert severity="success">{success}</Alert>}
@@ -240,23 +279,113 @@ export default function Transfers() {
             </TextField>
           </Box>
           {/* Technician stats removed from transfer dialog as requested */}
-          {form.items.map((it, idx) => (
-            <Box key={idx} sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-              <Autocomplete
-                options={items}
-                getOptionLabel={option => option.name || ''}
-                value={items.find(i => i._id === it.item) || null}
-                onChange={(_, newValue) => handleItemChange(idx, 'item', newValue ? newValue._id : '')}
-                renderInput={params => (
-                  <TextField {...params} margin="dense" label="Item" fullWidth required />
-                )}
-                isOptionEqualToValue={(option, value) => option._id === value._id}
-                sx={{ flex: 1 }}
-              />
-              <TextField margin="dense" label="Quantity" value={it.quantity} onChange={e => handleItemChange(idx, 'quantity', e.target.value)} type="number" fullWidth required sx={{ flex: 1 }} />
-              <Button onClick={() => handleRemoveItem(idx)} color="error" sx={{ minWidth: 40, alignSelf: 'center' }}>Remove</Button>
+          {form.items.map((it, idx) => {
+            const selectedItem = items.find(i => i._id === it.item);
+            const fromQty = form.from ? getLocationQty(form.from, it.item) : 0;
+            const toQty = form.to ? getLocationQty(form.to, it.item) : 0;
+            
+            return (
+            <Box key={idx} sx={{ 
+              display: 'flex', 
+              gap: 2, 
+              mb: 2, 
+              flexWrap: 'wrap',
+              p: 2,
+              border: '1px solid #e0e0e0',
+              borderRadius: '8px',
+              bgcolor: '#fafafa'
+            }}>
+              <Box sx={{ display: 'flex', gap: 2, width: '100%', flexWrap: 'wrap' }}>
+                <Autocomplete
+                  options={items}
+                  getOptionLabel={option => option.name || ''}
+                  value={items.find(i => i._id === it.item) || null}
+                  onChange={(_, newValue) => handleItemChange(idx, 'item', newValue ? newValue._id : '')}
+                  renderInput={params => (
+                    <TextField {...params} margin="dense" label="Item" fullWidth required />
+                  )}
+                  isOptionEqualToValue={(option, value) => option._id === value._id}
+                  sx={{ flex: 2 }}
+                />
+                <TextField 
+                  margin="dense" 
+                  label="Quantity" 
+                  value={it.quantity} 
+                  onChange={e => handleItemChange(idx, 'quantity', e.target.value)} 
+                  type="number" 
+                  fullWidth 
+                  required 
+                  sx={{ flex: 1 }} 
+                />
+                <Button 
+                  onClick={() => handleRemoveItem(idx)} 
+                  color="error" 
+                  sx={{ minWidth: 40, alignSelf: 'center' }}
+                >
+                  Remove
+                </Button>
+              </Box>
+              
+              {/* Inventory Display */}
+              {selectedItem && (form.from || form.to) && (
+                <Box sx={{ 
+                  display: 'flex', 
+                  gap: 3, 
+                  width: '100%', 
+                  mt: 1,
+                  p: 1.5,
+                  bgcolor: '#fff',
+                  borderRadius: '6px',
+                  border: '1px solid #e8e8e8'
+                }}>
+                  {form.from && (
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      gap: 1,
+                      color: '#1976d2'
+                    }}>
+                      <Typography variant="body2" fontWeight="600">
+                        From {form.from.charAt(0).toUpperCase() + form.from.slice(1)}:
+                      </Typography>
+                      <Typography variant="body2" sx={{ 
+                        bgcolor: '#e3f2fd',
+                        px: 1.5,
+                        py: 0.5,
+                        borderRadius: '12px',
+                        fontWeight: '600'
+                      }}>
+                        {fromQty} available
+                      </Typography>
+                    </Box>
+                  )}
+                  
+                  {form.to && (
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      gap: 1,
+                      color: '#388e3c'
+                    }}>
+                      <Typography variant="body2" fontWeight="600">
+                        To {form.to.charAt(0).toUpperCase() + form.to.slice(1)}:
+                      </Typography>
+                      <Typography variant="body2" sx={{ 
+                        bgcolor: '#e8f5e8',
+                        px: 1.5,
+                        py: 0.5,
+                        borderRadius: '12px',
+                        fontWeight: '600'
+                      }}>
+                        {toQty} current
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              )}
             </Box>
-          ))}
+            );
+          })}
           <Button onClick={handleAddItem} sx={{ mb: 2 }}>Add Another Item</Button>
           <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
             <TextField select margin="dense" label="Technician" name="technician" value={form.technician} onChange={handleChange} fullWidth sx={{ flex: 1 }}>

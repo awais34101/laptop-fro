@@ -22,7 +22,10 @@ export default function SalesStore2() {
   const [success, setSuccess] = useState('');
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
-  const { fetchInventory } = useInventory();
+  const { store2, fetchInventory } = useInventory();
+
+  // Helper function to get Store2 inventory for an item
+  const getStore2Qty = (itemId) => store2.find(s => s.item?._id === itemId)?.remaining_quantity ?? 0;
 
   const PAGE_SIZE = 1;
   const fetchSales = async (p = page) => {
@@ -89,7 +92,35 @@ export default function SalesStore2() {
 
   const handleSubmit = async () => {
     setSaving(true);
+    setError(''); // Clear previous errors
+    
     try {
+      // Validate inventory before submitting
+      const inventoryErrors = [];
+      
+      for (const row of rows) {
+        if (!row.item || !row.quantity || Number(row.quantity) <= 0) {
+          continue; // Skip validation for incomplete rows
+        }
+        
+        const requestedQty = Number(row.quantity);
+        const availableStock = getStore2Qty(row.item);
+        const itemName = items.find(i => i._id === row.item)?.name || 'Unknown Item';
+        
+        if (requestedQty > availableStock) {
+          inventoryErrors.push(
+            `${itemName}: You want to sell ${requestedQty} but only ${availableStock} available in Store2 inventory`
+          );
+        }
+      }
+      
+      // If there are inventory errors, show them and stop submission
+      if (inventoryErrors.length > 0) {
+        setError(inventoryErrors.join('\n'));
+        setSaving(false);
+        return;
+      }
+      
       const itemsPayload = rows.map(r => ({ item: r.item, quantity: Number(r.quantity), price: Number(r.price) }));
       if (editId) {
         await api.put(`/sales-store2/${editId}`, {
@@ -236,10 +267,45 @@ export default function SalesStore2() {
                 onChange={e => handleRowChange(idx, 'price', e.target.value)}
                 sx={{ width: 120 }}
               />
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                minWidth: 100, 
+                px: 2, 
+                py: 1, 
+                bgcolor: '#f0f4fa', 
+                borderRadius: 1, 
+                border: '1px solid #ddd' 
+              }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                  {(row.quantity && row.price) ? (Number(row.quantity) * Number(row.price)).toFixed(2) : '0.00'}
+                </Typography>
+              </Box>
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                minWidth: 80, 
+                px: 2, 
+                py: 1, 
+                bgcolor: '#e8f5e8', 
+                borderRadius: 1, 
+                border: '1px solid #c8e6c9' 
+              }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: '#2e7d32' }}>
+                  Stock: {row.item ? getStore2Qty(row.item) : '-'}
+                </Typography>
+              </Box>
               <Button onClick={() => handleRemoveRow(idx)} color="error" sx={{ minWidth: 40 }}>Remove</Button>
             </Box>
           ))}
           <Button onClick={handleAddRow} sx={{ mt: 1 }}>Add Item</Button>
+          
+          {/* Invoice Total Display */}
+          <Box sx={{ mt: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 2, border: '1px solid #ddd' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', textAlign: 'right' }}>
+              Invoice Total: {rows.reduce((sum, row) => sum + (Number(row.quantity) * Number(row.price) || 0), 0).toFixed(2)} AED
+            </Typography>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>

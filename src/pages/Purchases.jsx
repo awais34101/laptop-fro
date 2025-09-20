@@ -270,9 +270,44 @@ export default function Purchases() {
           </TableBody>
         </Table>
       </TableContainer>
-  <Dialog open={open} onClose={saving ? undefined : handleClose} maxWidth="md" fullWidth>
-  <DialogTitle>{editId ? 'Edit Purchase Invoice' : 'Add Purchase Invoice'}</DialogTitle>
-  <DialogContent onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); } }}>
+  <Dialog 
+    open={open} 
+    onClose={saving ? undefined : handleClose} 
+    maxWidth={false}
+    sx={{
+      '& .MuiDialog-container': {
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        paddingRight: '20px',
+      },
+      '& .MuiDialog-paper': {
+        width: '75%',
+        maxWidth: '1000px',
+        minWidth: '800px',
+        margin: '20px',
+        marginLeft: 'auto',
+        borderRadius: '12px',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+      }
+    }}
+  >
+  <DialogTitle sx={{ 
+    background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', 
+    color: 'white', 
+    fontWeight: 700,
+    fontSize: '1.2rem',
+    textAlign: 'center'
+  }}>
+    {editId ? 'Edit Purchase Invoice' : 'Add Purchase Invoice'}
+  </DialogTitle>
+  <DialogContent 
+    onKeyDown={e => { 
+      if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') { 
+        e.preventDefault(); 
+      } 
+    }} 
+    sx={{ pt: 3 }}
+  >
           {error && <Alert severity="error">{error}</Alert>}
           {success && <Alert severity="success">{success}</Alert>}
           <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
@@ -288,7 +323,6 @@ export default function Purchases() {
                   <TableCell>Price</TableCell>
                   <TableCell>Total</TableCell>
                   <TableCell>Warehouse Stock</TableCell>
-                  <TableCell>Store Stock</TableCell>
                   <TableCell></TableCell>
                 </TableRow>
               </TableHead>
@@ -297,7 +331,7 @@ export default function Purchases() {
                   <TableRow key={idx}>
                     <TableCell>
                       {/* Use Autocomplete for item selection */}
-                      <Box sx={{ minWidth: 200 }}>
+                      <Box sx={{ minWidth: 250, width: 280 }}>
                         {/* Autocomplete import moved to top of file */}
                         <Autocomplete
                           options={items}
@@ -314,10 +348,14 @@ export default function Purchases() {
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <TextField type="number" value={row.quantity} onChange={e => handleRowChange(idx, 'quantity', e.target.value)} fullWidth required disabled={saving} />
+                      <Box sx={{ width: 100 }}>
+                        <TextField type="number" value={row.quantity} onChange={e => handleRowChange(idx, 'quantity', e.target.value)} label="Qty" required disabled={saving} />
+                      </Box>
                     </TableCell>
                     <TableCell>
-                      <TextField type="number" value={row.price} onChange={e => handleRowChange(idx, 'price', e.target.value)} fullWidth required disabled={saving} />
+                      <Box sx={{ width: 140 }}>
+                        <TextField type="number" value={row.price} onChange={e => handleRowChange(idx, 'price', e.target.value)} label="Price" required disabled={saving} />
+                      </Box>
                     </TableCell>
                     <TableCell>
                       {(row.quantity && row.price) ? (Number(row.quantity) * Number(row.price)).toFixed(2) : ''}
@@ -326,17 +364,26 @@ export default function Purchases() {
                       {row.item ? getWarehouseQty(row.item) : ''}
                     </TableCell>
                     <TableCell>
-                      {row.item ? getStoreQty(row.item) : ''}
-                    </TableCell>
-                    <TableCell>
-                      <Button onClick={() => handleRemoveRow(idx)} color="error" disabled={rows.length === 1 || saving}>Remove</Button>
+                      <Button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleRemoveRow(idx);
+                        }} 
+                        color="error" 
+                        disabled={rows.length === 1 || saving}
+                        variant="outlined"
+                        size="small"
+                      >
+                        Remove
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
                 {/* Invoice total row */}
                 <TableRow>
                   <TableCell colSpan={3} align="right"><b>Invoice Total</b></TableCell>
-                  <TableCell colSpan={4} align="left">
+                  <TableCell colSpan={3} align="left">
                     <b>{rows.reduce((sum, i) => sum + (Number(i.quantity) * Number(i.price) || 0), 0).toFixed(2)}</b>
                   </TableCell>
                 </TableRow>

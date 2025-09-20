@@ -22,7 +22,10 @@ export default function Sales() {
   const [success, setSuccess] = useState('');
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
-  const { fetchInventory } = useInventory();
+  const { store, fetchInventory } = useInventory();
+
+  // Helper function to get Store inventory for an item
+  const getStoreQty = (itemId) => store.find(s => s.item?._id === itemId)?.remaining_quantity ?? 0;
 
   const PAGE_SIZE = 1;
   const fetchSales = async (p = page) => {
@@ -90,7 +93,35 @@ export default function Sales() {
 
   const handleSubmit = async () => {
     setSaving(true);
+    setError(''); // Clear previous errors
+    
     try {
+      // Validate inventory before submitting
+      const inventoryErrors = [];
+      
+      for (const row of rows) {
+        if (!row.item || !row.quantity || Number(row.quantity) <= 0) {
+          continue; // Skip validation for incomplete rows
+        }
+        
+        const requestedQty = Number(row.quantity);
+        const availableStock = getStoreQty(row.item);
+        const itemName = items.find(i => i._id === row.item)?.name || 'Unknown Item';
+        
+        if (requestedQty > availableStock) {
+          inventoryErrors.push(
+            `${itemName}: You want to sell ${requestedQty} but only ${availableStock} available in Store inventory`
+          );
+        }
+      }
+      
+      // If there are inventory errors, show them and stop submission
+      if (inventoryErrors.length > 0) {
+        setError(inventoryErrors.join('\n'));
+        setSaving(false);
+        return;
+      }
+      
       const itemsPayload = rows.map(r => ({ item: r.item, quantity: Number(r.quantity), price: Number(r.price) }));
       if (editId) {
         await api.put(`/sales/${editId}`, {
@@ -222,60 +253,69 @@ export default function Sales() {
             </TextField>
             <TextField label="Invoice Number" value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} fullWidth required />
           </Box>
-          <TableContainer component={Paper} sx={{ mb: 2 }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Item</TableCell>
-                  <TableCell>Quantity</TableCell>
-                  <TableCell>Price</TableCell>
-                  <TableCell>Total</TableCell>
-                  <TableCell></TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((row, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell>
-                      {/* Wider item selector */}
-                      <Box sx={{ minWidth: 300, width: 380, maxWidth: '100%' }}>
-                        <Autocomplete
-                          options={items}
-                          getOptionLabel={option => option.name || ''}
-                          value={items.find(i => i._id === row.item) || null}
-                          onChange={(_, newValue) => handleRowChange(idx, 'item', newValue ? newValue._id : '')}
-                          renderInput={params => (
-                            <TextField {...params} label="Item" required />
-                          )}
-                          isOptionEqualToValue={(option, value) => option._id === value._id}
-                        />
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ width: 140 }}>
-                      <TextField type="number" value={row.quantity} onChange={e => handleRowChange(idx, 'quantity', e.target.value)} required sx={{ width: 120 }} />
-                    </TableCell>
-                    <TableCell sx={{ width: 160 }}>
-                      <TextField type="number" value={row.price} onChange={e => handleRowChange(idx, 'price', e.target.value)} required sx={{ width: 120 }} />
-                    </TableCell>
-                    <TableCell>
-                      {(row.quantity && row.price) ? (Number(row.quantity) * Number(row.price)).toFixed(2) : ''}
-                    </TableCell>
-                    <TableCell>
-                      <Button onClick={() => handleRemoveRow(idx)} color="error" disabled={rows.length === 1}>Remove</Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {/* Invoice total row */}
-                <TableRow>
-                  <TableCell colSpan={3} align="right"><b>Invoice Total</b></TableCell>
-                  <TableCell align="left" colSpan={2}>
-                    <b>{rows.reduce((sum, i) => sum + (Number(i.quantity) * Number(i.price) || 0), 0).toFixed(2)}</b>
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <Button onClick={handleAddRow} color="primary">Add Item</Button>
+          {rows.map((row, idx) => (
+            <Box key={idx} sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              <Autocomplete
+                options={items}
+                getOptionLabel={option => option.name || ''}
+                value={items.find(i => i._id === row.item) || null}
+                onChange={(_, v) => handleRowChange(idx, 'item', v?._id || '')}
+                renderInput={params => <TextField {...params} label="Item" fullWidth />}
+                sx={{ width: 300 }}
+              />
+              <TextField
+                label="Quantity"
+                type="number"
+                value={row.quantity}
+                onChange={e => handleRowChange(idx, 'quantity', e.target.value)}
+                sx={{ width: 120 }}
+              />
+              <TextField
+                label="Price"
+                type="number"
+                value={row.price}
+                onChange={e => handleRowChange(idx, 'price', e.target.value)}
+                sx={{ width: 120 }}
+              />
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                minWidth: 100, 
+                px: 2, 
+                py: 1, 
+                bgcolor: '#f0f4fa', 
+                borderRadius: 1, 
+                border: '1px solid #ddd' 
+              }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                  {(row.quantity && row.price) ? (Number(row.quantity) * Number(row.price)).toFixed(2) : '0.00'}
+                </Typography>
+              </Box>
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                minWidth: 80, 
+                px: 2, 
+                py: 1, 
+                bgcolor: '#e8f5e8', 
+                borderRadius: 1, 
+                border: '1px solid #c8e6c9' 
+              }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: '#2e7d32' }}>
+                  Stock: {row.item ? getStoreQty(row.item) : '-'}
+                </Typography>
+              </Box>
+              <Button onClick={() => handleRemoveRow(idx)} color="error" sx={{ minWidth: 40 }}>Remove</Button>
+            </Box>
+          ))}
+          <Button onClick={handleAddRow} sx={{ mt: 1 }}>Add Item</Button>
+          
+          {/* Invoice Total Display */}
+          <Box sx={{ mt: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 2, border: '1px solid #ddd' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', textAlign: 'right' }}>
+              Invoice Total: {rows.reduce((sum, row) => sum + (Number(row.quantity) * Number(row.price) || 0), 0).toFixed(2)} AED
+            </Typography>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>

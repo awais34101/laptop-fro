@@ -32,10 +32,10 @@ export default function Store() {
   );
   // Get slow moving item ids for highlighting
   const slowIds = new Set(slowMoving.map(s => s.item?._id));
-  // Sort: slow moving items first
+  // Sort: slow moving items first, then alphabetically within each group
   const sortedInventory = [
-    ...filteredInventory.filter(s => slowIds.has(s.item?._id)),
-    ...filteredInventory.filter(s => !slowIds.has(s.item?._id)),
+    ...filteredInventory.filter(s => slowIds.has(s.item?._id)).sort((a, b) => (a.item?.name || '').localeCompare(b.item?.name || '')),
+    ...filteredInventory.filter(s => !slowIds.has(s.item?._id)).sort((a, b) => (a.item?.name || '').localeCompare(b.item?.name || '')),
   ];
   return (
     <Box p={2}>

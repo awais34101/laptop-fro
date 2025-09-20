@@ -25,7 +25,7 @@ export default function Warehouse() {
   }, []);
   const filteredStock = stock.filter(s =>
     s.item?.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  ).sort((a, b) => (a.item?.name || '').localeCompare(b.item?.name || ''));
   return (
     <Box p={{ xs: 1, md: 3 }} sx={{ background: 'linear-gradient(135deg, #f4f6f8 60%, #e3eafc 100%)', minHeight: '100vh' }}>
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 900, letterSpacing: 1, color: 'primary.main', mb: 3 }}>
