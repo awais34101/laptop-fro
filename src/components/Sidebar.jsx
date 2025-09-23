@@ -10,6 +10,7 @@ import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import PeopleIcon from '@mui/icons-material/People';
 import SettingsIcon from '@mui/icons-material/Settings';
 import DescriptionIcon from '@mui/icons-material/Description';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 import { Link, useLocation } from 'react-router-dom';
 
 const drawerWidth = 220;
@@ -28,7 +29,6 @@ const navSections = [
     label: 'Purchasing',
     items: [
       { text: 'Purchases', icon: <ShoppingCartIcon />, path: '/purchases', perm: { section: 'purchases', action: 'view' } },
-  // { text: 'Returns', icon: <AssignmentReturnIcon />, path: '/returns', perm: { section: 'purchases', action: 'view' } },
       { text: 'Warehouse', icon: <StoreIcon />, path: '/warehouse', perm: { section: 'warehouse', action: 'view' } },
       { text: 'Transfers', icon: <CompareArrowsIcon />, path: '/transfers', perm: { section: 'transfers', action: 'view' } },
     ]
@@ -37,18 +37,18 @@ const navSections = [
     label: 'Store 1',
     items: [
       { text: 'Store', icon: <StoreIcon />, path: '/store', perm: { section: 'store', action: 'view' } },
-      { text: 'Returns Store', icon: <AssignmentReturnIcon />, path: '/returns-store', perm: { section: 'purchases', action: 'view' } },
+      { text: 'Returns Store', icon: <AssignmentReturnIcon />, path: '/returns-store', perm: { section: 'returnsStore', action: 'view' } },
       { text: 'Sales', icon: <PointOfSaleIcon />, path: '/sales', perm: { section: 'sales', action: 'view' } },
-  { text: 'Closing', icon: <PointOfSaleIcon />, path: '/closing/store1', perm: { section: 'sales', action: 'view' } },
+      { text: 'Closing', icon: <PointOfSaleIcon />, path: '/closing/store1', perm: { section: 'closingStore1', action: 'view' } },
     ]
   },
   {
     label: 'Store 2',
     items: [
       { text: 'Store2', icon: <StoreIcon />, path: '/store2', perm: { section: 'store2', action: 'view' } },
-      { text: 'Returns Store2', icon: <AssignmentReturnIcon />, path: '/returns-store2', perm: { section: 'purchases', action: 'view' } },
-      { text: 'Sales Store2', icon: <PointOfSaleIcon />, path: '/sales-store2', perm: { section: 'sales', action: 'view' } },
-  { text: 'Closing', icon: <PointOfSaleIcon />, path: '/closing/store2', perm: { section: 'sales', action: 'view' } },
+      { text: 'Returns Store2', icon: <AssignmentReturnIcon />, path: '/returns-store2', perm: { section: 'returnsStore2', action: 'view' } },
+      { text: 'Sales Store2', icon: <PointOfSaleIcon />, path: '/sales-store2', perm: { section: 'salesStore2', action: 'view' } },
+      { text: 'Closing', icon: <PointOfSaleIcon />, path: '/closing/store2', perm: { section: 'closingStore2', action: 'view' } },
     ]
   },
   {
@@ -56,6 +56,12 @@ const navSections = [
     items: [
       { text: 'Parts Inventory', icon: <InventoryIcon />, path: '/parts-inventory', perm: { section: 'partsInventory', action: 'view' } },
       { text: 'Parts Requests', icon: <ShoppingCartIcon />, path: '/parts-requests', perm: { section: 'parts', action: 'view' } },
+    ]
+  },
+  {
+    label: 'Sheets',
+    items: [
+      { text: 'Purchase Sheets', icon: <AssignmentIcon />, path: '/sheets', perm: { section: 'purchaseSheets', action: 'view' } },
     ]
   },
   {

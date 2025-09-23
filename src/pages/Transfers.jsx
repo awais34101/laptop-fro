@@ -20,6 +20,8 @@ import DialogActions from '@mui/material/DialogActions';
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
 import api from '../services/api';
+import { getPurchaseSheets } from '../services/sheetsApi';
+import { createSheetTransfer } from '../services/sheetsApi';
 import { hasPerm } from '../utils/permissions';
 
 export default function Transfers() {
@@ -44,6 +46,8 @@ export default function Transfers() {
   const [technicians, setTechnicians] = useState([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ from: 'warehouse', to: 'store', items: [{ item: '', quantity: '' }], technician: '', workType: '' });
+  const [sheetOptions, setSheetOptions] = useState([]);
+  const [selectedSheetId, setSelectedSheetId] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -107,6 +111,8 @@ export default function Transfers() {
 
   const handleOpen = () => {
     setForm({ from: 'warehouse', to: 'store', items: [{ item: '', quantity: '' }], technician: '', workType: '' });
+    setSelectedSheetId('');
+    setSheetOptions([]);
     setError('');
     setSuccess('');
     setOpen(true);
@@ -128,19 +134,34 @@ export default function Transfers() {
   const handleSubmit = async () => {
     try {
       setSubmitting(true);
-      const payload = {
-        from: form.from,
-        to: form.to,
-        items: form.items.map(it => ({ item: it.item, quantity: Number(it.quantity) })),
-        technician: form.technician,
-        workType: form.workType,
-      };
-      if (form._id) {
-        await api.put(`/transfers/${form._id}`, payload);
-        setSuccess('Transfer updated');
+      // If a sheet is selected, use the sheet-specific transfer flow
+      if (selectedSheetId) {
+        if (form.to === 'warehouse') {
+          throw new Error('For sheet transfers, destination cannot be Warehouse');
+        }
+        const payload = {
+          destination: form.to,
+          items: form.items
+            .filter(it => Number(it.quantity) > 0)
+            .map(it => ({ item: it.item, quantity: Number(it.quantity) })),
+        };
+        await createSheetTransfer(selectedSheetId, payload);
+        setSuccess('Sheet transfer completed');
       } else {
-        await api.post('/transfers', payload);
-        setSuccess('Transfer completed');
+        const payload = {
+          from: form.from,
+          to: form.to,
+          items: form.items.map(it => ({ item: it.item, quantity: Number(it.quantity) })),
+          technician: form.technician,
+          workType: form.workType,
+        };
+        if (form._id) {
+          await api.put(`/transfers/${form._id}`, payload);
+          setSuccess('Transfer updated');
+        } else {
+          await api.post('/transfers', payload);
+          setSuccess('Transfer completed');
+        }
       }
       // Refresh list and inventory, then close dialog
       fetchTransfers();
@@ -150,6 +171,8 @@ export default function Transfers() {
       }, 200);
       // Reset form and close
       setForm({ from: 'warehouse', to: 'store', items: [{ item: '', quantity: '' }], technician: '', workType: '' });
+      setSelectedSheetId('');
+      setSheetOptions([]);
       setOpen(false);
     } catch (err) {
       setError(err.response?.data?.error || 'Error');
@@ -170,6 +193,41 @@ export default function Transfers() {
     setError('');
     setSuccess('');
     setOpen(true);
+  };
+
+  // Load sheets when technician changes
+  useEffect(() => {
+    const loadSheets = async () => {
+      if (!form.technician) {
+        setSheetOptions([]);
+        setSelectedSheetId('');
+        return;
+      }
+      try {
+        const { data } = await getPurchaseSheets({ technician: form.technician, limit: 100, page: 1 });
+        setSheetOptions(Array.isArray(data) ? data : []);
+      } catch (e) {
+        setSheetOptions([]);
+      }
+    };
+    loadSheets();
+  }, [form.technician]);
+
+  // When selecting a sheet, auto-fill items from the sheet with remaining quantities
+  const handleSelectSheet = (value) => {
+    setSelectedSheetId(value);
+    const sheet = sheetOptions.find(s => s._id === value);
+    if (!sheet) {
+      return;
+    }
+    const rows = (sheet.items || []).map(it => {
+      const pr = (sheet.progress || []).find(p => (p.item?._id || p.item) === (it.item?._id || it.item));
+      const purchased = it.quantity || 0;
+      const transferred = pr?.transferred || 0;
+      const remaining = Math.max(0, purchased - transferred);
+      return { item: it.item?._id || it.item, quantity: remaining };
+    }).filter(r => r.quantity > 0);
+    setForm(f => ({ ...f, from: 'warehouse', to: f.to === 'warehouse' ? 'store' : f.to, items: rows.length ? rows : [{ item: '', quantity: '' }] }));
   };
 
   return (
@@ -276,6 +334,26 @@ export default function Transfers() {
               <MenuItem value="warehouse">Warehouse</MenuItem>
               <MenuItem value="store">Store</MenuItem>
               <MenuItem value="store2">Store2</MenuItem>
+            </TextField>
+          </Box>
+          {/* Sheet selection appears when technician chosen */}
+          <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+            <TextField
+              select
+              margin="dense"
+              label="Sheet (optional, linked to technician)"
+              value={selectedSheetId}
+              onChange={(e) => handleSelectSheet(e.target.value)}
+              fullWidth
+              disabled={!form.technician}
+              helperText={form.technician ? 'Selecting a sheet will track this transfer against that sheet and pre-fill remaining quantities.' : 'Select a technician to show assigned sheets'}
+            >
+              <MenuItem value="">No Sheet (regular transfer)</MenuItem>
+              {sheetOptions.map(s => (
+                <MenuItem key={s._id} value={s._id}>
+                  {s.invoice_number} • {new Date(s.date).toLocaleDateString()} {s.assignment?.status ? `• ${s.assignment.status}` : ''}
+                </MenuItem>
+              ))}
             </TextField>
           </Box>
           {/* Technician stats removed from transfer dialog as requested */}

@@ -25,16 +25,40 @@ export default function Dashboard() {
   const { warehouse, store, store2, items, fetchInventory, loading } = useInventory();
 
   useEffect(() => {
-    api.get('/alerts/slow-moving').then(r => setSlowMoving({ store: r.data.store || [], store2: r.data.store2 || [] }));
-    api.get('/alerts/low-stock').then(r => setLowStock(r.data));
+    // Handle API calls with graceful error handling for permission issues
+    api.get('/alerts/slow-moving')
+      .then(r => setSlowMoving({ store: r.data.store || [], store2: r.data.store2 || [] }))
+      .catch(e => {
+        if (e.response?.status === 403) {
+          console.log('User does not have permission to view slow moving alerts');
+          setSlowMoving({ store: [], store2: [] });
+        }
+      });
+    
+    api.get('/alerts/low-stock')
+      .then(r => setLowStock(r.data))
+      .catch(e => {
+        if (e.response?.status === 403) {
+          console.log('User does not have permission to view low stock alerts');
+          setLowStock({ warehouse: [], store: [], store2: [] });
+        }
+      });
+    
     fetchSalesTotal();
-  fetchStore2SalesTotal();
-  fetchExpensesTotals();
+    fetchStore2SalesTotal();
+    fetchExpensesTotals();
+    
     // Technician stats moved to Technicians page
     // Listen for inventoryChanged event to refresh inventory
     const handler = () => {
       fetchInventory();
-      api.get('/alerts/low-stock').then(r => setLowStock(r.data));
+      api.get('/alerts/low-stock')
+        .then(r => setLowStock(r.data))
+        .catch(e => {
+          if (e.response?.status === 403) {
+            console.log('User does not have permission to view low stock alerts');
+          }
+        });
     };
     window.addEventListener('inventoryChanged', handler);
     return () => window.removeEventListener('inventoryChanged', handler);
@@ -42,13 +66,27 @@ export default function Dashboard() {
 
 
   const fetchSalesTotal = async (from = '', to = '') => {
-    const total = await fetchSalesTotalByDate(from, to);
-    setTotalSales(total);
+    try {
+      const total = await fetchSalesTotalByDate(from, to);
+      setTotalSales(total);
+    } catch (e) {
+      if (e.response?.status === 403) {
+        console.log('User does not have permission to view sales data');
+        setTotalSales(0);
+      }
+    }
   };
 
   const fetchStore2SalesTotal = async (from = '', to = '') => {
-    const total = await fetchStore2SalesTotalByDate(from, to);
-    setStore2Sales(total);
+    try {
+      const total = await fetchStore2SalesTotalByDate(from, to);
+      setStore2Sales(total);
+    } catch (e) {
+      if (e.response?.status === 403) {
+        console.log('User does not have permission to view sales data');
+        setStore2Sales(0);
+      }
+    }
   };
 
   const handleSalesFilter = () => {

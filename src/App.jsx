@@ -26,6 +26,7 @@ import ChangePassword from './pages/ChangePassword';
 import UsersList from './pages/UsersList';
 import Documents from './pages/Documents';
 import Time from './pages/Time';
+import Sheets from './pages/Sheets';
 import Sidebar from './components/Sidebar';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Box, Toolbar, CssBaseline } from '@mui/material';
@@ -108,6 +109,14 @@ function App() {
             />
             <Route path="/parts-inventory" element={<ProtectedRoute><PartsInventory /></ProtectedRoute>} />
             <Route path="/parts-requests" element={<ProtectedRoute><PartsRequests /></ProtectedRoute>} />
+            <Route 
+              path="/sheets" 
+              element={
+                <ProtectedRoute permission={{ section: 'purchases', action: 'view' }}>
+                  <Sheets />
+                </ProtectedRoute>
+              } 
+            />
             <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
             <Route path="/time" element={<ProtectedRoute><Time /></ProtectedRoute>} />
             <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />

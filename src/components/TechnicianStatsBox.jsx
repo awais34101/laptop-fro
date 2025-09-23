@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Typography, TextField, Button, Alert } from '@mui/material';
 import { fetchTechnicianStats } from '../services/technicianStatsApi';
-import { fetchMyStats } from '../services/technicianSelfApi';
+import api from '../services/api';
 
 export default function TechnicianStatsBox({ initialFrom = '', initialTo = '', technicianId = null }) {
   const [from, setFrom] = useState(initialFrom);
@@ -13,17 +13,26 @@ export default function TechnicianStatsBox({ initialFrom = '', initialTo = '', t
 
   const handleTechStatsFilter = async () => {
     setLoading(true);
-    if (user.role === 'technician') {
-      // For technician, use self endpoint and pass date filters
-      const stats = await fetchMyStats(from, to);
-      setTechStats(stats ? [stats] : []);
-    } else {
-      let stats = await fetchTechnicianStats(from, to);
-      if (technicianId) {
-        // Ensure filtering by technicianId matches backend expectations
-        stats = stats.filter(t => t._id === technicianId);
+    try {
+      if (user.role === 'technician') {
+        // For technician, use self endpoint with date filters
+        let url = '/technician-self/stats';
+        if (from || to) {
+          url += `?from=${from}&to=${to}`;
+        }
+        const response = await api.get(url);
+        setTechStats(response.data ? [response.data] : []);
+      } else {
+        let stats = await fetchTechnicianStats(from, to);
+        if (technicianId) {
+          // Ensure filtering by technicianId matches backend expectations
+          stats = stats.filter(t => t._id === technicianId);
+        }
+        setTechStats(stats);
       }
-      setTechStats(stats);
+    } catch (error) {
+      console.error('Error fetching technician stats:', error);
+      setTechStats([]);
     }
     setLoading(false);
   };

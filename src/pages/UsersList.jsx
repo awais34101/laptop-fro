@@ -1,6 +1,5 @@
 
 import React, { useEffect, useState } from 'react';
-// import { fetchTechnicians } from '../services/technicianApi';
 import { Box, Button, TextField, Typography, Alert, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, Switch, FormControlLabel, FormGroup, Checkbox } from '@mui/material';
 import api from '../services/api';
 
@@ -13,17 +12,29 @@ export default function UsersList() {
   const [editId, setEditId] = useState(null);
   const [technicians, setTechnicians] = useState([]);
 
-  const token = localStorage.getItem('token');
-
   const fetchUsers = () => {
-    api.get('/users/list', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => setUsers(r.data))
-      .catch(() => setUsers([]));
+    api.get('/users/list')
+      .then(r => {
+        // Handle both old format (direct array) and new format (object with users array)
+        const userData = r.data;
+        if (Array.isArray(userData)) {
+          setUsers(userData);
+        } else if (userData.users && Array.isArray(userData.users)) {
+          setUsers(userData.users);
+        } else {
+          console.error('Unexpected users data format:', userData);
+          setUsers([]);
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching users:', err);
+        setUsers([]);
+      });
   };
 
   useEffect(() => {
     fetchUsers();
-    api.get('/technicians', { headers: { Authorization: `Bearer ${token}` } })
+    api.get('/technicians')
       .then(r => setTechnicians(r.data))
       .catch(() => setTechnicians([]));
   }, []);
@@ -72,24 +83,38 @@ export default function UsersList() {
   };
 
   // Permissions UI logic (labelled + ordered to match sidebar)
+  // Some modules (e.g., Returns, Purchase Sheets, Closing) use shared permission keys.
+  // We expose them as separate rows (aliases) but map to the correct perm key via `permKey`.
   const sections = [
     { key: 'dashboard', label: 'Dashboard', actions: ['view'] },
-    { key: 'items', label: 'Items', actions: ['view', 'edit', 'delete'] },
-    { key: 'purchases', label: 'Purchases', actions: ['view', 'edit', 'delete'] },
-    { key: 'warehouse', label: 'Warehouse', actions: ['view', 'edit', 'delete'] },
-    { key: 'transfers', label: 'Transfers', actions: ['view', 'edit', 'delete'] },
-    { key: 'store', label: 'Store', actions: ['view', 'edit', 'delete'] },
-    { key: 'store2', label: 'Store2', actions: ['view', 'edit', 'delete'] },
-    { key: 'sales', label: 'Sales', actions: ['view', 'edit', 'delete'] },
-    { key: 'partsInventory', label: 'Parts Inventory', actions: ['view', 'edit', 'delete'] },
-    { key: 'parts', label: 'Parts Requests', actions: ['view', 'edit', 'delete'] },
-    { key: 'documents', label: 'Documents', actions: ['view', 'edit', 'delete'] },
-    { key: 'expenses', label: 'Expenses', actions: ['view', 'edit', 'delete'] },
-    { key: 'customers', label: 'Customers', actions: ['view', 'edit', 'delete'] },
-    { key: 'technicians', label: 'Technicians', actions: ['view', 'edit', 'delete'] },
+    { key: 'items', label: 'Items', actions: ['view', 'add', 'edit', 'delete'] },
+    // Purchasing group - separate sections
+    { key: 'purchases', label: 'Purchases', actions: ['view', 'add', 'edit', 'delete'] },
+    { key: 'purchaseSheets', label: 'Purchase Sheets', actions: ['view', 'add', 'edit', 'delete'] },
+    { key: 'returnsStore', label: 'Returns Store', actions: ['view', 'add', 'edit', 'delete'] },
+    { key: 'returnsStore2', label: 'Returns Store2', actions: ['view', 'add', 'edit', 'delete'] },
+    { key: 'warehouse', label: 'Warehouse', actions: ['view', 'add', 'edit', 'delete'] },
+    { key: 'transfers', label: 'Transfers', actions: ['view', 'add', 'edit', 'delete'] },
+    // Stores and sales - separate sections
+    { key: 'store', label: 'Store', actions: ['view', 'add', 'edit', 'delete'] },
+    { key: 'store2', label: 'Store2', actions: ['view', 'add', 'edit', 'delete'] },
+    { key: 'sales', label: 'Sales', actions: ['view', 'add', 'edit', 'delete'] },
+    { key: 'salesStore2', label: 'Sales Store2', actions: ['view', 'add', 'edit', 'delete'] },
+    { key: 'closingStore1', label: 'Closing (Store 1)', actions: ['view', 'add', 'edit', 'delete'] },
+    { key: 'closingStore2', label: 'Closing (Store 2)', actions: ['view', 'add', 'edit', 'delete'] },
+    // Parts - separate sections
+    { key: 'partsInventory', label: 'Parts Inventory', actions: ['view', 'add', 'edit', 'delete'] },
+    { key: 'parts', label: 'Parts Requests', actions: ['view', 'add', 'edit', 'delete'] },
+    // Other sections
+    { key: 'documents', label: 'Documents', actions: ['view', 'add', 'edit', 'delete'] },
+    { key: 'expenses', label: 'Expenses', actions: ['view', 'add', 'edit', 'delete'] },
+    { key: 'customers', label: 'Customers', actions: ['view', 'add', 'edit', 'delete'] },
+    { key: 'technicians', label: 'Technicians', actions: ['view', 'add', 'edit', 'delete'] },
+    { key: 'time', label: 'Time', actions: ['view', 'add', 'edit', 'delete'] },
+    { key: 'assignments', label: 'Assignments', actions: ['view', 'add', 'edit', 'delete'] },
+    { key: 'alerts', label: 'Alerts', actions: ['view', 'add', 'edit', 'delete'] },
     { key: 'settings', label: 'Settings', actions: ['view', 'edit'] },
-    { key: 'users', label: 'Users (Admin UI)', actions: ['view', 'edit', 'delete'] },
-    { key: 'time', label: 'Time', actions: ['view', 'edit', 'delete'] },
+    { key: 'users', label: 'Users (Admin UI)', actions: ['view', 'add', 'edit', 'delete'] },
   ];
 
   const handlePermissionChange = (section, action) => e => {
@@ -119,13 +144,13 @@ export default function UsersList() {
         technicianId: form.role === 'technician' ? form.technicianId : null
       };
       if (editId) {
-        await api.put(`/users/${editId}/edit`, userPayload, { headers: { Authorization: `Bearer ${token}` } });
+        await api.put(`/users/${editId}/edit`, userPayload);
         setSuccess('User updated');
         // If editing your own user, fetch latest user data and update localStorage
         const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
         if (currentUser && currentUser.email === form.email) {
           // Fetch latest user data from backend
-          const updatedUsers = await api.get('/users/list', { headers: { Authorization: `Bearer ${token}` } });
+          const updatedUsers = await api.get('/users/list');
           const updatedUser = updatedUsers.data.find(u => u.email === form.email);
           if (updatedUser) {
             localStorage.setItem('user', JSON.stringify(updatedUser));
@@ -133,7 +158,7 @@ export default function UsersList() {
           }
         }
       } else {
-        await api.post('/users/add-staff', { ...form, ...userPayload }, { headers: { Authorization: `Bearer ${token}` } });
+        await api.post('/users/add-staff', { ...form, ...userPayload });
         setSuccess('User added');
       }
       fetchUsers();
@@ -145,21 +170,23 @@ export default function UsersList() {
 
   const handleDeactivate = async (id) => {
     if (!window.confirm('Deactivate this user?')) return;
-    await api.delete(`/users/${id}/delete`, { headers: { Authorization: `Bearer ${token}` } });
+    await api.delete(`/users/${id}/delete`);
     fetchUsers();
   };
 
 
   const handlePermanentDelete = async (id) => {
     if (!window.confirm('Permanently delete this user? This cannot be undone.')) return;
-    await api.delete(`/users/${id}/permanent`, { headers: { Authorization: `Bearer ${token}` } });
+    await api.delete(`/users/${id}/permanent`);
     fetchUsers();
   };
 
   return (
     <Box p={2}>
       <Typography variant="h5" mb={2}>Staff Management</Typography>
-      <Button variant="contained" onClick={() => handleOpen()}>Add Staff</Button>
+      {JSON.parse(localStorage.getItem('user') || '{}').permissions?.users?.add && (
+        <Button variant="contained" onClick={() => handleOpen()}>Add Staff</Button>
+      )}
       <TableContainer component={Paper} sx={{ mt: 2 }}>
         <Table>
           <TableHead>
