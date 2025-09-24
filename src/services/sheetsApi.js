@@ -7,7 +7,7 @@ export const getPurchaseSheets = async (params = {}) => {
 };
 
 export const getTechnicians = async () => {
-  return (await api.get('/technicians')).data;
+  return (await api.get('/purchases/technicians')).data;
 };
 
 export const assignSheet = async (purchaseId, assignment) => {
