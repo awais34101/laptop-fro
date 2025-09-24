@@ -1,12 +1,105 @@
 import React, { useState } from 'react';
-import { Box, Button, TextField, Typography, Alert, Paper } from '@mui/material';
+import { 
+  Box, 
+  Button, 
+  TextField, 
+  Typography, 
+  Alert, 
+  Paper, 
+  Container,
+  Avatar,
+  Fade,
+  CircularProgress,
+  InputAdornment,
+  IconButton,
+  Divider
+} from '@mui/material';
+import { 
+  LaptopMac as LaptopIcon,
+  Email as EmailIcon,
+  Lock as LockIcon,
+  Visibility,
+  VisibilityOff,
+  Business as BusinessIcon
+} from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
 import api from '../services/api';
+
+const StyledPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(4),
+  borderRadius: theme.spacing(2),
+  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+  backdropFilter: 'blur(10px)',
+  background: 'rgba(255, 255, 255, 0.9)',
+  minWidth: 420,
+  position: 'relative',
+  overflow: 'hidden',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 4,
+    background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+  }
+}));
+
+const BackgroundBox = styled(Box)({
+  minHeight: '100vh',
+  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  position: 'relative',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff0a' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+  }
+});
+
+const StyledTextField = styled(TextField)(({ theme }) => ({
+  '& .MuiOutlinedInput-root': {
+    borderRadius: theme.spacing(1.5),
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    '&:hover': {
+      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    },
+    '&.Mui-focused': {
+      backgroundColor: 'white',
+    }
+  }
+}));
+
+const LoginButton = styled(Button)(({ theme }) => ({
+  borderRadius: theme.spacing(1.5),
+  padding: theme.spacing(1.5),
+  fontSize: '1.1rem',
+  fontWeight: 600,
+  background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)',
+  boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
+  '&:hover': {
+    background: 'linear-gradient(45deg, #5a6fd8 30%, #6a4190 90%)',
+    boxShadow: '0 6px 25px rgba(102, 126, 234, 0.4)',
+    transform: 'translateY(-1px)',
+  },
+  '&:active': {
+    transform: 'translateY(0px)',
+  },
+  transition: 'all 0.2s ease-in-out',
+}));
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,17 +142,151 @@ export default function Login({ onLogin }) {
     }
   };
 
+  const handleTogglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
-    <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh" bgcolor="#f5f5f5">
-      <Paper sx={{ p: 4, minWidth: 320 }}>
-        <Typography variant="h5" mb={2}>Login</Typography>
-        {error && <Alert severity="error">{error}</Alert>}
-        <TextField label="Email or Username" value={email} onChange={e => setEmail(e.target.value)} fullWidth margin="normal" required />
-        <TextField label="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} fullWidth margin="normal" required />
-        <Button onClick={handleSubmit} variant="contained" color="primary" fullWidth disabled={loading} sx={{ mt: 2 }}>
-          {loading ? 'Logging in...' : 'Login'}
-        </Button>
-      </Paper>
-    </Box>
+    <BackgroundBox>
+      <Container maxWidth="sm">
+        <Fade in timeout={800}>
+          <StyledPaper elevation={0}>
+            <Box display="flex" flexDirection="column" alignItems="center" mb={3}>
+              <Avatar 
+                sx={{ 
+                  mb: 2, 
+                  bgcolor: 'transparent',
+                  background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)',
+                  width: 64, 
+                  height: 64,
+                  boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)'
+                }}
+              >
+                <LaptopIcon sx={{ fontSize: 32 }} />
+              </Avatar>
+              <Typography 
+                variant="h4" 
+                component="h1" 
+                gutterBottom
+                sx={{ 
+                  fontWeight: 700,
+                  background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  textAlign: 'center'
+                }}
+              >
+                UAE Laptop CRM
+              </Typography>
+              <Box display="flex" alignItems="center" gap={1} mb={1}>
+                <BusinessIcon sx={{ color: '#666', fontSize: 18 }} />
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary"
+                  sx={{ fontWeight: 500 }}
+                >
+                  Professional Business Management
+                </Typography>
+              </Box>
+            </Box>
+
+            <Divider sx={{ mb: 3, opacity: 0.3 }} />
+
+            <Box component="form" onSubmit={handleSubmit}>
+              {error && (
+                <Fade in>
+                  <Alert 
+                    severity="error" 
+                    sx={{ 
+                      mb: 2,
+                      borderRadius: 1.5,
+                      '& .MuiAlert-message': {
+                        fontWeight: 500
+                      }
+                    }}
+                  >
+                    {error}
+                  </Alert>
+                </Fade>
+              )}
+              
+              <StyledTextField
+                label="Email or Username"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                fullWidth
+                margin="normal"
+                required
+                variant="outlined"
+                autoComplete="email"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailIcon sx={{ color: '#667eea' }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ mb: 2 }}
+              />
+              
+              <StyledTextField
+                label="Password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                fullWidth
+                margin="normal"
+                required
+                variant="outlined"
+                autoComplete="current-password"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LockIcon sx={{ color: '#667eea' }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={handleTogglePasswordVisibility}
+                        edge="end"
+                        sx={{ color: '#667eea' }}
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ mb: 3 }}
+              />
+              
+              <LoginButton
+                type="submit"
+                fullWidth
+                variant="contained"
+                disabled={loading || !email || !password}
+                size="large"
+              >
+                {loading ? (
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <CircularProgress size={20} color="inherit" />
+                    <span>Signing in...</span>
+                  </Box>
+                ) : (
+                  'Sign In'
+                )}
+              </LoginButton>
+            </Box>
+
+            <Box mt={3} textAlign="center">
+              <Typography variant="body2" color="text.secondary">
+                © 2025 UAE Laptop Business CRM
+              </Typography>
+            </Box>
+          </StyledPaper>
+        </Fade>
+      </Container>
+    </BackgroundBox>
   );
 }

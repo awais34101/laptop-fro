@@ -112,7 +112,7 @@ function App() {
             <Route 
               path="/sheets" 
               element={
-                <ProtectedRoute permission={{ section: 'purchases', action: 'view' }}>
+                <ProtectedRoute permission={{ section: 'purchaseSheets', action: 'view' }}>
                   <Sheets />
                 </ProtectedRoute>
               } 
