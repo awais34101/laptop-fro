@@ -170,7 +170,11 @@ export default function Sheets() {
     const progMap = new Map();
     (sheet.progress || []).forEach(p => {
       const key = p.item?._id || p.item;
-      progMap.set(String(key), { transferred: p.transferred || 0, remaining: p.remaining || 0 });
+      progMap.set(String(key), { 
+        transferred: p.transferred || 0, 
+        remaining: p.remaining || 0,
+        transferPercentage: p.transferPercentage || 0
+      });
     });
     const printWindow = window.open('', '_blank');
     const printContent = `
@@ -247,8 +251,49 @@ export default function Sheets() {
             width: 120px;
             text-align: center;
           }
+          .percentage-col {
+            width: 80px;
+            text-align: center;
+            font-weight: bold;
+            color: #2e7d32;
+          }
           .notes-col {
             width: 200px;
+          }
+          .progress-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+          }
+          .progress-header {
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 15px;
+            color: #1976d2;
+          }
+          .progress-info {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+          }
+          .progress-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 5px;
+          }
+          .progress-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 3px;
+          }
+          .progress-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: #2e7d32;
           }
           .signature-section {
             margin-top: 40px;
@@ -297,6 +342,28 @@ export default function Sheets() {
           ` : ''}
         </div>
 
+        <div class="progress-section">
+          <div class="progress-header">Transfer Progress Summary</div>
+          <div class="progress-info">
+            <div class="progress-item">
+              <span class="progress-label">Overall Progress:</span>
+              <span class="progress-value">${sheet.transferPercentage || 0}%</span>
+            </div>
+            <div class="progress-item">
+              <span class="progress-label">Total Purchased:</span>
+              <span class="progress-value">${sheet.totalPurchased || 0}</span>
+            </div>
+            <div class="progress-item">
+              <span class="progress-label">Total Transferred:</span>
+              <span class="progress-value">${sheet.totalTransferred || 0}</span>
+            </div>
+            <div class="progress-item">
+              <span class="progress-label">Total Remaining:</span>
+              <span class="progress-value">${sheet.totalRemaining || 0}</span>
+            </div>
+          </div>
+        </div>
+
         <table>
           <thead>
             <tr>
@@ -305,6 +372,7 @@ export default function Sheets() {
               <th class="quantity-col">Expected Qty</th>
               <th class="transferred-col">Transferred</th>
               <th class="remaining-col">Remaining</th>
+              <th class="percentage-col">Transfer %</th>
               <th class="verified-col">Verified Qty</th>
               <th class="notes-col">Notes</th>
             </tr>
@@ -317,6 +385,7 @@ export default function Sheets() {
                 <td class="quantity-col">${item.quantity}</td>
                 <td class="transferred-col">${(() => { const p = progMap.get(String(item.item?._id || item.item)); return p?.transferred ?? 0; })()}</td>
                 <td class="remaining-col">${(() => { const p = progMap.get(String(item.item?._id || item.item)); return p?.remaining ?? (item.quantity || 0); })()}</td>
+                <td class="percentage-col">${(() => { const p = progMap.get(String(item.item?._id || item.item)); return p?.transferPercentage ?? 0; })()}%</td>
                 <td class="verified-col">_______</td>
                 <td class="notes-col">_________________</td>
               </tr>
@@ -554,6 +623,41 @@ export default function Sheets() {
                   </Box>
                 )}
 
+                {/* Transfer Progress */}
+                <Box sx={{ mb: 2, p: 2, backgroundColor: 'rgba(76,175,80,0.08)', borderRadius: 2, border: '1px solid rgba(76,175,80,0.2)' }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      Transfer Progress
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 700, color: 'success.main' }}>
+                      {sheet.transferPercentage || 0}%
+                    </Typography>
+                  </Box>
+                  
+                  {/* Progress Bar */}
+                  <Box sx={{ 
+                    width: '100%', 
+                    height: 8, 
+                    backgroundColor: 'rgba(0,0,0,0.1)', 
+                    borderRadius: 4, 
+                    overflow: 'hidden',
+                    mb: 1 
+                  }}>
+                    <Box sx={{ 
+                      width: `${sheet.transferPercentage || 0}%`, 
+                      height: '100%', 
+                      backgroundColor: sheet.transferPercentage === 100 ? 'success.main' : 'warning.main',
+                      borderRadius: 4,
+                      transition: 'width 0.3s ease-in-out'
+                    }} />
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'text.secondary' }}>
+                    <span>Transferred: {sheet.totalTransferred || 0}</span>
+                    <span>Remaining: {sheet.totalRemaining || 0}</span>
+                  </Box>
+                </Box>
+
                 <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
                   Items to verify:
                 </Typography>
@@ -563,21 +667,34 @@ export default function Sheets() {
                     const pr = (sheet.progress || []).find(p => (p.item?._id || p.item) === (item.item?._id || item.item));
                     const transferred = pr?.transferred || 0;
                     const remaining = Math.max(0, (item.quantity || 0) - transferred);
+                    const itemPercentage = pr?.transferPercentage || 0;
                     return (
-                      <Typography 
+                      <Box 
                         key={idx} 
-                        variant="body2" 
                         sx={{ 
-                          fontSize: '0.85rem',
-                          mb: 0.5,
-                          padding: '2px 6px',
+                          mb: 1,
+                          padding: '4px 8px',
                           backgroundColor: idx % 2 === 0 ? 'rgba(0,0,0,0.03)' : 'transparent',
-                          borderRadius: 1
+                          borderRadius: 1,
+                          border: itemPercentage === 100 ? '1px solid rgba(76,175,80,0.3)' : 'none'
                         }}
                       >
-                        {item.item?.name || 'Unknown Item'} × {item.quantity}
-                        {`  | Transferred: ${transferred}  | Remaining: ${remaining}`}
-                      </Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                          <Typography variant="body2" sx={{ fontSize: '0.85rem', fontWeight: 500 }}>
+                            {item.item?.name || 'Unknown Item'} × {item.quantity}
+                          </Typography>
+                          <Typography variant="body2" sx={{ 
+                            fontSize: '0.75rem', 
+                            fontWeight: 600,
+                            color: itemPercentage === 100 ? 'success.main' : itemPercentage > 0 ? 'warning.main' : 'text.secondary'
+                          }}>
+                            {itemPercentage}%
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                          Transferred: {transferred} | Remaining: {remaining}
+                        </Typography>
+                      </Box>
                     );
                   })}
                   {sheet.items?.length > 5 && (
