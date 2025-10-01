@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import { useInventory } from '../context/InventoryContext';
 import { hasPerm } from '../utils/permissions';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Alert, CircularProgress } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Alert, CircularProgress, FormControl, InputLabel, Select, MenuItem, Chip } from '@mui/material';
 
 export default function Items() {
   const [items, setItems] = useState([]);
   const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: '', unit: '', category: '' });
   const [error, setError] = useState('');
@@ -54,8 +55,16 @@ export default function Items() {
         await api.post('/items', form);
         setSuccess('Item added');
       }
-      fetchItems();
+      
+      // Refresh items to auto-update category list
+      await fetchItems();
       fetchInventory();
+      
+      // Clear category filter if the new/edited item doesn't match current filter
+      if (categoryFilter && form.category !== categoryFilter) {
+        setCategoryFilter('');
+      }
+      
       setOpen(false);
     } catch (err) {
       setError(err.response?.data?.error || 'Error');
@@ -77,19 +86,59 @@ export default function Items() {
   const getWarehouseQty = (itemId) => warehouse.find(w => w.item?._id === itemId)?.quantity ?? 0;
   const getStoreQty = (itemId) => store.find(s => s.item?._id === itemId)?.remaining_quantity ?? 0;
   const getStore2Qty = (itemId) => store2.find(s => s.item?._id === itemId)?.remaining_quantity ?? 0;
-  const filteredItems = items.filter(item =>
-    item.name.toLowerCase().includes(search.toLowerCase()) ||
-    item.category?.toLowerCase().includes(search.toLowerCase())
-  ).sort((a, b) => a.name.localeCompare(b.name));
+  // Get unique categories for filter dropdown - Auto-updates when new categories are added
+  const uniqueCategories = React.useMemo(() => {
+    return [...new Set(items.map(item => item.category?.trim()).filter(Boolean))].sort();
+  }, [items]);
+
+  const filteredItems = items.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase()) ||
+                         item.category?.toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = !categoryFilter || item.category === categoryFilter;
+    return matchesSearch && matchesCategory;
+  }).sort((a, b) => a.name.localeCompare(b.name));
   return (
     <Box p={{ xs: 1, md: 3 }} sx={{ background: 'linear-gradient(135deg, #f4f6f8 60%, #e3eafc 100%)', minHeight: '100vh' }}>
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
       )}
-      <Typography variant="h4" gutterBottom sx={{ fontWeight: 900, letterSpacing: 1, color: 'primary.main', mb: 3 }}>
+      <Typography variant="h4" gutterBottom sx={{ fontWeight: 900, letterSpacing: 1, color: 'primary.main', mb: 1 }}>
         Items Management
       </Typography>
-      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+        <Box sx={{ 
+          background: 'linear-gradient(145deg, #f8fafc, #e2e8f0)', 
+          px: 3, 
+          py: 1.5, 
+          borderRadius: 3, 
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+        }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, color: '#475569' }}>
+            📊 Showing <Box component="span" sx={{ color: '#1976d2', fontWeight: 700 }}>{filteredItems.length}</Box> of <Box component="span" sx={{ color: '#64748b' }}>{items.length}</Box> items
+          </Typography>
+        </Box>
+        {categoryFilter && (
+          <Chip 
+            label={`📂 ${categoryFilter.toLowerCase()}`}
+            onDelete={() => setCategoryFilter('')}
+            sx={{
+              background: 'linear-gradient(145deg, #dbeafe, #bfdbfe)',
+              color: '#1e40af',
+              fontWeight: 600,
+              borderRadius: 3,
+              px: 1,
+              '& .MuiChip-deleteIcon': {
+                color: '#3b82f6',
+                '&:hover': {
+                  color: '#1e40af'
+                }
+              }
+            }}
+          />
+        )}
+      </Box>
+      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
         {hasPerm('items','edit') && (
           <Button variant="contained" color="primary" onClick={() => handleOpen()} sx={{ fontWeight: 700, px: 3, borderRadius: 2 }}>Add Item</Button>
         )}
@@ -100,6 +149,182 @@ export default function Items() {
           size="small"
           sx={{ width: 320, background: '#fff', borderRadius: 2 }}
         />
+        <FormControl size="small" sx={{ minWidth: 250, background: 'linear-gradient(145deg, #ffffff, #f8fafc)', borderRadius: 3, boxShadow: '0 2px 12px rgba(25,118,210,0.08)', border: '1px solid #e2e8f0' }}>
+          <InputLabel sx={{ color: '#64748b', fontWeight: 600, '&.Mui-focused': { color: '#1976d2' } }}>Filter by Category</InputLabel>
+          <Select
+            value={categoryFilter}
+            label="Filter by Category"
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            sx={{ 
+              borderRadius: 3, 
+              '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+              '& .MuiSelect-select': { fontWeight: 500 },
+              '&:hover .MuiOutlinedInput-notchedOutline': { border: 'none' },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': { border: '2px solid #1976d2' }
+            }}
+            MenuProps={{
+              PaperProps: {
+                sx: {
+                  borderRadius: 3,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                  border: '1px solid #e2e8f0',
+                  mt: 1,
+                  maxHeight: 400,
+                  '& .MuiMenuItem-root': {
+                    borderRadius: 2,
+                    mx: 1,
+                    my: 0.5,
+                    minHeight: 48,
+                    '&:hover': {
+                      background: 'linear-gradient(145deg, #f1f5f9, #e2e8f0)',
+                      transform: 'translateX(4px)',
+                      transition: 'all 0.2s ease'
+                    },
+                    '&.Mui-selected': {
+                      background: 'linear-gradient(145deg, #dbeafe, #bfdbfe)',
+                      color: '#1e40af',
+                      fontWeight: 600,
+                      '&:hover': {
+                        background: 'linear-gradient(145deg, #dbeafe, #bfdbfe)'
+                      }
+                    }
+                  }
+                }
+              }
+            }}
+          >
+            <MenuItem value="" sx={{ borderBottom: '1px solid #e2e8f0', mb: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                <Box sx={{ 
+                  width: 32, 
+                  height: 32, 
+                  borderRadius: 2, 
+                  background: 'linear-gradient(145deg, #f8fafc, #e2e8f0)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  🗂️
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#1e293b' }}>All Categories</Typography>
+                  <Typography variant="caption" sx={{ color: '#64748b' }}>Show all {items.length} items</Typography>
+                </Box>
+              </Box>
+            </MenuItem>
+            {uniqueCategories.map((category) => {
+              const categoryCount = items.filter(item => item.category === category).length;
+              // Smart icon detection - automatically assigns icons for new categories
+              const getCategoryIcon = (categoryName) => {
+                const name = categoryName.toUpperCase();
+                
+                // Exact matches first
+                const exactMatches = {
+                  'IPADS': '📱', 'IPAD': '📱', 'TABLET': '📱',
+                  'LAPTOP': '💻', 'LAPT': '💻', 'NOTEBOOK': '💻',
+                  'MAC': '�️', 'MACBOOK': '�💻', 'IMAC': '🖥️',
+                  'SURF': '💻', 'SURFACE': '�',
+                  'BOOK': '📚', 'CHROMEBOOK': '💻',
+                  'CABLE': '🔌', 'CBL': '🔌', 'WIRE': '�',
+                  'CHRG': '⚡', 'CHARGING': '⚡', 'CHARGER': '⚡',
+                  'ADAPTER': '🔌', 'ADP': '🔌', 'AD': '�',
+                  'MOUSE': '🖱️', 'MICE': '�️',
+                  'KEYBOARD': '⌨️', 'KB': '⌨️',
+                  'MONITOR': '🖥️', 'SCREEN': '🖥️', 'DISPLAY': '🖥️',
+                  'REPAIR': '🔧', 'REPAIRING': '🔧', 'SERVICE': '🔧',
+                  'PARTS': '⚙️', 'COMPONENT': '🔩', 'SPARE': '⚙️'
+                };
+                
+                if (exactMatches[name]) return exactMatches[name];
+                
+                // Pattern matching for new categories
+                if (name.includes('PHONE') || name.includes('MOBILE')) return '�';
+                if (name.includes('COMPUTER') || name.includes('PC')) return '�';
+                if (name.includes('POWER') || name.includes('BATTERY')) return '�';
+                if (name.includes('AUDIO') || name.includes('SOUND') || name.includes('SPEAKER')) return '�';
+                if (name.includes('VIDEO') || name.includes('CAMERA')) return '📹';
+                if (name.includes('STORAGE') || name.includes('DRIVE') || name.includes('HDD') || name.includes('SSD')) return '💾';
+                if (name.includes('MEMORY') || name.includes('RAM')) return '🧠';
+                if (name.includes('NETWORK') || name.includes('WIFI') || name.includes('ETHERNET')) return '🌐';
+                if (name.includes('PRINTER') || name.includes('PRINT')) return '�️';
+                if (name.includes('ACCESSORY') || name.includes('ACCESSORIES')) return '🎯';
+                if (name.includes('TOOL') || name.includes('EQUIPMENT')) return '🔧';
+                if (name.includes('SOFTWARE') || name.includes('LICENSE')) return '💿';
+                if (name.includes('CASE') || name.includes('COVER') || name.includes('SLEEVE')) return '💼';
+                
+                // Default for unknown categories
+                return '�';
+              };
+              
+              const categoryIcon = getCategoryIcon(category);
+              
+              return (
+                <MenuItem key={category} value={category}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                    <Box sx={{ 
+                      width: 32, 
+                      height: 32, 
+                      borderRadius: 2, 
+                      background: `linear-gradient(145deg, ${categoryFilter === category ? '#dbeafe' : '#f1f5f9'}, ${categoryFilter === category ? '#bfdbfe' : '#e2e8f0'})`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '14px'
+                    }}>
+                      {categoryIcon}
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#1e293b', textTransform: 'capitalize' }}>
+                        {category.toLowerCase()}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#64748b' }}>
+                        {categoryCount} {categoryCount === 1 ? 'item' : 'items'}
+                      </Typography>
+                    </Box>
+                    <Chip 
+                      label={categoryCount}
+                      size="small"
+                      sx={{ 
+                        background: categoryFilter === category ? '#1e40af' : '#64748b',
+                        color: 'white',
+                        fontWeight: 600,
+                        minWidth: 28,
+                        height: 24,
+                        fontSize: '0.75rem'
+                      }}
+                    />
+                  </Box>
+                </MenuItem>
+              );
+            })}
+          </Select>
+        </FormControl>
+        {categoryFilter && (
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => setCategoryFilter('')}
+            sx={{ 
+              borderRadius: 3, 
+              fontWeight: 600,
+              textTransform: 'none',
+              px: 2,
+              py: 1,
+              background: 'linear-gradient(145deg, #fef2f2, #fee2e2)',
+              borderColor: '#fca5a5',
+              color: '#dc2626',
+              '&:hover': {
+                background: 'linear-gradient(145deg, #fee2e2, #fecaca)',
+                borderColor: '#f87171',
+                transform: 'translateY(-1px)',
+                boxShadow: '0 4px 12px rgba(220, 38, 38, 0.2)'
+              },
+              transition: 'all 0.2s ease'
+            }}
+          >
+            ✕ Clear Filter
+          </Button>
+        )}
       </Box>
       <TableContainer component={Paper} sx={{ mt: 2, maxHeight: 520, overflowY: 'auto', borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
   <Table sx={{ minWidth: 900, '& tbody tr:nth-of-type(odd)': { backgroundColor: '#f9fafd' }, '& tbody tr:hover': { backgroundColor: '#e3eafc' } }}>

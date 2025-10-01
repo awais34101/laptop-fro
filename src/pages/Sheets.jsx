@@ -41,6 +41,7 @@ export default function Sheets() {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [error, setError] = useState('');
@@ -72,8 +73,9 @@ export default function Sheets() {
       
       const result = await getPurchaseSheets(params);
       
-      setSheets(result.data || []);
-      setTotalPages(result.totalPages || 1);
+  setSheets(result.data || []);
+  setTotalPages(result.totalPages || 1);
+  setTotalCount(result.total || 0);
       setPage(pageNum);
     } catch (err) {
       console.error('Error fetching sheets:', err);
@@ -556,7 +558,7 @@ export default function Sheets() {
         </Button>
         <Box sx={{ flex: 1 }} />
         <Typography variant="body2" color="text.secondary">
-          {sheets.length} sheets on this page
+          {sheets.length} sheets on this page • {totalCount} total
         </Typography>
       </Box>
 
