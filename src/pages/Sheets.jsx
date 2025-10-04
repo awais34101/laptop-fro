@@ -29,7 +29,15 @@ import {
   InputLabel,
   Autocomplete
 } from '@mui/material';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import PrintIcon from '@mui/icons-material/Print';
+
+// Enable dayjs plugins
+dayjs.extend(relativeTime);
 import SearchIcon from '@mui/icons-material/Search';
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -50,7 +58,7 @@ export default function Sheets() {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [currentSheet, setCurrentSheet] = useState(null);
-  const [assignmentForm, setAssignmentForm] = useState({ technicianId: '', notes: '' });
+  const [assignmentForm, setAssignmentForm] = useState({ technicianId: '', notes: '', dueDate: null });
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [currentAssignment, setCurrentAssignment] = useState(null);
   const [statusForm, setStatusForm] = useState({ status: '', notes: '' });
@@ -125,7 +133,8 @@ export default function Sheets() {
     setCurrentSheet(sheet);
     setAssignmentForm({
       technicianId: sheet.assignment?.technician?._id || '',
-      notes: sheet.assignment?.notes || ''
+      notes: sheet.assignment?.notes || '',
+      dueDate: sheet.assignment?.dueDate ? dayjs(sheet.assignment.dueDate) : null
     });
     setAssignDialogOpen(true);
   };
@@ -137,11 +146,28 @@ export default function Sheets() {
     }
 
     try {
-      await assignSheet(currentSheet._id, assignmentForm);
+      const dueDateTime = assignmentForm.dueDate ? assignmentForm.dueDate.toISOString() : null;
+      const assignmentData = {
+        technicianId: assignmentForm.technicianId,
+        notes: assignmentForm.notes,
+        dueDate: dueDateTime
+      };
+      console.log('=== ASSIGNMENT DEBUG ===');
+      console.log('Raw dueDate from form:', assignmentForm.dueDate);
+      console.log('Is dayjs object?', assignmentForm.dueDate?.$d);
+      console.log('Converted to ISO:', dueDateTime);
+      console.log('Full assignment data:', assignmentData);
+      console.log('========================');
+      
+      const response = await assignSheet(currentSheet._id, assignmentData);
+      console.log('Response from server:', response);
+      
       setAssignDialogOpen(false);
+      setAssignmentForm({ technicianId: '', notes: '', dueDate: null });
       fetchSheets(page, search, selectedTechnician, selectedStatus);
     } catch (err) {
       console.error('Error assigning sheet:', err);
+      console.error('Error response:', err.response?.data);
       const errorMessage = err.response?.data?.error || err.message || 'Failed to assign sheet';
       setError(`Failed to assign sheet: ${errorMessage}`);
     }
@@ -315,6 +341,25 @@ export default function Sheets() {
             font-size: 12px;
             margin-top: 20px;
           }
+          .deadline-alert {
+            background: ${sheet.assignment?.dueDate && new Date(sheet.assignment.dueDate) < new Date() && sheet.assignment?.status !== 'completed' ? '#ffebee' : '#fff3e0'};
+            border: 3px solid ${sheet.assignment?.dueDate && new Date(sheet.assignment.dueDate) < new Date() && sheet.assignment?.status !== 'completed' ? '#d32f2f' : '#ff9800'};
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin: 20px 0;
+            text-align: center;
+          }
+          .deadline-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: ${sheet.assignment?.dueDate && new Date(sheet.assignment.dueDate) < new Date() && sheet.assignment?.status !== 'completed' ? '#d32f2f' : '#e65100'};
+            margin-bottom: 8px;
+          }
+          .deadline-date {
+            font-size: 24px;
+            font-weight: bold;
+            color: ${sheet.assignment?.dueDate && new Date(sheet.assignment.dueDate) < new Date() && sheet.assignment?.status !== 'completed' ? '#d32f2f' : '#1976d2'};
+          }
         </style>
       </head>
       <body>
@@ -336,13 +381,59 @@ export default function Sheets() {
             <span class="info-label">Verification ID:</span>
             <span class="info-value">${sheet._id.slice(-6).toUpperCase()}</span>
           </div>
-          ${sheet.assignment ? `
+        </div>
+        
+        ${sheet.assignment ? `
+        <div class="invoice-info" style="background: #e3f2fd; border-left: 4px solid #1976d2;">
           <div class="info-group">
             <span class="info-label">Assigned To:</span>
-            <span class="info-value">${sheet.assignment.technician?.name || 'N/A'}</span>
+            <span class="info-value" style="font-size: 16px; font-weight: bold;">${sheet.assignment.technician?.name || 'N/A'}</span>
+          </div>
+          <div class="info-group">
+            <span class="info-label">Assigned Date:</span>
+            <span class="info-value">${new Date(sheet.assignment.assignedAt).toLocaleDateString()} ${new Date(sheet.assignment.assignedAt).toLocaleTimeString()}</span>
+          </div>
+          <div class="info-group">
+            <span class="info-label">Due Date:</span>
+            <span class="info-value" style="font-size: 16px; font-weight: bold; color: ${sheet.assignment.dueDate ? (new Date(sheet.assignment.dueDate) < new Date() && sheet.assignment.status !== 'completed' ? '#d32f2f' : '#1976d2') : '#666'};">
+              ${sheet.assignment.dueDate ? `${new Date(sheet.assignment.dueDate).toLocaleDateString()} ${new Date(sheet.assignment.dueDate).toLocaleTimeString()}` : 'Not Set'}
+            </span>
+          </div>
+          <div class="info-group">
+            <span class="info-label">Status:</span>
+            <span class="info-value" style="font-weight: bold; color: ${
+              sheet.assignment.status === 'completed' ? '#2e7d32' : 
+              sheet.assignment.status === 'in-progress' ? '#ed6c02' : '#1976d2'
+            };">
+              ${sheet.assignment.status.replace('-', ' ').toUpperCase()}
+            </span>
+          </div>
+        </div>
+        
+        ${sheet.assignment.dueDate ? `
+        <div class="deadline-alert">
+          <div class="deadline-title">
+            ${new Date(sheet.assignment.dueDate) < new Date() && sheet.assignment.status !== 'completed' ? '⚠️ OVERDUE - COMPLETE IMMEDIATELY ⚠️' : '⏰ DEADLINE - MUST COMPLETE BY:'}
+          </div>
+          <div class="deadline-date">
+            ${new Date(sheet.assignment.dueDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            <br>
+            ${new Date(sheet.assignment.dueDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+          </div>
+          ${new Date(sheet.assignment.dueDate) < new Date() && sheet.assignment.status !== 'completed' ? `
+          <div style="margin-top: 10px; color: #d32f2f; font-weight: bold; font-size: 14px;">
+            This task is OVERDUE. Please complete as soon as possible!
           </div>
           ` : ''}
         </div>
+        ` : `
+        <div style="background: #fff3e0; border: 2px solid #ff9800; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: center;">
+          <div style="font-size: 16px; font-weight: bold; color: #e65100;">
+            ⚠️ No Deadline Set - Please complete as assigned
+          </div>
+        </div>
+        `}
+        ` : ''}
 
         <div class="progress-section">
           <div class="progress-header">Transfer Progress Summary</div>
@@ -604,18 +695,59 @@ export default function Sheets() {
 
                 {/* Assignment Info */}
                 {sheet.assignment ? (
-                  <Box sx={{ mb: 2, p: 1, backgroundColor: 'rgba(25,118,210,0.08)', borderRadius: 1 }}>
+                  <Box sx={{ mb: 2, p: 1.5, backgroundColor: 'rgba(25,118,210,0.08)', borderRadius: 1 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
                       Assigned to: {sheet.assignment.technician?.name}
                     </Typography>
-                    <Chip 
-                      label={sheet.assignment.status.replace('-', ' ').toUpperCase()} 
-                      size="small" 
-                      color={
-                        sheet.assignment.status === 'completed' ? 'success' : 
-                        sheet.assignment.status === 'in-progress' ? 'warning' : 'primary'
-                      }
-                    />
+                    
+                    {/* Assignment Date Info */}
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                      📋 Assigned {dayjs(sheet.assignment.assignedAt).fromNow()} 
+                      ({dayjs(sheet.assignment.assignedAt).format('MMM D, YYYY h:mm A')})
+                    </Typography>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, flexWrap: 'wrap' }}>
+                      <Chip 
+                        label={sheet.assignment.status.replace('-', ' ').toUpperCase()} 
+                        size="small" 
+                        color={
+                          sheet.assignment.status === 'completed' ? 'success' : 
+                          sheet.assignment.status === 'in-progress' ? 'warning' : 'primary'
+                        }
+                      />
+                      {sheet.assignment.dueDate && (
+                        <Chip 
+                          label={`Due: ${dayjs(sheet.assignment.dueDate).format('MMM D, h:mm A')}`}
+                          size="small"
+                          color={
+                            sheet.assignment.status === 'completed' ? 'default' :
+                            dayjs(sheet.assignment.dueDate).isBefore(dayjs()) ? 'error' : 'info'
+                          }
+                          variant={dayjs(sheet.assignment.dueDate).isBefore(dayjs()) && sheet.assignment.status !== 'completed' ? 'filled' : 'outlined'}
+                        />
+                      )}
+                    </Box>
+                    
+                    {/* Due Date Details */}
+                    {sheet.assignment.dueDate && (
+                      <Box sx={{ mt: 1 }}>
+                        {sheet.assignment.status === 'completed' ? (
+                          <Typography variant="caption" color="success.main" sx={{ display: 'block' }}>
+                            ✅ Completed {sheet.assignment.completedAt ? dayjs(sheet.assignment.completedAt).fromNow() : ''}
+                          </Typography>
+                        ) : dayjs(sheet.assignment.dueDate).isBefore(dayjs()) ? (
+                          <Typography variant="caption" color="error" sx={{ display: 'block', fontWeight: 600 }}>
+                            ⚠️ Overdue by {dayjs().diff(dayjs(sheet.assignment.dueDate), 'day')} day(s) 
+                            ({dayjs().diff(dayjs(sheet.assignment.dueDate), 'hour')} hours)
+                          </Typography>
+                        ) : (
+                          <Typography variant="caption" color="info.main" sx={{ display: 'block' }}>
+                            ⏰ {dayjs(sheet.assignment.dueDate).diff(dayjs(), 'day')} day(s) remaining 
+                            (Due {dayjs(sheet.assignment.dueDate).fromNow()})
+                          </Typography>
+                        )}
+                      </Box>
+                    )}
                   </Box>
                 ) : (
                   <Box sx={{ mb: 2, p: 1, backgroundColor: 'rgba(255,193,7,0.08)', borderRadius: 1 }}>
@@ -796,6 +928,21 @@ export default function Sheets() {
                 ))}
               </Select>
             </FormControl>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DateTimePicker
+                label="Due Date & Time"
+                value={assignmentForm.dueDate}
+                onChange={(newValue) => setAssignmentForm({...assignmentForm, dueDate: newValue})}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    sx: { mb: 2 },
+                    helperText: 'Set when the technician should complete this sheet'
+                  }
+                }}
+                minDateTime={dayjs()}
+              />
+            </LocalizationProvider>
             <TextField
               fullWidth
               label="Notes (optional)"
