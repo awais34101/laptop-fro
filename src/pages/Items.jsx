@@ -2,7 +2,11 @@ import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import { useInventory } from '../context/InventoryContext';
 import { hasPerm } from '../utils/permissions';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Alert, CircularProgress, FormControl, InputLabel, Select, MenuItem, Chip } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Alert, CircularProgress, FormControl, InputLabel, Select, MenuItem, Chip, IconButton, Tooltip } from '@mui/material';
+import { FileDownload as DownloadIcon, PictureAsPdf as PdfIcon, TableChart as ExcelIcon } from '@mui/icons-material';
+import * as XLSX from 'xlsx';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function Items() {
   const [items, setItems] = useState([]);
@@ -97,6 +101,90 @@ export default function Items() {
     const matchesCategory = !categoryFilter || item.category === categoryFilter;
     return matchesSearch && matchesCategory;
   }).sort((a, b) => a.name.localeCompare(b.name));
+
+  // Export to Excel
+  const handleExportExcel = () => {
+    const exportData = filteredItems.map(item => ({
+      'Item Name': item.name,
+      'Category': item.category || '-',
+      'Unit': item.unit,
+      'Warehouse Stock': getWarehouseQty(item._id),
+      'Store 1 Stock': getStoreQty(item._id),
+      'Store 2 Stock': getStore2Qty(item._id),
+      'Total Stock': getWarehouseQty(item._id) + getStoreQty(item._id) + getStore2Qty(item._id)
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Items');
+    
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 30 }, // Item Name
+      { wch: 15 }, // Category
+      { wch: 10 }, // Unit
+      { wch: 15 }, // Warehouse
+      { wch: 15 }, // Store 1
+      { wch: 15 }, // Store 2
+      { wch: 15 }  // Total
+    ];
+    
+    XLSX.writeFile(wb, `items-list-${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  // Export to PDF
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Items List', 14, 20);
+    
+    // Add date
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 28);
+    
+    // Add summary
+    doc.text(`Total Items: ${filteredItems.length}`, 14, 35);
+    
+    // Prepare table data
+    const tableData = filteredItems.map(item => [
+      item.name,
+      item.category || '-',
+      item.unit,
+      getWarehouseQty(item._id),
+      getStoreQty(item._id),
+      getStore2Qty(item._id),
+      getWarehouseQty(item._id) + getStoreQty(item._id) + getStore2Qty(item._id)
+    ]);
+    
+    // Add table using autoTable
+    autoTable(doc, {
+      head: [['Item Name', 'Category', 'Unit', 'Warehouse', 'Store 1', 'Store 2', 'Total']],
+      body: tableData,
+      startY: 42,
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [25, 118, 210], fontStyle: 'bold' },
+      columnStyles: {
+        0: { cellWidth: 50 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 20 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 25 },
+        5: { cellWidth: 25 },
+        6: { cellWidth: 25, fontStyle: 'bold' }
+      }
+    });
+    
+    // Open PDF in new tab for preview instead of direct download
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    window.open(pdfUrl, '_blank');
+  };
+
   return (
     <Box sx={{ 
       background: 'linear-gradient(135deg, #f8fafc 0%, #e3f2fd 50%, #f3e5f5 100%)', 
@@ -132,30 +220,84 @@ export default function Items() {
             </Typography>
           </Box>
           
-          {hasPerm('items','edit') && (
-            <Button 
-              variant="contained" 
-              onClick={() => handleOpen()} 
-              sx={{ 
-                fontWeight: 700,
-                px: 4,
-                py: 1.5,
-                borderRadius: 3,
-                fontSize: '1rem',
-                background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-                boxShadow: '0 8px 24px rgba(25, 118, 210, 0.3)',
-                textTransform: 'none',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #1565c0 0%, #0d47a1 100%)',
-                  boxShadow: '0 12px 32px rgba(25, 118, 210, 0.4)',
-                  transform: 'translateY(-2px)'
-                },
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-              }}
-            >
-              ➕ Add New Item
-            </Button>
-          )}
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+            <Tooltip title="Export to Excel">
+              <Button
+                variant="outlined"
+                startIcon={<ExcelIcon />}
+                onClick={handleExportExcel}
+                sx={{
+                  fontWeight: 600,
+                  px: 3,
+                  py: 1.2,
+                  borderRadius: 2,
+                  borderColor: '#10b981',
+                  color: '#10b981',
+                  textTransform: 'none',
+                  '&:hover': {
+                    borderColor: '#059669',
+                    background: 'rgba(16, 185, 129, 0.08)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)'
+                  },
+                  transition: 'all 0.3s'
+                }}
+              >
+                Excel
+              </Button>
+            </Tooltip>
+            
+            <Tooltip title="Export to PDF">
+              <Button
+                variant="outlined"
+                startIcon={<PdfIcon />}
+                onClick={handleExportPDF}
+                sx={{
+                  fontWeight: 600,
+                  px: 3,
+                  py: 1.2,
+                  borderRadius: 2,
+                  borderColor: '#ef4444',
+                  color: '#ef4444',
+                  textTransform: 'none',
+                  '&:hover': {
+                    borderColor: '#dc2626',
+                    background: 'rgba(239, 68, 68, 0.08)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)'
+                  },
+                  transition: 'all 0.3s'
+                }}
+              >
+                PDF
+              </Button>
+            </Tooltip>
+
+            {hasPerm('items','edit') && (
+              <Button 
+                variant="contained" 
+                onClick={() => handleOpen()} 
+                sx={{ 
+                  fontWeight: 700,
+                  px: 4,
+                  py: 1.5,
+                  borderRadius: 3,
+                  fontSize: '1rem',
+                  background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+                  boxShadow: '0 8px 24px rgba(25, 118, 210, 0.3)',
+                  textTransform: 'none',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #1565c0 0%, #0d47a1 100%)',
+                    boxShadow: '0 12px 32px rgba(25, 118, 210, 0.4)',
+                    transform: 'translateY(-2px)'
+                  },
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                }}
+              >
+                ➕ Add New Item
+              </Button>
+            )}
+          </Box>
         </Box>
 
         {error && (
