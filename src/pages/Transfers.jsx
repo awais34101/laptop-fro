@@ -41,6 +41,9 @@ export default function Transfers() {
   const [transfers, setTransfers] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [currentDate, setCurrentDate] = useState(null);
+  const [hasNext, setHasNext] = useState(false);
+  const [hasPrev, setHasPrev] = useState(false);
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
   const [technicians, setTechnicians] = useState([]);
@@ -51,6 +54,17 @@ export default function Transfers() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  
+  // Filter states
+  const [filters, setFilters] = useState({
+    technician: '',
+    from: '',
+    to: '',
+    startDate: '',
+    endDate: ''
+  });
+  const [showFilters, setShowFilters] = useState(false);
+
   const { warehouse, store, store2, items: inventoryItems, fetchInventory } = useInventory();
 
   // Helper functions to get inventory quantities
@@ -68,23 +82,35 @@ export default function Transfers() {
     }
   };
 
-  const PAGE_SIZE = 1;
-  const fetchTransfers = async (p = page) => {
+  const PAGE_SIZE = 20;
+  const fetchTransfers = async (p = page, currentFilters = filters) => {
     setLoading(true);
     try {
-      const r = await api.get(`/transfers?page=${p}&limit=${PAGE_SIZE}`);
-      if (Array.isArray(r.data)) {
-        // backward compatibility
-        const sorted = [...r.data].sort((a, b) => new Date(b.date) - new Date(a.date));
-        setTransfers(sorted.slice(0, 1));
-        setTotalPages(sorted.length ? sorted.length : 1);
-      } else {
+      // Build query params with filters - use groupByDate mode
+      const params = new URLSearchParams({
+        page: p,
+        groupByDate: 'true' // Enable date grouping
+      });
+      
+      if (currentFilters.technician) params.append('technician', currentFilters.technician);
+      if (currentFilters.from) params.append('from', currentFilters.from);
+      if (currentFilters.to) params.append('to', currentFilters.to);
+      if (currentFilters.startDate) params.append('startDate', currentFilters.startDate);
+      if (currentFilters.endDate) params.append('endDate', currentFilters.endDate);
+      
+      const r = await api.get(`/transfers?${params.toString()}`);
+      
+      if (r.data) {
         setTransfers(r.data.data || []);
         setTotalPages(r.data.totalPages || 1);
+        setCurrentDate(r.data.currentDate || null);
+        setHasNext(r.data.hasNext || false);
+        setHasPrev(r.data.hasPrev || false);
       }
     } catch (e) {
       setError(e.response?.data?.error || e.message);
       setTransfers([]);
+      setCurrentDate(null);
     } finally {
       setLoading(false);
     }
@@ -144,6 +170,7 @@ export default function Transfers() {
           items: form.items
             .filter(it => Number(it.quantity) > 0)
             .map(it => ({ item: it.item, quantity: Number(it.quantity) })),
+          workType: form.workType || undefined, // Include workType for sheet transfers
         };
         await createSheetTransfer(selectedSheetId, payload);
         setSuccess('Sheet transfer completed');
@@ -230,6 +257,29 @@ export default function Transfers() {
     setForm(f => ({ ...f, from: 'warehouse', to: f.to === 'warehouse' ? 'store' : f.to, items: rows.length ? rows : [{ item: '', quantity: '' }] }));
   };
 
+  // Filter handlers
+  const handleFilterChange = (field, value) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleApplyFilters = () => {
+    setPage(1);
+    fetchTransfers(1, filters);
+  };
+
+  const handleClearFilters = () => {
+    const clearedFilters = {
+      technician: '',
+      from: '',
+      to: '',
+      startDate: '',
+      endDate: ''
+    };
+    setFilters(clearedFilters);
+    setPage(1);
+    fetchTransfers(1, clearedFilters);
+  };
+
   return (
     <Box p={{ xs: 1, md: 3 }} sx={{ background: 'linear-gradient(135deg, #f4f6f8 60%, #e3eafc 100%)', minHeight: '100vh' }}>
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 900, letterSpacing: 1, color: 'primary.main', mb: 3 }}>
@@ -238,15 +288,166 @@ export default function Transfers() {
       {hasPerm('transfers', 'view') && (
         <Button variant="contained" color="primary" onClick={handleOpen} sx={{ fontWeight: 700, px: 3, borderRadius: 2, mb: 2 }}>Transfer Stock</Button>
       )}
+      
+      {/* Filter Section */}
+      <Paper sx={{ p: 2, mb: 2, borderRadius: 3, boxShadow: '0 2px 12px rgba(25,118,210,0.08)' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: showFilters ? 2 : 0 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
+            Filters
+          </Typography>
+          <Button 
+            variant="outlined" 
+            onClick={() => setShowFilters(!showFilters)}
+            sx={{ fontWeight: 600 }}
+          >
+            {showFilters ? 'Hide Filters' : 'Show Filters'}
+          </Button>
+        </Box>
+        
+        {showFilters && (
+          <Box>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2, mb: 2 }}>
+              <TextField
+                select
+                label="Technician"
+                value={filters.technician}
+                onChange={(e) => handleFilterChange('technician', e.target.value)}
+                fullWidth
+                size="small"
+              >
+                <MenuItem value="">All Technicians</MenuItem>
+                {technicians.map(t => (
+                  <MenuItem key={t._id} value={t._id}>{t.name}</MenuItem>
+                ))}
+              </TextField>
+              
+              <TextField
+                select
+                label="From Location"
+                value={filters.from}
+                onChange={(e) => handleFilterChange('from', e.target.value)}
+                fullWidth
+                size="small"
+              >
+                <MenuItem value="">All Locations</MenuItem>
+                <MenuItem value="warehouse">Warehouse</MenuItem>
+                <MenuItem value="store">Store</MenuItem>
+                <MenuItem value="store2">Store2</MenuItem>
+              </TextField>
+              
+              <TextField
+                select
+                label="To Location"
+                value={filters.to}
+                onChange={(e) => handleFilterChange('to', e.target.value)}
+                fullWidth
+                size="small"
+              >
+                <MenuItem value="">All Locations</MenuItem>
+                <MenuItem value="warehouse">Warehouse</MenuItem>
+                <MenuItem value="store">Store</MenuItem>
+                <MenuItem value="store2">Store2</MenuItem>
+              </TextField>
+            </Box>
+            
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 2 }}>
+              <TextField
+                type="date"
+                label="Start Date"
+                value={filters.startDate}
+                onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                fullWidth
+                size="small"
+                InputLabelProps={{ shrink: true }}
+              />
+              
+              <TextField
+                type="date"
+                label="End Date"
+                value={filters.endDate}
+                onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                fullWidth
+                size="small"
+                InputLabelProps={{ shrink: true }}
+              />
+            </Box>
+            
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button 
+                variant="contained" 
+                onClick={handleApplyFilters}
+                sx={{ fontWeight: 600 }}
+              >
+                Apply Filters
+              </Button>
+              <Button 
+                variant="outlined" 
+                onClick={handleClearFilters}
+                sx={{ fontWeight: 600 }}
+              >
+                Clear Filters
+              </Button>
+            </Box>
+          </Box>
+        )}
+      </Paper>
+
       <TableContainer component={Paper} sx={{ mt: 2, maxHeight: 520, overflowY: 'auto', borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
         {error && (
           <Alert severity="error" sx={{ m:2 }}>{error}</Alert>
         )}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
-          <Button variant="outlined" disabled={loading || page <= 1} onClick={() => { const p = Math.max(1, page - 1); setPage(p); fetchTransfers(p); }}>Prev</Button>
-          <Typography variant="body2">Page {page} / {totalPages}</Typography>
-          <Button variant="outlined" disabled={loading || page >= totalPages} onClick={() => { const p = Math.min(totalPages, page + 1); setPage(p); fetchTransfers(p); }}>Next</Button>
+        
+        {/* Date Navigation */}
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          gap: 2, 
+          p: 2,
+          borderBottom: '2px solid #e0e0e0',
+          bgcolor: '#f9fafb'
+        }}>
+          <Button 
+            variant="contained" 
+            disabled={loading || !hasPrev} 
+            onClick={() => { 
+              const p = Math.max(1, page - 1); 
+              setPage(p); 
+              fetchTransfers(p); 
+            }}
+            sx={{ fontWeight: 600, minWidth: 120 }}
+          >
+            ← Previous Date
+          </Button>
+          
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
+              {currentDate ? new Date(currentDate).toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              }) : 'No Date'}
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              Day {page} of {totalPages} • {transfers.length} transfer{transfers.length !== 1 ? 's' : ''}
+            </Typography>
+          </Box>
+          
+          <Button 
+            variant="contained" 
+            disabled={loading || !hasNext} 
+            onClick={() => { 
+              const p = Math.min(totalPages, page + 1); 
+              setPage(p); 
+              fetchTransfers(p); 
+            }}
+            sx={{ fontWeight: 600, minWidth: 120 }}
+          >
+            Next Date →
+          </Button>
         </Box>
+
         <Table sx={{ minWidth: 900, '& tbody tr:nth-of-type(odd)': { backgroundColor: '#f9fafd' }, '& tbody tr:hover': { backgroundColor: '#e3eafc' } }}>
           <TableHead>
             <TableRow>
@@ -297,6 +498,26 @@ export default function Transfers() {
                 </TableCell>
               </TableRow>
             ))}
+            
+            {/* Summary Row */}
+            {!loading && transfers.length > 0 && (
+              <TableRow sx={{ bgcolor: '#e3f2fd', fontWeight: 'bold', borderTop: '2px solid #1976d2' }}>
+                <TableCell sx={{ fontWeight: 900, fontSize: '1rem', color: 'primary.main' }}>
+                  TOTAL FOR THIS DAY
+                </TableCell>
+                <TableCell sx={{ fontWeight: 900, fontSize: '1.1rem', color: 'primary.main' }}>
+                  {transfers.reduce((sum, t) => {
+                    if (Array.isArray(t.items)) {
+                      return sum + t.items.reduce((itemSum, it) => itemSum + (Number(it.quantity) || 0), 0);
+                    }
+                    return sum + (Number(t.quantity) || 0);
+                  }, 0)}
+                </TableCell>
+                <TableCell colSpan={6} sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+                  {transfers.length} transfer invoice{transfers.length !== 1 ? 's' : ''} on this date
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </TableContainer>

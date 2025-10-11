@@ -159,7 +159,7 @@ export default function TechnicianStatsBox({ initialFrom = '', initialTo = '', t
         ) : (
           <Grid container spacing={3}>
             {techStats.map(t => {
-              const totalJobs = Number(t.repair) + Number(t.test);
+              const totalJobs = Number(t.total) || (Number(t.repair || 0) + Number(t.test || 0) + Number(t.regularTransfers || 0) + Number(t.sheetTransfers || 0));
               const avgPerDay = days > 1 ? (totalJobs / days).toFixed(2) : totalJobs;
               
               return (
@@ -213,7 +213,7 @@ export default function TechnicianStatsBox({ initialFrom = '', initialTo = '', t
                           }}>
                             <BuildIcon sx={{ fontSize: 28, color: '#fff', mb: 0.5 }} />
                             <Typography variant="h4" sx={{ fontWeight: 700, color: '#fff' }}>
-                              {t.repair}
+                              {t.repair || 0}
                             </Typography>
                             <Typography variant="caption" sx={{ color: '#fff', fontWeight: 600 }}>
                               🔧 Repairs
@@ -232,7 +232,7 @@ export default function TechnicianStatsBox({ initialFrom = '', initialTo = '', t
                           }}>
                             <CheckCircleIcon sx={{ fontSize: 28, color: '#fff', mb: 0.5 }} />
                             <Typography variant="h4" sx={{ fontWeight: 700, color: '#fff' }}>
-                              {t.test}
+                              {t.test || 0}
                             </Typography>
                             <Typography variant="caption" sx={{ color: '#fff', fontWeight: 600 }}>
                               ✅ Tests
@@ -240,10 +240,46 @@ export default function TechnicianStatsBox({ initialFrom = '', initialTo = '', t
                           </Box>
                         </Grid>
 
+                        {/* Regular Transfers (without sheet) */}
+                        <Grid item xs={6}>
+                          <Box sx={{ 
+                            p: 2, 
+                            borderRadius: 2,
+                            background: 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)',
+                            textAlign: 'center',
+                            boxShadow: '0 4px 15px rgba(243,156,18,0.3)'
+                          }}>
+                            <Typography variant="h4" sx={{ fontWeight: 700, color: '#fff' }}>
+                              {t.regularTransfers || 0}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#fff', fontWeight: 600 }}>
+                              📋 Regular Transfers
+                            </Typography>
+                          </Box>
+                        </Grid>
+
+                        {/* Sheet Transfers (with sheet selected) */}
+                        <Grid item xs={6}>
+                          <Box sx={{ 
+                            p: 2, 
+                            borderRadius: 2,
+                            background: 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)',
+                            textAlign: 'center',
+                            boxShadow: '0 4px 15px rgba(46,204,113,0.3)'
+                          }}>
+                            <Typography variant="h4" sx={{ fontWeight: 700, color: '#fff' }}>
+                              {t.sheetTransfers || 0}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#fff', fontWeight: 600 }}>
+                              📦 Sheet Transfers
+                            </Typography>
+                          </Box>
+                        </Grid>
+
                         {/* Total Jobs */}
                         <Grid item xs={12}>
                           <Box sx={{ 
-                            p: 2, 
+                            p: 2.5, 
                             borderRadius: 2,
                             background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
                             textAlign: 'center',
@@ -253,8 +289,63 @@ export default function TechnicianStatsBox({ initialFrom = '', initialTo = '', t
                             <Typography variant="h3" sx={{ fontWeight: 700, color: '#fff' }}>
                               {totalJobs}
                             </Typography>
-                            <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600 }}>
-                              📈 Total Jobs Completed
+                            <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600, mb: 1 }}>
+                              📈 Total PCs Transferred
+                            </Typography>
+                            <Box sx={{ 
+                              display: 'flex', 
+                              justifyContent: 'center', 
+                              gap: 1, 
+                              flexWrap: 'wrap',
+                              mt: 1 
+                            }}>
+                              {(t.repair > 0) && (
+                                <Chip 
+                                  label={`${t.repair} Repairs`}
+                                  size="small"
+                                  sx={{ 
+                                    background: 'rgba(102,126,234,0.9)',
+                                    color: '#fff',
+                                    fontWeight: 700,
+                                    fontSize: '0.75rem',
+                                    border: '1px solid rgba(255,255,255,0.3)'
+                                  }}
+                                />
+                              )}
+                              {(t.test > 0) && (
+                                <Chip 
+                                  label={`${t.test} Tests`}
+                                  size="small"
+                                  sx={{ 
+                                    background: 'rgba(245,87,108,0.9)',
+                                    color: '#fff',
+                                    fontWeight: 700,
+                                    fontSize: '0.75rem',
+                                    border: '1px solid rgba(255,255,255,0.3)'
+                                  }}
+                                />
+                              )}
+                              {(t.withoutWorkType > 0) && (
+                                <Chip 
+                                  label={`${t.withoutWorkType} Unspecified`}
+                                  size="small"
+                                  sx={{ 
+                                    background: 'rgba(149,165,166,0.9)',
+                                    color: '#fff',
+                                    fontWeight: 700,
+                                    fontSize: '0.75rem',
+                                    border: '1px solid rgba(255,255,255,0.3)'
+                                  }}
+                                />
+                              )}
+                            </Box>
+                            <Typography variant="caption" sx={{ 
+                              color: 'rgba(255,255,255,0.9)', 
+                              display: 'block', 
+                              mt: 1,
+                              fontWeight: 600 
+                            }}>
+                              {t.regularTransfers || 0} Regular + {t.sheetTransfers || 0} Sheet = {totalJobs} Total
                             </Typography>
                           </Box>
                         </Grid>
@@ -274,29 +365,57 @@ export default function TechnicianStatsBox({ initialFrom = '', initialTo = '', t
                                 {avgPerDay}
                               </Typography>
                               <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600, mb: 1 }}>
-                                ⚡ Average Jobs/Day
+                                ⚡ Average PCs/Day
                               </Typography>
-                              <Box sx={{ display: 'flex', justifyContent: 'space-around', mt: 1 }}>
-                                <Chip 
-                                  label={`${(Number(t.repair) / days).toFixed(1)} repairs/day`}
-                                  size="small"
-                                  sx={{ 
-                                    background: 'rgba(255,255,255,0.3)', 
-                                    color: '#fff',
-                                    fontWeight: 600,
-                                    fontSize: '0.7rem'
-                                  }}
-                                />
-                                <Chip 
-                                  label={`${(Number(t.test) / days).toFixed(1)} tests/day`}
-                                  size="small"
-                                  sx={{ 
-                                    background: 'rgba(255,255,255,0.3)', 
-                                    color: '#fff',
-                                    fontWeight: 600,
-                                    fontSize: '0.7rem'
-                                  }}
-                                />
+                              <Box sx={{ display: 'flex', justifyContent: 'space-around', mt: 1, flexWrap: 'wrap', gap: 0.5 }}>
+                                {t.repair > 0 && (
+                                  <Chip 
+                                    label={`${(Number(t.repair) / days).toFixed(1)} repairs`}
+                                    size="small"
+                                    sx={{ 
+                                      background: 'rgba(255,255,255,0.3)', 
+                                      color: '#fff',
+                                      fontWeight: 600,
+                                      fontSize: '0.7rem'
+                                    }}
+                                  />
+                                )}
+                                {t.test > 0 && (
+                                  <Chip 
+                                    label={`${(Number(t.test) / days).toFixed(1)} tests`}
+                                    size="small"
+                                    sx={{ 
+                                      background: 'rgba(255,255,255,0.3)', 
+                                      color: '#fff',
+                                      fontWeight: 600,
+                                      fontSize: '0.7rem'
+                                    }}
+                                  />
+                                )}
+                                {t.regularTransfers > 0 && (
+                                  <Chip 
+                                    label={`${(Number(t.regularTransfers) / days).toFixed(1)} regular`}
+                                    size="small"
+                                    sx={{ 
+                                      background: 'rgba(255,255,255,0.3)', 
+                                      color: '#fff',
+                                      fontWeight: 600,
+                                      fontSize: '0.7rem'
+                                    }}
+                                  />
+                                )}
+                                {t.sheetTransfers > 0 && (
+                                  <Chip 
+                                    label={`${(Number(t.sheetTransfers) / days).toFixed(1)} sheets`}
+                                    size="small"
+                                    sx={{ 
+                                      background: 'rgba(255,255,255,0.3)', 
+                                      color: '#fff',
+                                      fontWeight: 600,
+                                      fontSize: '0.7rem'
+                                    }}
+                                  />
+                                )}
                               </Box>
                             </Box>
                           </Grid>
