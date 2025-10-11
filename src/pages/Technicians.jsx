@@ -232,179 +232,232 @@ export default function Technicians() {
   };
 
   return (
-    <Box p={2}>
-      <Typography variant="h4" gutterBottom>Technician Management</Typography>
+    <Box p={{ xs: 1, md: 3 }} sx={{ background: 'linear-gradient(135deg, #f4f6f8 60%, #e3eafc 100%)', minHeight: '100vh' }}>
+      <Typography variant="h4" gutterBottom sx={{ fontWeight: 900, letterSpacing: 1, color: 'primary.main', mb: 3 }}>
+        👨‍🔧 Technician Management
+      </Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       
-      <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
+      <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
         {hasPerm('technicians','edit') && (
           <>
-            <Button variant="contained" onClick={() => handleOpen()}>Add Technician</Button>
-            <Button variant="outlined" onClick={handleAssignmentOpen}>Assign Items</Button>
+            <Button 
+              variant="contained" 
+              onClick={() => handleOpen()}
+              sx={{ fontWeight: 700, px: 3, borderRadius: 2, boxShadow: '0 4px 12px rgba(25,118,210,0.3)' }}
+            >
+              ➕ Add Technician
+            </Button>
+            <Button 
+              variant="outlined" 
+              onClick={handleAssignmentOpen}
+              sx={{ fontWeight: 700, px: 3, borderRadius: 2 }}
+            >
+              🔧 Assign Items
+            </Button>
           </>
         )}
       </Box>
 
-      <Grid container spacing={3}>
-        {/* Technicians Table */}
-        <Grid item xs={12} md={8}>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Phone</TableCell>
-                  <TableCell>Specialization</TableCell>
+      {/* 1. TECHNICIAN MANAGEMENT TABLE - FULL WIDTH AT TOP */}
+      <Box sx={{ mb: 3 }}>
+        <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
+          <Table sx={{ '& tbody tr:nth-of-type(odd)': { backgroundColor: '#f9fafd' }, '& tbody tr:hover': { backgroundColor: '#e3eafc' } }}>
+            <TableHead>
+              <TableRow sx={{ background: 'linear-gradient(145deg, #1976d2, #1565c0)' }}>
+                <TableCell sx={{ fontWeight: 900, color: 'white', fontSize: '1rem' }}>👤 Name</TableCell>
+                <TableCell sx={{ fontWeight: 900, color: 'white' }}>📧 Email</TableCell>
+                <TableCell sx={{ fontWeight: 900, color: 'white' }}>📞 Phone</TableCell>
+                <TableCell sx={{ fontWeight: 900, color: 'white' }}>🔧 Specialization</TableCell>
+                {(hasPerm('technicians','edit') || hasPerm('technicians','delete')) && (
+                  <TableCell sx={{ fontWeight: 900, color: 'white' }}>⚙️ Actions</TableCell>
+                )}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {(technicians || []).filter(t => t && t._id).map(t => (
+                <TableRow key={t._id} sx={{ transition: 'all 0.2s' }}>
+                  <TableCell sx={{ fontWeight: 600 }}>{t.name}</TableCell>
+                  <TableCell>{t.email}</TableCell>
+                  <TableCell>{t.phone}</TableCell>
+                  <TableCell>
+                    <Box sx={{ 
+                      display: 'inline-block',
+                      px: 2, 
+                      py: 0.5, 
+                      borderRadius: 2, 
+                      background: 'linear-gradient(145deg, #e3f2fd, #bbdefb)',
+                      color: '#1565c0',
+                      fontWeight: 600,
+                      fontSize: '0.875rem'
+                    }}>
+                      {t.specialization}
+                    </Box>
+                  </TableCell>
                   {(hasPerm('technicians','edit') || hasPerm('technicians','delete')) && (
-                    <TableCell>Actions</TableCell>
+                    <TableCell>
+                      {hasPerm('technicians','edit') && (
+                        <Button 
+                          size="small" 
+                          onClick={() => handleOpen(t)}
+                          sx={{ mr: 1, fontWeight: 600 }}
+                        >
+                          Edit
+                        </Button>
+                      )}
+                      {hasPerm('technicians','delete') && (
+                        <Button 
+                          size="small" 
+                          color="error" 
+                          onClick={() => handleDelete(t._id)}
+                          sx={{ fontWeight: 600 }}
+                        >
+                          Delete
+                        </Button>
+                      )}
+                    </TableCell>
                   )}
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {(technicians || []).filter(t => t && t._id).map(t => (
-                  <TableRow key={t._id}>
-                    <TableCell>{t.name}</TableCell>
-                    <TableCell>{t.email}</TableCell>
-                    <TableCell>{t.phone}</TableCell>
-                    <TableCell>{t.specialization}</TableCell>
-                    {(hasPerm('technicians','edit') || hasPerm('technicians','delete')) && (
-                      <TableCell>
-                        {hasPerm('technicians','edit') && (
-                          <Button size="small" onClick={() => handleOpen(t)}>Edit</Button>
-                        )}
-                        {hasPerm('technicians','delete') && (
-                          <Button size="small" color="error" onClick={() => handleDelete(t._id)}>Delete</Button>
-                        )}
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Grid>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
 
-        {/* Current Assignments */}
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2, height: 'fit-content', maxHeight: '600px', display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="h6" gutterBottom>View Assignments</Typography>
-            
-            {/* Technician Selector */}
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Select Technician</InputLabel>
-              <Select
-                value={viewSelectedTechnician}
-                label="Select Technician"
-                onChange={(e) => setViewSelectedTechnician(e.target.value)}
-              >
-                <MenuItem value="">
-                  <em>Select a technician</em>
+      {/* 2. VIEW ASSIGNMENTS SECTION - FULL WIDTH IN MIDDLE */}
+      <Box sx={{ mb: 3 }}>
+        <Paper sx={{ 
+          p: 3, 
+          borderRadius: 3,
+          boxShadow: '0 4px 24px rgba(25,118,210,0.08)',
+          background: 'linear-gradient(145deg, #ffffff, #f8fafc)'
+        }}>
+          <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: 'primary.main', mb: 3 }}>
+            📋 View Technician Assignments
+          </Typography>
+          
+          {/* Technician Selector */}
+          <FormControl fullWidth sx={{ mb: 3 }}>
+            <InputLabel sx={{ fontWeight: 600 }}>Select Technician</InputLabel>
+            <Select
+              value={viewSelectedTechnician}
+              label="Select Technician"
+              onChange={(e) => setViewSelectedTechnician(e.target.value)}
+              sx={{ 
+                borderRadius: 2,
+                background: '#fff',
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e0e0e0' }
+              }}
+            >
+              <MenuItem value="">
+                <em>Select a technician</em>
+              </MenuItem>
+              {technicians.length > 0 ? (technicians.filter(tech => tech && tech._id).map(tech => (
+                <MenuItem key={tech._id} value={tech._id}>
+                  👨‍🔧 {tech.name} - {tech.specialization}
                 </MenuItem>
-                {technicians.length > 0 ? (technicians.filter(tech => tech && tech._id).map(tech => (
-                  <MenuItem key={tech._id} value={tech._id}>
-                    {tech.name} - {tech.specialization}
-                  </MenuItem>
-                ))) : (
-                  <MenuItem disabled>
-                    <em>No technicians available</em>
-                  </MenuItem>
-                )}
-              </Select>
-            </FormControl>
-            
-            {/* Debug info */}
-            {process.env.NODE_ENV === 'development' && (
-              <Typography variant="caption" color="textSecondary">
-                Debug: {technicians.length} technicians loaded
-              </Typography>
-            )}
-
-            {/* Scrollable content area */}
-            <Box sx={{ flex: 1, overflow: 'auto', maxHeight: '450px' }}>
-              {/* Show only assigned items for the selected technician */}
-              {viewSelectedTechnician ? (
-                (() => {
-                  const selectedAssignment = (assignments || []).find(a => a && (a.technicianId?._id || a.technicianId) === viewSelectedTechnician);
-                  const assignedIds = selectedAssignment && Array.isArray(selectedAssignment.itemIds)
-                    ? selectedAssignment.itemIds.filter(item => item && (typeof item === 'object' ? item._id : item)).map(item => typeof item === 'object' ? item._id : item)
-                    : [];
-
-                  const technicianItems = (warehouseItems || []).filter(w => w && w.item && assignedIds.includes(w.item._id));
-
-                  return (
-                    <Box>
-                      <Typography variant="subtitle2" gutterBottom>
-                        Assigned Items ({technicianItems.length}):
-                      </Typography>
-                      <List dense>
-                        {technicianItems.length > 0 ? (
-                          technicianItems.filter(w => w && w.item && w.item._id).map((w) => {
-                            // Find the comment for this item
-                            const savedComment = selectedAssignment?.itemComments?.find(
-                              c => c && (c.itemId?._id || c.itemId) === w.item._id
-                            )?.comment || '';
-                            
-                            // Use local state if available, otherwise use saved comment
-                            const commentKey = `${viewSelectedTechnician}-${w.item._id}`;
-                            const displayComment = commentStates[commentKey] !== undefined 
-                              ? commentStates[commentKey] 
-                              : savedComment;
-
-                            return (
-                              <Box key={w.item._id} sx={{ mb: 2, p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-                                <ListItem sx={{ pl: 0, background: '#e3f2fd', mb: 1 }}>
-                                  <ListItemText
-                                    primary={w.item.name}
-                                    secondary={`Category: ${w.item.category} | Unit: ${w.item.unit} | Qty: ${w.quantity}`}
-                                  />
-                                  {hasPerm('technicians','edit') && (
-                                    <IconButton
-                                      size="small"
-                                      color="error"
-                                      onClick={() => handleUnassignItem(viewSelectedTechnician, w.item._id)}
-                                      sx={{ ml: 1 }}
-                                    >
-                                      <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                  )}
-                                </ListItem>
-                                <TextField
-                                  size="small"
-                                  fullWidth
-                                  label="Comments"
-                                  placeholder="Add comments about this item..."
-                                  value={displayComment}
-                                  onChange={(e) => {
-                                    handleCommentChange(viewSelectedTechnician, w.item._id, e.target.value);
-                                  }}
-                                  multiline
-                                  rows={2}
-                                  disabled={!hasPerm('technicians','edit')}
-                                  sx={{ mt: 1 }}
-                                />
-                              </Box>
-                            );
-                          })
-                        ) : (
-                          <ListItem>
-                            <ListItemText primary="No items assigned to this technician." />
-                          </ListItem>
-                        )}
-                      </List>
-                    </Box>
-                  );
-                })()
-              ) : (
-                <Alert severity="info">
-                  Select a technician to view their assigned items
-                </Alert>
+              ))) : (
+                <MenuItem disabled>
+                  <em>No technicians available</em>
+                </MenuItem>
               )}
-            </Box>
-          </Paper>
-        </Grid>
-      </Grid>
+            </Select>
+          </FormControl>
+          
+          {/* Debug info */}
+          {process.env.NODE_ENV === 'development' && (
+            <Typography variant="caption" color="textSecondary" sx={{ mb: 2, display: 'block' }}>
+              Debug: {technicians.length} technicians loaded
+            </Typography>
+          )}
+
+          {/* Scrollable content area */}
+          <Box sx={{ overflow: 'auto', maxHeight: '450px' }}>
+            {/* Show only assigned items for the selected technician */}
+            {viewSelectedTechnician ? (
+              (() => {
+                const selectedAssignment = (assignments || []).find(a => a && (a.technicianId?._id || a.technicianId) === viewSelectedTechnician);
+                const assignedIds = selectedAssignment && Array.isArray(selectedAssignment.itemIds)
+                  ? selectedAssignment.itemIds.filter(item => item && (typeof item === 'object' ? item._id : item)).map(item => typeof item === 'object' ? item._id : item)
+                  : [];
+
+                const technicianItems = (warehouseItems || []).filter(w => w && w.item && assignedIds.includes(w.item._id));
+
+                return (
+                  <Box>
+                    <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
+                      Assigned Items ({technicianItems.length}):
+                    </Typography>
+                    <List dense>
+                      {technicianItems.length > 0 ? (
+                        technicianItems.filter(w => w && w.item && w.item._id).map((w) => {
+                          // Find the comment for this item
+                          const savedComment = selectedAssignment?.itemComments?.find(
+                            c => c && (c.itemId?._id || c.itemId) === w.item._id
+                          )?.comment || '';
+                          
+                          // Use local state if available, otherwise use saved comment
+                          const commentKey = `${viewSelectedTechnician}-${w.item._id}`;
+                          const displayComment = commentStates[commentKey] !== undefined 
+                            ? commentStates[commentKey] 
+                            : savedComment;
+
+                          return (
+                            <Box key={w.item._id} sx={{ mb: 2, p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+                              <ListItem sx={{ pl: 0, background: '#e3f2fd', mb: 1 }}>
+                                <ListItemText
+                                  primary={w.item.name}
+                                  secondary={`Category: ${w.item.category} | Unit: ${w.item.unit} | Qty: ${w.quantity}`}
+                                />
+                                {hasPerm('technicians','edit') && (
+                                  <IconButton
+                                    size="small"
+                                    color="error"
+                                    onClick={() => handleUnassignItem(viewSelectedTechnician, w.item._id)}
+                                    sx={{ ml: 1 }}
+                                  >
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                )}
+                              </ListItem>
+                              <TextField
+                                size="small"
+                                fullWidth
+                                label="Comments"
+                                placeholder="Add comments about this item..."
+                                value={displayComment}
+                                onChange={(e) => {
+                                  handleCommentChange(viewSelectedTechnician, w.item._id, e.target.value);
+                                }}
+                                multiline
+                                rows={2}
+                                disabled={!hasPerm('technicians','edit')}
+                                sx={{ mt: 1 }}
+                              />
+                            </Box>
+                          );
+                        })
+                      ) : (
+                        <ListItem>
+                          <ListItemText primary="No items assigned to this technician." />
+                        </ListItem>
+                      )}
+                    </List>
+                  </Box>
+                );
+              })()
+            ) : (
+              <Alert severity="info">
+                Select a technician to view their assigned items
+              </Alert>
+            )}
+          </Box>
+        </Paper>
+      </Box>
+
+      {/* 3. STATISTICS SECTION - FULL WIDTH AT BOTTOM */}
+      <TechnicianStatsBox />
 
       {/* Add/Edit Technician Dialog */}
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
@@ -509,8 +562,6 @@ export default function Technicians() {
           )}
         </DialogActions>
       </Dialog>
-
-      <TechnicianStatsBox />
     </Box>
   );
 }

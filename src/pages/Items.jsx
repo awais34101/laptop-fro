@@ -98,351 +98,922 @@ export default function Items() {
     return matchesSearch && matchesCategory;
   }).sort((a, b) => a.name.localeCompare(b.name));
   return (
-    <Box p={{ xs: 1, md: 3 }} sx={{ background: 'linear-gradient(135deg, #f4f6f8 60%, #e3eafc 100%)', minHeight: '100vh' }}>
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
-      )}
-      <Typography variant="h4" gutterBottom sx={{ fontWeight: 900, letterSpacing: 1, color: 'primary.main', mb: 1 }}>
-        Items Management
-      </Typography>
-      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+    <Box sx={{ 
+      background: 'linear-gradient(135deg, #f8fafc 0%, #e3f2fd 50%, #f3e5f5 100%)', 
+      minHeight: '100vh',
+      p: { xs: 2, sm: 3, md: 4 }
+    }}>
+      {/* Header Section with Modern Design */}
+      <Box sx={{ mb: 4 }}>
         <Box sx={{ 
-          background: 'linear-gradient(145deg, #f8fafc, #e2e8f0)', 
-          px: 3, 
-          py: 1.5, 
-          borderRadius: 3, 
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 2,
+          mb: 3
         }}>
-          <Typography variant="body2" sx={{ fontWeight: 600, color: '#475569' }}>
-            📊 Showing <Box component="span" sx={{ color: '#1976d2', fontWeight: 700 }}>{filteredItems.length}</Box> of <Box component="span" sx={{ color: '#64748b' }}>{items.length}</Box> items
-          </Typography>
-        </Box>
-        {categoryFilter && (
-          <Chip 
-            label={`📂 ${categoryFilter.toLowerCase()}`}
-            onDelete={() => setCategoryFilter('')}
-            sx={{
-              background: 'linear-gradient(145deg, #dbeafe, #bfdbfe)',
-              color: '#1e40af',
-              fontWeight: 600,
-              borderRadius: 3,
-              px: 1,
-              '& .MuiChip-deleteIcon': {
-                color: '#3b82f6',
+          <Box>
+            <Typography 
+              variant="h3" 
+              sx={{ 
+                fontWeight: 800, 
+                background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                letterSpacing: '-0.5px',
+                mb: 0.5
+              }}
+            >
+              📦 Items Management
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500 }}>
+              Manage your inventory items and track stock levels across all locations
+            </Typography>
+          </Box>
+          
+          {hasPerm('items','edit') && (
+            <Button 
+              variant="contained" 
+              onClick={() => handleOpen()} 
+              sx={{ 
+                fontWeight: 700,
+                px: 4,
+                py: 1.5,
+                borderRadius: 3,
+                fontSize: '1rem',
+                background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+                boxShadow: '0 8px 24px rgba(25, 118, 210, 0.3)',
+                textTransform: 'none',
                 '&:hover': {
-                  color: '#1e40af'
+                  background: 'linear-gradient(135deg, #1565c0 0%, #0d47a1 100%)',
+                  boxShadow: '0 12px 32px rgba(25, 118, 210, 0.4)',
+                  transform: 'translateY(-2px)'
+                },
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+            >
+              ➕ Add New Item
+            </Button>
+          )}
+        </Box>
+
+        {error && (
+          <Alert 
+            severity="error" 
+            sx={{ 
+              mb: 3,
+              borderRadius: 3,
+              boxShadow: '0 4px 16px rgba(211, 47, 47, 0.15)',
+              border: '1px solid #ffcdd2',
+              '& .MuiAlert-icon': {
+                fontSize: 28
+              }
+            }}
+          >
+            {error}
+          </Alert>
+        )}
+
+        {/* Stats Cards */}
+        <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+          <Box sx={{ 
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)', 
+            px: 4, 
+            py: 2.5, 
+            borderRadius: 4, 
+            border: '2px solid #e2e8f0',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
+            minWidth: 280
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box sx={{ 
+                width: 48, 
+                height: 48, 
+                borderRadius: 3,
+                background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '24px'
+              }}>
+                📊
+              </Box>
+              <Box>
+                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: 1 }}>
+                  Displaying Items
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 800, color: '#1e293b', lineHeight: 1.2 }}>
+                  <Box component="span" sx={{ color: '#1976d2' }}>{filteredItems.length}</Box>
+                  <Box component="span" sx={{ fontSize: '1rem', color: '#94a3b8', mx: 1 }}>/</Box>
+                  <Box component="span" sx={{ fontSize: '1.2rem', color: '#64748b' }}>{items.length}</Box>
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+          
+          
+          {categoryFilter && (
+            <Chip 
+              label={`📂 ${categoryFilter.toLowerCase()}`}
+              onDelete={() => setCategoryFilter('')}
+              sx={{
+                background: 'linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%)',
+                color: '#1e40af',
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                height: 42,
+                borderRadius: 4,
+                px: 2,
+                border: '2px solid #bfdbfe',
+                boxShadow: '0 4px 16px rgba(59, 130, 246, 0.2)',
+                '& .MuiChip-deleteIcon': {
+                  color: '#3b82f6',
+                  fontSize: '22px',
+                  '&:hover': {
+                    color: '#1e40af',
+                    transform: 'scale(1.2)'
+                  }
+                }
+              }}
+            />
+          )}
+        </Box>
+      </Box>
+
+      {/* Filters and Search Section */}
+      <Box sx={{ 
+        background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+        borderRadius: 4,
+        p: 3,
+        mb: 4,
+        border: '2px solid #e2e8f0',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)'
+      }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: '#1e293b', mb: 2.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+          🔍 Search & Filter
+        </Typography>
+        
+        <Box sx={{ display: 'flex', gap: 2.5, flexWrap: 'wrap', alignItems: 'center' }}>
+          <TextField
+            label="Search Items"
+            placeholder="Search by name or category..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            size="medium"
+            sx={{ 
+              flex: 1,
+              minWidth: 320, 
+              '& .MuiOutlinedInput-root': {
+                background: '#ffffff',
+                borderRadius: 3,
+                fontSize: '1rem',
+                fontWeight: 500,
+                '& fieldset': {
+                  borderColor: '#cbd5e1',
+                  borderWidth: 2
+                },
+                '&:hover fieldset': {
+                  borderColor: '#94a3b8'
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#1976d2',
+                  borderWidth: 2
+                }
+              },
+              '& .MuiInputLabel-root': {
+                fontWeight: 600,
+                fontSize: '1rem',
+                '&.Mui-focused': {
+                  color: '#1976d2'
                 }
               }
             }}
           />
-        )}
-      </Box>
-      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
-        {hasPerm('items','edit') && (
-          <Button variant="contained" color="primary" onClick={() => handleOpen()} sx={{ fontWeight: 700, px: 3, borderRadius: 2 }}>Add Item</Button>
-        )}
-        <TextField
-          label="Search Items"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          size="small"
-          sx={{ width: 320, background: '#fff', borderRadius: 2 }}
-        />
-        <FormControl size="small" sx={{ minWidth: 250, background: 'linear-gradient(145deg, #ffffff, #f8fafc)', borderRadius: 3, boxShadow: '0 2px 12px rgba(25,118,210,0.08)', border: '1px solid #e2e8f0' }}>
-          <InputLabel sx={{ color: '#64748b', fontWeight: 600, '&.Mui-focused': { color: '#1976d2' } }}>Filter by Category</InputLabel>
-          <Select
-            value={categoryFilter}
-            label="Filter by Category"
-            onChange={(e) => setCategoryFilter(e.target.value)}
+          
+          <FormControl 
+            size="medium" 
             sx={{ 
+              minWidth: 280, 
+              background: 'linear-gradient(145deg, #ffffff, #f8fafc)', 
               borderRadius: 3, 
-              '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
-              '& .MuiSelect-select': { fontWeight: 500 },
-              '&:hover .MuiOutlinedInput-notchedOutline': { border: 'none' },
-              '&.Mui-focused .MuiOutlinedInput-notchedOutline': { border: '2px solid #1976d2' }
+              boxShadow: '0 4px 16px rgba(25, 118, 210, 0.1)', 
+              border: '2px solid #e2e8f0',
+              '& .MuiOutlinedInput-notchedOutline': {
+                border: 'none'
+              }
             }}
-            MenuProps={{
-              PaperProps: {
-                sx: {
-                  borderRadius: 3,
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-                  border: '1px solid #e2e8f0',
-                  mt: 1,
-                  maxHeight: 400,
-                  '& .MuiMenuItem-root': {
-                    borderRadius: 2,
-                    mx: 1,
-                    my: 0.5,
-                    minHeight: 48,
-                    '&:hover': {
-                      background: 'linear-gradient(145deg, #f1f5f9, #e2e8f0)',
-                      transform: 'translateX(4px)',
-                      transition: 'all 0.2s ease'
-                    },
-                    '&.Mui-selected': {
-                      background: 'linear-gradient(145deg, #dbeafe, #bfdbfe)',
-                      color: '#1e40af',
-                      fontWeight: 600,
+          >
+            <InputLabel 
+              sx={{ 
+                color: '#64748b', 
+                fontWeight: 700, 
+                fontSize: '1rem',
+                '&.Mui-focused': { 
+                  color: '#1976d2' 
+                } 
+              }}
+            >
+              Filter by Category
+            </InputLabel>
+            <Select
+              value={categoryFilter}
+              label="Filter by Category"
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              sx={{ 
+                borderRadius: 3,
+                fontWeight: 600,
+                '&:hover .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { border: '2px solid #1976d2' }
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    borderRadius: 4,
+                    boxShadow: '0 12px 48px rgba(0, 0, 0, 0.15)',
+                    border: '2px solid #e2e8f0',
+                    mt: 1.5,
+                    maxHeight: 480,
+                    '& .MuiMenuItem-root': {
+                      borderRadius: 3,
+                      mx: 1.5,
+                      my: 0.75,
+                      minHeight: 56,
+                      fontSize: '1rem',
                       '&:hover': {
-                        background: 'linear-gradient(145deg, #dbeafe, #bfdbfe)'
+                        background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
+                        transform: 'translateX(6px)',
+                        transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
+                      },
+                      '&.Mui-selected': {
+                        background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                        color: '#1e40af',
+                        fontWeight: 700,
+                        border: '2px solid #93c5fd',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%)'
+                        }
                       }
                     }
                   }
                 }
+              }}
+            >
+              <MenuItem value="" sx={{ borderBottom: '2px solid #e2e8f0', mb: 1.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5, width: '100%' }}>
+                  <Box sx={{ 
+                    width: 40, 
+                    height: 40, 
+                    borderRadius: 3, 
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '20px',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)'
+                  }}>
+                    🗂️
+                  </Box>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#1e293b' }}>All Categories</Typography>
+                    <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>Show all {items.length} items</Typography>
+                  </Box>
+                </Box>
+              </MenuItem>
+              {uniqueCategories.map((category) => {
+                const categoryCount = items.filter(item => item.category === category).length;
+                // Smart icon detection - automatically assigns icons for new categories
+                const getCategoryIcon = (categoryName) => {
+                  const name = categoryName.toUpperCase();
+                  
+                  // Exact matches first
+                  const exactMatches = {
+                    'IPADS': '📱', 'IPAD': '📱', 'TABLET': '📱',
+                    'LAPTOP': '💻', 'LAPT': '💻', 'NOTEBOOK': '💻',
+                    'MAC': '🖥️', 'MACBOOK': '💻', 'IMAC': '🖥️',
+                    'SURF': '💻', 'SURFACE': '💻',
+                    'BOOK': '📚', 'CHROMEBOOK': '💻',
+                    'CABLE': '🔌', 'CBL': '🔌', 'WIRE': '🔌',
+                    'CHRG': '⚡', 'CHARGING': '⚡', 'CHARGER': '⚡',
+                    'ADAPTER': '🔌', 'ADP': '🔌', 'AD': '🔌',
+                    'MOUSE': '🖱️', 'MICE': '🖱️',
+                    'KEYBOARD': '⌨️', 'KB': '⌨️',
+                    'MONITOR': '🖥️', 'SCREEN': '🖥️', 'DISPLAY': '🖥️',
+                    'REPAIR': '🔧', 'REPAIRING': '🔧', 'SERVICE': '🔧',
+                    'PARTS': '⚙️', 'COMPONENT': '🔩', 'SPARE': '⚙️'
+                  };
+                  
+                  if (exactMatches[name]) return exactMatches[name];
+                  
+                  // Pattern matching for new categories
+                  if (name.includes('PHONE') || name.includes('MOBILE')) return '📱';
+                  if (name.includes('COMPUTER') || name.includes('PC')) return '💻';
+                  if (name.includes('POWER') || name.includes('BATTERY')) return '🔋';
+                  if (name.includes('AUDIO') || name.includes('SOUND') || name.includes('SPEAKER')) return '🔊';
+                  if (name.includes('VIDEO') || name.includes('CAMERA')) return '📹';
+                  if (name.includes('STORAGE') || name.includes('DRIVE') || name.includes('HDD') || name.includes('SSD')) return '💾';
+                  if (name.includes('MEMORY') || name.includes('RAM')) return '🧠';
+                  if (name.includes('NETWORK') || name.includes('WIFI') || name.includes('ETHERNET')) return '🌐';
+                  if (name.includes('PRINTER') || name.includes('PRINT')) return '🖨️';
+                  if (name.includes('ACCESSORY') || name.includes('ACCESSORIES')) return '🎯';
+                  if (name.includes('TOOL') || name.includes('EQUIPMENT')) return '🔧';
+                  if (name.includes('SOFTWARE') || name.includes('LICENSE')) return '💿';
+                  if (name.includes('CASE') || name.includes('COVER') || name.includes('SLEEVE')) return '💼';
+                  
+                  // Default for unknown categories
+                  return '📦';
+                };
+                
+                const categoryIcon = getCategoryIcon(category);
+                
+                return (
+                  <MenuItem key={category} value={category}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5, width: '100%' }}>
+                      <Box sx={{ 
+                        width: 40, 
+                        height: 40, 
+                        borderRadius: 3, 
+                        background: `linear-gradient(135deg, ${categoryFilter === category ? '#dbeafe' : '#f1f5f9'}, ${categoryFilter === category ? '#bfdbfe' : '#e2e8f0'})`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '18px',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)'
+                      }}>
+                        {categoryIcon}
+                      </Box>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#1e293b', textTransform: 'capitalize' }}>
+                          {category.toLowerCase()}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
+                          {categoryCount} {categoryCount === 1 ? 'item' : 'items'}
+                        </Typography>
+                      </Box>
+                      <Chip 
+                        label={categoryCount}
+                        size="small"
+                        sx={{ 
+                          background: categoryFilter === category ? 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%)' : 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
+                          color: 'white',
+                          fontWeight: 700,
+                          minWidth: 32,
+                          height: 28,
+                          fontSize: '0.8rem',
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+                        }}
+                      />
+                    </Box>
+                  </MenuItem>
+                );
+              })}
+            </Select>
+          </FormControl>
+          
+          {categoryFilter && (
+            <Button
+              variant="outlined"
+              size="medium"
+              onClick={() => setCategoryFilter('')}
+              sx={{ 
+                borderRadius: 3, 
+                fontWeight: 700,
+                textTransform: 'none',
+                px: 3,
+                py: 1.5,
+                fontSize: '0.95rem',
+                background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
+                borderColor: '#fca5a5',
+                borderWidth: 2,
+                color: '#dc2626',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
+                  borderColor: '#f87171',
+                  borderWidth: 2,
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 8px 20px rgba(220, 38, 38, 0.25)'
+                },
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+            >
+              ✕ Clear Filter
+            </Button>
+          )}
+        </Box>
+      </Box>
+
+      {/* Data Table Section */}
+      <TableContainer 
+        component={Paper} 
+        sx={{ 
+          borderRadius: 4, 
+          boxShadow: '0 12px 48px rgba(25, 118, 210, 0.12)',
+          overflow: 'hidden',
+          border: '2px solid #e2e8f0'
+        }}
+      >
+        <Box sx={{ maxHeight: 600, overflowY: 'auto' }}>
+          <Table 
+            stickyHeader
+            sx={{ 
+              minWidth: 1200,
+              '& .MuiTableCell-root': {
+                fontSize: '0.95rem'
               }
             }}
           >
-            <MenuItem value="" sx={{ borderBottom: '1px solid #e2e8f0', mb: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-                <Box sx={{ 
-                  width: 32, 
-                  height: 32, 
-                  borderRadius: 2, 
-                  background: 'linear-gradient(145deg, #f8fafc, #e2e8f0)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  🗂️
-                </Box>
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#1e293b' }}>All Categories</Typography>
-                  <Typography variant="caption" sx={{ color: '#64748b' }}>Show all {items.length} items</Typography>
-                </Box>
-              </Box>
-            </MenuItem>
-            {uniqueCategories.map((category) => {
-              const categoryCount = items.filter(item => item.category === category).length;
-              // Smart icon detection - automatically assigns icons for new categories
-              const getCategoryIcon = (categoryName) => {
-                const name = categoryName.toUpperCase();
-                
-                // Exact matches first
-                const exactMatches = {
-                  'IPADS': '📱', 'IPAD': '📱', 'TABLET': '📱',
-                  'LAPTOP': '💻', 'LAPT': '💻', 'NOTEBOOK': '💻',
-                  'MAC': '�️', 'MACBOOK': '�💻', 'IMAC': '🖥️',
-                  'SURF': '💻', 'SURFACE': '�',
-                  'BOOK': '📚', 'CHROMEBOOK': '💻',
-                  'CABLE': '🔌', 'CBL': '🔌', 'WIRE': '�',
-                  'CHRG': '⚡', 'CHARGING': '⚡', 'CHARGER': '⚡',
-                  'ADAPTER': '🔌', 'ADP': '🔌', 'AD': '�',
-                  'MOUSE': '🖱️', 'MICE': '�️',
-                  'KEYBOARD': '⌨️', 'KB': '⌨️',
-                  'MONITOR': '🖥️', 'SCREEN': '🖥️', 'DISPLAY': '🖥️',
-                  'REPAIR': '🔧', 'REPAIRING': '🔧', 'SERVICE': '🔧',
-                  'PARTS': '⚙️', 'COMPONENT': '🔩', 'SPARE': '⚙️'
-                };
-                
-                if (exactMatches[name]) return exactMatches[name];
-                
-                // Pattern matching for new categories
-                if (name.includes('PHONE') || name.includes('MOBILE')) return '�';
-                if (name.includes('COMPUTER') || name.includes('PC')) return '�';
-                if (name.includes('POWER') || name.includes('BATTERY')) return '�';
-                if (name.includes('AUDIO') || name.includes('SOUND') || name.includes('SPEAKER')) return '�';
-                if (name.includes('VIDEO') || name.includes('CAMERA')) return '📹';
-                if (name.includes('STORAGE') || name.includes('DRIVE') || name.includes('HDD') || name.includes('SSD')) return '💾';
-                if (name.includes('MEMORY') || name.includes('RAM')) return '🧠';
-                if (name.includes('NETWORK') || name.includes('WIFI') || name.includes('ETHERNET')) return '🌐';
-                if (name.includes('PRINTER') || name.includes('PRINT')) return '�️';
-                if (name.includes('ACCESSORY') || name.includes('ACCESSORIES')) return '🎯';
-                if (name.includes('TOOL') || name.includes('EQUIPMENT')) return '🔧';
-                if (name.includes('SOFTWARE') || name.includes('LICENSE')) return '💿';
-                if (name.includes('CASE') || name.includes('COVER') || name.includes('SLEEVE')) return '💼';
-                
-                // Default for unknown categories
-                return '�';
-              };
-              
-              const categoryIcon = getCategoryIcon(category);
-              
-              return (
-                <MenuItem key={category} value={category}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-                    <Box sx={{ 
-                      width: 32, 
-                      height: 32, 
-                      borderRadius: 2, 
-                      background: `linear-gradient(145deg, ${categoryFilter === category ? '#dbeafe' : '#f1f5f9'}, ${categoryFilter === category ? '#bfdbfe' : '#e2e8f0'})`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '14px'
-                    }}>
-                      {categoryIcon}
-                    </Box>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#1e293b', textTransform: 'capitalize' }}>
-                        {category.toLowerCase()}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: '#64748b' }}>
-                        {categoryCount} {categoryCount === 1 ? 'item' : 'items'}
-                      </Typography>
-                    </Box>
-                    <Chip 
-                      label={categoryCount}
-                      size="small"
-                      sx={{ 
-                        background: categoryFilter === category ? '#1e40af' : '#64748b',
-                        color: 'white',
-                        fontWeight: 600,
-                        minWidth: 28,
-                        height: 24,
-                        fontSize: '0.75rem'
-                      }}
-                    />
-                  </Box>
-                </MenuItem>
-              );
-            })}
-          </Select>
-        </FormControl>
-        {categoryFilter && (
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => setCategoryFilter('')}
-            sx={{ 
-              borderRadius: 3, 
-              fontWeight: 600,
-              textTransform: 'none',
-              px: 2,
-              py: 1,
-              background: 'linear-gradient(145deg, #fef2f2, #fee2e2)',
-              borderColor: '#fca5a5',
-              color: '#dc2626',
-              '&:hover': {
-                background: 'linear-gradient(145deg, #fee2e2, #fecaca)',
-                borderColor: '#f87171',
-                transform: 'translateY(-1px)',
-                boxShadow: '0 4px 12px rgba(220, 38, 38, 0.2)'
-              },
-              transition: 'all 0.2s ease'
-            }}
-          >
-            ✕ Clear Filter
-          </Button>
-        )}
-      </Box>
-      <TableContainer component={Paper} sx={{ mt: 2, maxHeight: 520, overflowY: 'auto', borderRadius: 3, boxShadow: '0 4px 24px rgba(25,118,210,0.08)' }}>
-  <Table sx={{ minWidth: 900, '& tbody tr:nth-of-type(odd)': { backgroundColor: '#f9fafd' }, '& tbody tr:hover': { backgroundColor: '#e3eafc' } }}>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, whiteSpace: 'nowrap', maxWidth: 300, minWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 900, fontSize: '1.1rem', color: 'primary.main' }}>Name</TableCell>
-              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Unit</TableCell>
-              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Category</TableCell>
-              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Avg Price</TableCell>
-              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Store Inventory</TableCell>
-              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Store2 Inventory</TableCell>
-              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Warehouse Inventory</TableCell>
-              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Total Inventory</TableCell>
-              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Total Value</TableCell>
-              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Sale Count</TableCell>
-              <TableCell sx={{ position: 'sticky', top: 0, background: '#f0f4fa', zIndex: 2, fontWeight: 900, color: 'primary.main' }}>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading && (
+            <TableHead>
               <TableRow>
-                <TableCell colSpan={11} align="center">
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: 'center', py: 2 }}>
-                    <CircularProgress size={24} />
-                    <span>Loading items...</span>
-                  </Box>
+                <TableCell 
+                  sx={{ 
+                    background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+                    color: 'white',
+                    fontWeight: 800,
+                    fontSize: '1rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                    py: 2.5,
+                    borderBottom: '3px solid #0d47a1',
+                    minWidth: 220,
+                    maxWidth: 320,
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 100
+                  }}
+                >
+                  📝 Item Name
                 </TableCell>
+                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.5, py: 2.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100 }}>📏 Unit</TableCell>
+                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.5, py: 2.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100 }}>🏷️ Category</TableCell>
+                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.5, py: 2.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100 }}>💰 Avg Price</TableCell>
+                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.5, py: 2.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100 }}>🏪 Store</TableCell>
+                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.5, py: 2.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100 }}>🏬 Store 2</TableCell>
+                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.5, py: 2.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100 }}>🏭 Warehouse</TableCell>
+                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.5, py: 2.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100 }}>📊 Total Qty</TableCell>
+                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.5, py: 2.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100 }}>💵 Total Value</TableCell>
+                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.5, py: 2.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100 }}>🛒 Sales</TableCell>
+                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.5, py: 2.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100 }}>⚙️ Actions</TableCell>
               </TableRow>
-            )}
-            {!loading && filteredItems.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={11} align="center">No items found</TableCell>
-              </TableRow>
-            )}
-            {!loading && filteredItems.map(item => {
-              const warehouseQty = getWarehouseQty(item._id);
-              const storeQty = getStoreQty(item._id);
-              const store2Qty = getStore2Qty(item._id);
-              const totalQty = warehouseQty + storeQty + store2Qty;
-              const avgPrice = item.average_price || 0;
-              const totalValue = totalQty * avgPrice;
-              return (
-                <TableRow key={item._id} sx={{ transition: 'background 0.2s' }}>
-                  <TableCell sx={{ whiteSpace: 'nowrap', maxWidth: 300, minWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 600 }}>{item.name}</TableCell>
-                  <TableCell>{item.unit}</TableCell>
-                  <TableCell>{item.category}</TableCell>
-                  <TableCell>{avgPrice.toFixed(2)}</TableCell>
-                  <TableCell>{storeQty}</TableCell>
-                  <TableCell>{store2Qty}</TableCell>
-                  <TableCell>{warehouseQty}</TableCell>
-                  <TableCell>{totalQty}</TableCell>
-                  <TableCell>{totalValue.toFixed(2)}</TableCell>
-                  <TableCell>{item.sale_count}</TableCell>
-                  <TableCell>
-                    {hasPerm('items','edit') && (
-                      <Button size="small" variant="outlined" sx={{ mr: 1, fontWeight: 600, borderRadius: 2 }} onClick={() => handleOpen(item)}>Edit</Button>
-                    )}
-                    {hasPerm('items','delete') && (
-                      <Button size="small" variant="contained" color="error" sx={{ fontWeight: 600, borderRadius: 2 }} onClick={() => handleDelete(item._id)}>Delete</Button>
-                    )}
+              </TableHead>
+            <TableBody>
+              {loading && (
+                <TableRow>
+                  <TableCell colSpan={11} align="center">
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', justifyContent: 'center', py: 6 }}>
+                      <CircularProgress size={32} thickness={4} />
+                      <Typography sx={{ fontWeight: 600, color: '#64748b', fontSize: '1.1rem' }}>Loading items...</Typography>
+                    </Box>
                   </TableCell>
                 </TableRow>
-              );
-            })}
-          </TableBody>
-          {/* Summary Row */}
-          <tfoot>
+              )}
+              {!loading && filteredItems.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={11} align="center">
+                    <Box sx={{ py: 8 }}>
+                      <Typography variant="h6" sx={{ color: '#94a3b8', fontWeight: 600, mb: 1 }}>
+                        📭 No items found
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#cbd5e1' }}>
+                        {search || categoryFilter ? 'Try adjusting your filters' : 'Add your first item to get started'}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              )}
+              {!loading && filteredItems.map((item, index) => {
+                const warehouseQty = getWarehouseQty(item._id);
+                const storeQty = getStoreQty(item._id);
+                const store2Qty = getStore2Qty(item._id);
+                const totalQty = warehouseQty + storeQty + store2Qty;
+                const avgPrice = item.average_price || 0;
+                const totalValue = totalQty * avgPrice;
+                return (
+                  <TableRow 
+                    key={item._id} 
+                    sx={{ 
+                      background: index % 2 === 0 ? '#ffffff' : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%)',
+                        transform: 'scale(1.001)',
+                        boxShadow: '0 4px 16px rgba(25, 118, 210, 0.15)'
+                      },
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      borderBottom: '1px solid #e2e8f0'
+                    }}
+                  >
+                    <TableCell 
+                      sx={{ 
+                        whiteSpace: 'nowrap', 
+                        maxWidth: 320, 
+                        minWidth: 220, 
+                        overflow: 'hidden', 
+                        textOverflow: 'ellipsis', 
+                        fontWeight: 700,
+                        color: '#1e293b',
+                        fontSize: '0.95rem',
+                        py: 2.5
+                      }}
+                    >
+                      {item.name}
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#475569', py: 2.5 }}>{item.unit}</TableCell>
+                    <TableCell sx={{ py: 2.5 }}>
+                      <Chip 
+                        label={item.category} 
+                        size="small"
+                        sx={{ 
+                          fontWeight: 600,
+                          background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)',
+                          color: '#0369a1',
+                          border: '1px solid #7dd3fc',
+                          textTransform: 'capitalize'
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#059669', fontSize: '0.95rem', py: 2.5 }}>
+                      ${avgPrice.toFixed(2)}
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#6366f1', py: 2.5 }}>{storeQty}</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#8b5cf6', py: 2.5 }}>{store2Qty}</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#f59e0b', py: 2.5 }}>{warehouseQty}</TableCell>
+                    <TableCell sx={{ fontWeight: 800, color: '#1976d2', fontSize: '1rem', py: 2.5 }}>{totalQty}</TableCell>
+                    <TableCell sx={{ fontWeight: 800, color: '#16a34a', fontSize: '1rem', py: 2.5 }}>
+                      ${totalValue.toFixed(2)}
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#64748b', py: 2.5 }}>{item.sale_count}</TableCell>
+                    <TableCell sx={{ py: 2.5 }}>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        {hasPerm('items','edit') && (
+                          <Button 
+                            size="small" 
+                            variant="outlined"
+                            onClick={() => handleOpen(item)}
+                            sx={{ 
+                              fontWeight: 700,
+                              borderRadius: 2.5,
+                              px: 2.5,
+                              textTransform: 'none',
+                              borderWidth: 2,
+                              borderColor: '#3b82f6',
+                              color: '#3b82f6',
+                              '&:hover': {
+                                borderWidth: 2,
+                                borderColor: '#2563eb',
+                                background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                                transform: 'translateY(-1px)',
+                                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                              },
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            ✏️ Edit
+                          </Button>
+                        )}
+                        {hasPerm('items','delete') && (
+                          <Button 
+                            size="small" 
+                            variant="contained"
+                            color="error"
+                            onClick={() => handleDelete(item._id)}
+                            sx={{ 
+                              fontWeight: 700,
+                              borderRadius: 2.5,
+                              px: 2.5,
+                              textTransform: 'none',
+                              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                              '&:hover': {
+                                background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                                transform: 'translateY(-1px)',
+                                boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)'
+                              },
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            🗑️ Delete
+                          </Button>
+                        )}
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+            {/* Enhanced Summary Row */}
             <TableRow>
-              <TableCell sx={{ fontWeight: 900, background: '#f0f4fa', color: 'primary.main' }}>Total</TableCell>
-              <TableCell sx={{ background: '#f0f4fa' }} />
-              <TableCell sx={{ background: '#f0f4fa' }} />
-              <TableCell sx={{ background: '#f0f4fa' }} />
+              <TableCell 
+                sx={{ 
+                  fontWeight: 800, 
+                  background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)', 
+                  color: '#1e293b',
+                  fontSize: '1.05rem',
+                  py: 3,
+                  borderTop: '3px solid #1976d2',
+                  position: 'sticky',
+                  bottom: 0,
+                  zIndex: 10
+                }}
+              >
+                📊 TOTALS
+              </TableCell>
+              <TableCell sx={{ background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)', borderTop: '3px solid #1976d2', position: 'sticky', bottom: 0, zIndex: 10 }} />
+              <TableCell sx={{ background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)', borderTop: '3px solid #1976d2', position: 'sticky', bottom: 0, zIndex: 10 }} />
+              <TableCell sx={{ background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)', borderTop: '3px solid #1976d2', position: 'sticky', bottom: 0, zIndex: 10 }} />
               {/* Store Inventory Total */}
-              <TableCell sx={{ fontWeight: 900, background: '#f0f4fa', color: 'primary.main' }}>
+              <TableCell 
+                sx={{ 
+                  fontWeight: 800, 
+                  background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)', 
+                  color: '#6366f1',
+                  fontSize: '1.05rem',
+                  py: 3,
+                  borderTop: '3px solid #1976d2',
+                  position: 'sticky',
+                  bottom: 0,
+                  zIndex: 10
+                }}
+              >
                 {filteredItems.reduce((sum, item) => sum + getStoreQty(item._id), 0)}
               </TableCell>
               {/* Store2 Inventory Total */}
-              <TableCell sx={{ fontWeight: 900, background: '#f0f4fa', color: 'primary.main' }}>
+              <TableCell 
+                sx={{ 
+                  fontWeight: 800, 
+                  background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)', 
+                  color: '#8b5cf6',
+                  fontSize: '1.05rem',
+                  py: 3,
+                  borderTop: '3px solid #1976d2',
+                  position: 'sticky',
+                  bottom: 0,
+                  zIndex: 10
+                }}
+              >
                 {filteredItems.reduce((sum, item) => sum + getStore2Qty(item._id), 0)}
               </TableCell>
               {/* Warehouse Inventory Total */}
-              <TableCell sx={{ fontWeight: 900, background: '#f0f4fa', color: 'primary.main' }}>
+              <TableCell 
+                sx={{ 
+                  fontWeight: 800, 
+                  background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)', 
+                  color: '#f59e0b',
+                  fontSize: '1.05rem',
+                  py: 3,
+                  borderTop: '3px solid #1976d2',
+                  position: 'sticky',
+                  bottom: 0,
+                  zIndex: 10
+                }}
+              >
                 {filteredItems.reduce((sum, item) => sum + getWarehouseQty(item._id), 0)}
               </TableCell>
               {/* Total Inventory */}
-              <TableCell sx={{ fontWeight: 900, background: '#f0f4fa', color: 'primary.main' }}>
+              <TableCell 
+                sx={{ 
+                  fontWeight: 900, 
+                  background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)', 
+                  color: '#1e40af',
+                  fontSize: '1.15rem',
+                  py: 3,
+                  borderTop: '3px solid #1976d2',
+                  position: 'sticky',
+                  bottom: 0,
+                  zIndex: 10,
+                  border: '2px solid #93c5fd'
+                }}
+              >
                 {filteredItems.reduce((sum, item) => {
                   const totalQty = getWarehouseQty(item._id) + getStoreQty(item._id) + getStore2Qty(item._id);
                   return sum + totalQty;
                 }, 0)}
               </TableCell>
               {/* Total Value */}
-              <TableCell sx={{ fontWeight: 900, background: '#f0f4fa', color: 'primary.main' }}>
-                {filteredItems.reduce((sum, item) => {
+              <TableCell 
+                sx={{ 
+                  fontWeight: 900, 
+                  background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)', 
+                  color: '#065f46',
+                  fontSize: '1.15rem',
+                  py: 3,
+                  borderTop: '3px solid #1976d2',
+                  position: 'sticky',
+                  bottom: 0,
+                  zIndex: 10,
+                  border: '2px solid #6ee7b7'
+                }}
+              >
+                ${filteredItems.reduce((sum, item) => {
                   const totalQty = getWarehouseQty(item._id) + getStoreQty(item._id) + getStore2Qty(item._id);
                   const avgPrice = item.average_price || 0;
                   return sum + totalQty * avgPrice;
                 }, 0).toFixed(2)}
               </TableCell>
-              <TableCell sx={{ background: '#f0f4fa' }} />
-              <TableCell sx={{ background: '#f0f4fa' }} />
+              <TableCell sx={{ background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)', borderTop: '3px solid #1976d2', position: 'sticky', bottom: 0, zIndex: 10 }} />
+              <TableCell sx={{ background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)', borderTop: '3px solid #1976d2', position: 'sticky', bottom: 0, zIndex: 10 }} />
             </TableRow>
-          </tfoot>
-        </Table>
+          </Table>
+        </Box>
       </TableContainer>
-      <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>{editId ? 'Edit Item' : 'Add Item'}</DialogTitle>
-        <DialogContent>
-          {error && <Alert severity="error">{error}</Alert>}
-          {success && <Alert severity="success">{success}</Alert>}
-          <TextField margin="dense" label="Name" name="name" value={form.name} onChange={handleChange} fullWidth required />
-          <TextField margin="dense" label="Unit" name="unit" value={form.unit} onChange={handleChange} fullWidth required />
-          <TextField margin="dense" label="Category" name="category" value={form.category} onChange={handleChange} fullWidth required />
+
+      {/* Enhanced Dialog */}
+      <Dialog 
+        open={open} 
+        onClose={handleClose}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            boxShadow: '0 24px 64px rgba(0, 0, 0, 0.2)',
+            border: '2px solid #e2e8f0'
+          }
+        }}
+      >
+        <DialogTitle 
+          sx={{ 
+            background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+            color: 'white',
+            fontWeight: 800,
+            fontSize: '1.5rem',
+            py: 3,
+            borderBottom: '3px solid #0d47a1'
+          }}
+        >
+          {editId ? '✏️ Edit Item' : '➕ Add New Item'}
+        </DialogTitle>
+        <DialogContent sx={{ mt: 3, px: 4 }}>
+          {error && (
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 3,
+                borderRadius: 3,
+                fontWeight: 600,
+                border: '2px solid #fca5a5'
+              }}
+            >
+              {error}
+            </Alert>
+          )}
+          {success && (
+            <Alert 
+              severity="success" 
+              sx={{ 
+                mb: 3,
+                borderRadius: 3,
+                fontWeight: 600,
+                border: '2px solid #86efac'
+              }}
+            >
+              {success}
+            </Alert>
+          )}
+          <TextField 
+            margin="dense" 
+            label="Item Name" 
+            name="name" 
+            value={form.name} 
+            onChange={handleChange} 
+            fullWidth 
+            required
+            sx={{
+              mb: 2.5,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 3,
+                fontSize: '1rem',
+                '& fieldset': {
+                  borderWidth: 2,
+                  borderColor: '#cbd5e1'
+                },
+                '&:hover fieldset': {
+                  borderColor: '#94a3b8'
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#1976d2',
+                  borderWidth: 2
+                }
+              },
+              '& .MuiInputLabel-root': {
+                fontWeight: 600,
+                '&.Mui-focused': {
+                  color: '#1976d2',
+                  fontWeight: 700
+                }
+              }
+            }}
+          />
+          <TextField 
+            margin="dense" 
+            label="Unit" 
+            name="unit" 
+            value={form.unit} 
+            onChange={handleChange} 
+            fullWidth 
+            required
+            placeholder="e.g., pcs, kg, liter"
+            sx={{
+              mb: 2.5,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 3,
+                fontSize: '1rem',
+                '& fieldset': {
+                  borderWidth: 2,
+                  borderColor: '#cbd5e1'
+                },
+                '&:hover fieldset': {
+                  borderColor: '#94a3b8'
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#1976d2',
+                  borderWidth: 2
+                }
+              },
+              '& .MuiInputLabel-root': {
+                fontWeight: 600,
+                '&.Mui-focused': {
+                  color: '#1976d2',
+                  fontWeight: 700
+                }
+              }
+            }}
+          />
+          <TextField 
+            margin="dense" 
+            label="Category" 
+            name="category" 
+            value={form.category} 
+            onChange={handleChange} 
+            fullWidth 
+            required
+            placeholder="e.g., Laptop, iPad, Charger"
+            sx={{
+              mb: 1,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 3,
+                fontSize: '1rem',
+                '& fieldset': {
+                  borderWidth: 2,
+                  borderColor: '#cbd5e1'
+                },
+                '&:hover fieldset': {
+                  borderColor: '#94a3b8'
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#1976d2',
+                  borderWidth: 2
+                }
+              },
+              '& .MuiInputLabel-root': {
+                fontWeight: 600,
+                '&.Mui-focused': {
+                  color: '#1976d2',
+                  fontWeight: 700
+                }
+              }
+            }}
+          />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
+        <DialogActions sx={{ px: 4, py: 3, background: '#f8fafc', borderTop: '2px solid #e2e8f0' }}>
+          <Button 
+            onClick={handleClose}
+            sx={{
+              fontWeight: 700,
+              px: 4,
+              py: 1.5,
+              borderRadius: 3,
+              textTransform: 'none',
+              fontSize: '1rem',
+              color: '#64748b',
+              '&:hover': {
+                background: '#f1f5f9',
+                color: '#475569'
+              }
+            }}
+          >
+            Cancel
+          </Button>
           {hasPerm('items','edit') && (
-            <Button onClick={handleSubmit} variant="contained">{editId ? 'Update' : 'Add'}</Button>
+            <Button 
+              onClick={handleSubmit} 
+              variant="contained"
+              sx={{
+                fontWeight: 700,
+                px: 4,
+                py: 1.5,
+                borderRadius: 3,
+                textTransform: 'none',
+                fontSize: '1rem',
+                background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+                boxShadow: '0 8px 24px rgba(25, 118, 210, 0.3)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #1565c0 0%, #0d47a1 100%)',
+                  boxShadow: '0 12px 32px rgba(25, 118, 210, 0.4)',
+                  transform: 'translateY(-1px)'
+                },
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+            >
+              {editId ? '💾 Update Item' : '➕ Add Item'}
+            </Button>
           )}
         </DialogActions>
       </Dialog>

@@ -22,7 +22,7 @@ import {
   RadioButtonUnchecked,
   CalendarToday
 } from '@mui/icons-material';
-import axios from 'axios';
+import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
 function ChecklistHistory() {
@@ -38,9 +38,7 @@ function ChecklistHistory() {
   const fetchHistory = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/checklists/history?days=${days}`, {
-        headers: { 'x-auth-token': token }
-      });
+      const response = await api.get(`/checklists/history?days=${days}`);
       setHistory(response.data);
     } catch (error) {
       console.error('Error fetching history:', error);

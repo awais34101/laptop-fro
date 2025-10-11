@@ -27,11 +27,13 @@ import UsersList from './pages/UsersList';
 import Documents from './pages/Documents';
 import Time from './pages/Time';
 import Sheets from './pages/Sheets';
+import ChecklistEnhanced from './pages/ChecklistEnhanced';
+import ChecklistReports from './pages/ChecklistReports';
 import Sidebar from './components/Sidebar';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Box, Toolbar, CssBaseline } from '@mui/material';
 
-const drawerWidth = 220;
+const drawerWidth = 260;
 
 
 
@@ -67,14 +69,15 @@ function App() {
       <Box sx={{ display: 'flex' }}>
         <CssBaseline />
         {!hideSidebar && <Sidebar />}
-        <Box component="main" sx={{ flexGrow: 1, p: 3, ml: !hideSidebar ? `${drawerWidth}px` : 0 }}>
-          {!hideSidebar && <Toolbar />}
+        <Box component="main" sx={{ flexGrow: 1, p: 0 }}>
           <Routes>
             <Route path="/login" element={<Login onLogin={() => navigate('/')} />} />
             <Route path="/settings/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute roles={["admin"]}><UsersList /></ProtectedRoute>} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/items" element={<ProtectedRoute><Items /></ProtectedRoute>} />
+            <Route path="/checklists" element={<ProtectedRoute><ChecklistEnhanced /></ProtectedRoute>} />
+            <Route path="/checklist-reports" element={<ProtectedRoute><ChecklistReports /></ProtectedRoute>} />
             <Route path="/purchases" element={<ProtectedRoute><Purchases /></ProtectedRoute>} />
             {/* <Route path="/returns" element={<ProtectedRoute><Returns /></ProtectedRoute>} /> */}
             <Route path="/returns-store" element={<ProtectedRoute><ReturnsStore /></ProtectedRoute>} />

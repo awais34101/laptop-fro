@@ -1,5 +1,5 @@
-import React from 'react';
-import { Drawer, List, ListItem, ListItemIcon, ListItemText, Toolbar, Box, Divider, Button, Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { Drawer, List, ListItem, ListItemIcon, ListItemText, Toolbar, Box, Divider, Button, Typography, Collapse, Avatar, Chip } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -11,9 +11,14 @@ import PeopleIcon from '@mui/icons-material/People';
 import SettingsIcon from '@mui/icons-material/Settings';
 import DescriptionIcon from '@mui/icons-material/Description';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import ChecklistIcon from '@mui/icons-material/Checklist';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import LogoutIcon from '@mui/icons-material/Logout';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import ExpandMore from '@mui/icons-material/ExpandMore';
 import { Link, useLocation } from 'react-router-dom';
 
-const drawerWidth = 220;
+const drawerWidth = 280;
 
 
 
@@ -23,6 +28,13 @@ const navSections = [
     items: [
       { text: 'Dashboard', icon: <DashboardIcon />, path: '/', perm: { section: 'dashboard', action: 'view' } },
       { text: 'Items', icon: <InventoryIcon />, path: '/items', perm: { section: 'items', action: 'view' } },
+    ]
+  },
+  {
+    label: 'Checklists',
+    items: [
+      { text: 'Checklists', icon: <ChecklistIcon />, path: '/checklists', perm: { section: 'checklists', action: 'view' } },
+      { text: 'Checklist Reports', icon: <AssessmentIcon />, path: '/checklist-reports', perm: { section: 'checklists', action: 'view' } },
     ]
   },
   {
@@ -83,6 +95,22 @@ export default function Sidebar() {
   const permissions = user.permissions || {};
   const isAdmin = user.role === 'admin';
   const token = localStorage.getItem('token');
+  
+  // State for collapsible sections
+  const [openSections, setOpenSections] = useState({
+    Main: true,
+    Checklists: true,
+    Purchasing: true,
+    'Store 1': true,
+    'Store 2': true,
+    Parts: true,
+    Sheets: true,
+    Other: true
+  });
+
+  const toggleSection = (label) => {
+    setOpenSections(prev => ({ ...prev, [label]: !prev[label] }));
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -101,19 +129,98 @@ export default function Sidebar() {
         [`& .MuiDrawer-paper`]: {
           width: drawerWidth,
           boxSizing: 'border-box',
-          background: 'linear-gradient(135deg, #1976d2 60%, #42a5f5 100%)',
+          background: 'linear-gradient(180deg, #1a237e 0%, #283593 50%, #3949ab 100%)',
           color: '#fff',
           borderRight: 'none',
+          boxShadow: '4px 0 24px rgba(0, 0, 0, 0.15)',
         },
       }}
     >
-      <Toolbar sx={{ minHeight: 64 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: 1, color: '#fff', mx: 'auto' }}>
-          <span style={{ color: '#fff', fontWeight: 900 }}>PRO CRM</span>
-        </Typography>
-      </Toolbar>
-      <Box sx={{ overflow: 'auto', height: '100%' }}>
-        <List sx={{ mt: 2 }}>
+      {/* Header with Logo */}
+      <Box 
+        sx={{ 
+          p: 3,
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)',
+          backdropFilter: 'blur(10px)',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+          <Box
+            sx={{
+              width: 48,
+              height: 48,
+              borderRadius: 3,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
+              fontWeight: 900,
+              fontSize: '1.5rem'
+            }}
+          >
+            💼
+          </Box>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: 0.5, color: '#fff', fontSize: '1.5rem' }}>
+              PRO CRM
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600, fontSize: '0.9rem' }}>
+              Laptop Business
+            </Typography>
+          </Box>
+        </Box>
+        
+        {/* User Info */}
+        <Box 
+          sx={{ 
+            mt: 2,
+            p: 2,
+            borderRadius: 2,
+            background: 'rgba(255,255,255,0.08)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5
+          }}
+        >
+          <Avatar 
+            sx={{ 
+              width: 40, 
+              height: 40,
+              bgcolor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              fontWeight: 700,
+              fontSize: '1rem',
+              border: '2px solid rgba(255,255,255,0.3)'
+            }}
+          >
+            {user.username?.charAt(0)?.toUpperCase() || 'U'}
+          </Avatar>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="body1" sx={{ fontWeight: 700, color: '#fff', fontSize: '1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {user.username || 'User'}
+            </Typography>
+            <Chip 
+              label={isAdmin ? 'Admin' : 'Staff'} 
+              size="small"
+              sx={{ 
+                height: 22,
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                background: isAdmin ? 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' : 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                color: '#fff',
+                border: '1px solid rgba(255,255,255,0.3)',
+                mt: 0.5
+              }}
+            />
+          </Box>
+        </Box>
+      </Box>
+      
+      <Box sx={{ overflow: 'auto', height: '100%', py: 2, px: 1.5 }}>
+        <List sx={{ px: 0 }}>
           {navSections.map(section => {
             // Filter items by permission
             const visibleItems = section.items.filter(({ perm }) => {
@@ -123,68 +230,204 @@ export default function Sidebar() {
               return permissions[sec]?.[action];
             });
             if (visibleItems.length === 0) return null;
+            
+            const isOpen = openSections[section.label];
+            
             return (
               <React.Fragment key={section.label}>
-                <Typography variant="caption" sx={{ color: '#bbdefb', pl: 2, pt: 2, fontWeight: 700, letterSpacing: 1 }}>{section.label}</Typography>
-                {visibleItems.map(({ text, icon, path }) => (
-                  <ListItem
-                    button
-                    key={text}
-                    component={Link}
-                    to={path}
-                    selected={location.pathname === path}
-                    sx={{
-                      my: 0.5,
-                      borderRadius: 2,
-                      background: location.pathname === path ? 'rgba(255,255,255,0.12)' : 'none',
-                      '&:hover': {
-                        background: 'rgba(255,255,255,0.18)',
-                      },
-                      color: '#fff',
+                {/* Section Header - Collapsible */}
+                <ListItem
+                  button
+                  onClick={() => toggleSection(section.label)}
+                  sx={{
+                    py: 1,
+                    px: 2,
+                    mb: 0.5,
+                    borderRadius: 2,
+                    background: 'rgba(255,255,255,0.05)',
+                    '&:hover': {
+                      background: 'rgba(255,255,255,0.1)',
+                    },
+                  }}
+                >
+                  <ListItemText 
+                    primary={section.label}
+                    primaryTypographyProps={{
+                      variant: 'body2',
+                      sx: { 
+                        color: '#90caf9', 
+                        fontWeight: 800, 
+                        letterSpacing: 1.5,
+                        fontSize: '0.85rem',
+                        textTransform: 'uppercase'
+                      }
                     }}
-                  >
-                    <ListItemIcon sx={{ color: '#fff', minWidth: 36 }}>{icon}</ListItemIcon>
-                    <ListItemText primary={text} sx={{ '.MuiTypography-root': { fontWeight: location.pathname === path ? 700 : 500 } }} />
-                  </ListItem>
-                ))}
-                <Divider sx={{ my: 1 }} />
+                  />
+                  {isOpen ? <ExpandLess sx={{ color: '#90caf9', fontSize: '1.2rem' }} /> : <ExpandMore sx={{ color: '#90caf9', fontSize: '1.2rem' }} />}
+                </ListItem>
+                
+                {/* Section Items */}
+                <Collapse in={isOpen} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding>
+                    {visibleItems.map(({ text, icon, path }) => {
+                      const isActive = location.pathname === path;
+                      return (
+                        <ListItem
+                          button
+                          key={text}
+                          component={Link}
+                          to={path}
+                          sx={{
+                            my: 0.3,
+                            mx: 1,
+                            px: 2,
+                            py: 1.2,
+                            borderRadius: 2,
+                            background: isActive 
+                              ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%)'
+                              : 'transparent',
+                            border: isActive ? '1px solid rgba(102, 126, 234, 0.5)' : '1px solid transparent',
+                            boxShadow: isActive ? '0 4px 12px rgba(102, 126, 234, 0.2)' : 'none',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              background: isActive 
+                                ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.4) 0%, rgba(118, 75, 162, 0.4) 100%)'
+                                : 'rgba(255,255,255,0.08)',
+                              transform: 'translateX(4px)',
+                              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)',
+                            },
+                            color: '#fff',
+                          }}
+                        >
+                          <ListItemIcon 
+                            sx={{ 
+                              color: isActive ? '#90caf9' : 'rgba(255,255,255,0.8)', 
+                              minWidth: 42,
+                              '& .MuiSvgIcon-root': {
+                                fontSize: '1.5rem',
+                                filter: isActive ? 'drop-shadow(0 2px 4px rgba(144, 202, 249, 0.3))' : 'none'
+                              }
+                            }}
+                          >
+                            {icon}
+                          </ListItemIcon>
+                          <ListItemText 
+                            primary={text} 
+                            primaryTypographyProps={{
+                              sx: { 
+                                fontWeight: isActive ? 700 : 600,
+                                fontSize: '1rem',
+                                color: isActive ? '#fff' : 'rgba(255,255,255,0.9)'
+                              }
+                            }}
+                          />
+                          {isActive && (
+                            <Box
+                              sx={{
+                                width: 6,
+                                height: 6,
+                                borderRadius: '50%',
+                                background: 'linear-gradient(135deg, #90caf9 0%, #64b5f6 100%)',
+                                boxShadow: '0 0 8px rgba(144, 202, 249, 0.8)'
+                              }}
+                            />
+                          )}
+                        </ListItem>
+                      );
+                    })}
+                  </List>
+                </Collapse>
               </React.Fragment>
             );
           })}
+          
           {/* Settings section extra links */}
           {location.pathname.startsWith('/settings') && (
-            <>
-              {user.role === 'admin' && (
-                <ListItem button component={Link} to="/admin/users" selected={location.pathname === '/admin/users'}>
-                  <ListItemIcon><PeopleIcon /></ListItemIcon>
-                  <ListItemText primary="Staff Management" />
+            <Collapse in={true} timeout="auto">
+              <List component="div" disablePadding>
+                {user.role === 'admin' && (
+                  <ListItem 
+                    button 
+                    component={Link} 
+                    to="/admin/users" 
+                    selected={location.pathname === '/admin/users'}
+                    sx={{
+                      my: 0.3,
+                      mx: 1,
+                      px: 2,
+                      py: 1.2,
+                      borderRadius: 2,
+                      '&:hover': {
+                        background: 'rgba(255,255,255,0.08)',
+                      }
+                    }}
+                  >
+                    <ListItemIcon sx={{ color: 'rgba(255,255,255,0.8)', minWidth: 42, '& .MuiSvgIcon-root': { fontSize: '1.5rem' } }}>
+                      <PeopleIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Staff Management" primaryTypographyProps={{ sx: { fontSize: '1rem', fontWeight: 600 } }} />
+                  </ListItem>
+                )}
+                <ListItem 
+                  button 
+                  component={Link} 
+                  to="/settings/change-password" 
+                  selected={location.pathname === '/settings/change-password'}
+                  sx={{
+                    my: 0.3,
+                    mx: 1,
+                    px: 2,
+                    py: 1.2,
+                    borderRadius: 2,
+                    '&:hover': {
+                      background: 'rgba(255,255,255,0.08)',
+                    }
+                  }}
+                >
+                  <ListItemIcon sx={{ color: 'rgba(255,255,255,0.8)', minWidth: 42, '& .MuiSvgIcon-root': { fontSize: '1.5rem' } }}>
+                    <SettingsIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Change Password" primaryTypographyProps={{ sx: { fontSize: '1rem', fontWeight: 600 } }} />
                 </ListItem>
-              )}
-              <ListItem button component={Link} to="/settings/change-password" selected={location.pathname === '/settings/change-password'}>
-                <ListItemIcon><SettingsIcon /></ListItemIcon>
-                <ListItemText primary="Change Password" />
-              </ListItem>
-            </>
+              </List>
+            </Collapse>
           )}
-          <Divider sx={{ my: 1 }} />
-          <ListItem>
-            <Button
-              variant="contained"
-              color="secondary"
-              fullWidth
-              onClick={handleLogout}
-              sx={{
-                color: '#fff',
-                fontWeight: 700,
-                borderRadius: 2,
-                boxShadow: '0 2px 8px rgba(156,39,176,0.12)',
-                mt: 2,
-              }}
-            >
-              Logout
-            </Button>
-          </ListItem>
         </List>
+      </Box>
+      
+      {/* Logout Button - Fixed at Bottom */}
+      <Box 
+        sx={{ 
+          p: 2,
+          background: 'linear-gradient(135deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.1) 100%)',
+          borderTop: '1px solid rgba(255,255,255,0.1)',
+          backdropFilter: 'blur(10px)'
+        }}
+      >
+        <Button
+          variant="contained"
+          fullWidth
+          onClick={handleLogout}
+          startIcon={<LogoutIcon sx={{ fontSize: '1.3rem' }} />}
+          sx={{
+            background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+            color: '#fff',
+            fontWeight: 700,
+            py: 1.5,
+            borderRadius: 2,
+            boxShadow: '0 4px 12px rgba(245, 87, 108, 0.4)',
+            textTransform: 'none',
+            fontSize: '1.05rem',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #f5576c 0%, #f093fb 100%)',
+              boxShadow: '0 6px 16px rgba(245, 87, 108, 0.5)',
+              transform: 'translateY(-2px)'
+            },
+            transition: 'all 0.3s ease'
+          }}
+        >
+          Logout
+        </Button>
       </Box>
     </Drawer>
   );

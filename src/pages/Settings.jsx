@@ -9,6 +9,7 @@ export default function Settings() {
     auto_delete_sales_days: '',
     auto_delete_purchase_days: '',
     auto_delete_transfer_days: '',
+    auto_delete_checklist_days: '',
     enable_auto_delete: false
   });
   const [error, setError] = useState('');
@@ -36,6 +37,7 @@ export default function Settings() {
         auto_delete_sales_days: Number(settings.auto_delete_sales_days),
         auto_delete_purchase_days: Number(settings.auto_delete_purchase_days),
         auto_delete_transfer_days: Number(settings.auto_delete_transfer_days),
+        auto_delete_checklist_days: Number(settings.auto_delete_checklist_days),
         enable_auto_delete: settings.enable_auto_delete
       });
       setSuccess('Settings updated successfully');
@@ -177,6 +179,17 @@ export default function Settings() {
                 sx={{ flex: 1, minWidth: 180 }}
                 helperText="Auto delete transfers after X days"
               />
+              <TextField 
+                margin="dense" 
+                label="Checklist Reports (Days)" 
+                name="auto_delete_checklist_days" 
+                value={settings.auto_delete_checklist_days} 
+                onChange={handleChange} 
+                type="number" 
+                required 
+                sx={{ flex: 1, minWidth: 180 }}
+                helperText="Auto delete checklist reports after X days"
+              />
             </Box>
             
             <Alert severity="warning" sx={{ mt: 2 }}>
@@ -221,6 +234,9 @@ export default function Settings() {
                   </Typography>
                   <Typography variant="body2">
                     • Transfer Records: {deleteResult.deleted.transfers} deleted
+                  </Typography>
+                  <Typography variant="body2">
+                    • Checklist Reports: {deleteResult.deleted.checklists || 0} deleted
                   </Typography>
                 </Box>
               )}
