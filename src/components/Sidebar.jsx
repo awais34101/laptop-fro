@@ -28,6 +28,7 @@ const navSections = [
     items: [
       { text: 'Dashboard', icon: <DashboardIcon />, path: '/', perm: { section: 'dashboard', action: 'view' } },
       { text: 'Items', icon: <InventoryIcon />, path: '/items', perm: { section: 'items', action: 'view' } },
+      { text: 'Inventory Boxes', icon: <InventoryIcon />, path: '/inventory-boxes', perm: { section: 'items', action: 'view' } },
     ]
   },
   {

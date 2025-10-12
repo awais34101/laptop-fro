@@ -29,6 +29,7 @@ import Time from './pages/Time';
 import Sheets from './pages/Sheets';
 import ChecklistEnhanced from './pages/ChecklistEnhanced';
 import ChecklistReports from './pages/ChecklistReports';
+import InventoryBoxes from './pages/InventoryBoxes';
 import Sidebar from './components/Sidebar';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Box, Toolbar, CssBaseline } from '@mui/material';
@@ -76,6 +77,7 @@ function App() {
             <Route path="/admin/users" element={<ProtectedRoute roles={["admin"]}><UsersList /></ProtectedRoute>} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/items" element={<ProtectedRoute><Items /></ProtectedRoute>} />
+            <Route path="/inventory-boxes" element={<ProtectedRoute><InventoryBoxes /></ProtectedRoute>} />
             <Route path="/checklists" element={<ProtectedRoute><ChecklistEnhanced /></ProtectedRoute>} />
             <Route path="/checklist-reports" element={<ProtectedRoute><ChecklistReports /></ProtectedRoute>} />
             <Route path="/purchases" element={<ProtectedRoute><Purchases /></ProtectedRoute>} />
