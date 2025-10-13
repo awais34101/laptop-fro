@@ -111,20 +111,51 @@ export default function Login({ onLogin }) {
       localStorage.setItem('user', JSON.stringify(res.data.user));
       // Redirect to first allowed page based on permissions
       const perms = res.data.user.permissions || {};
-      if (perms.dashboard?.view) {
+      const isAdmin = res.data.user.role === 'admin';
+      
+      // Try to find the first page the user has access to
+      if (isAdmin || perms.dashboard?.view) {
         window.location.href = '/';
       } else if (perms.items?.view) {
         window.location.href = '/items';
+      } else if (perms.inventoryBoxes?.view) {
+        window.location.href = '/inventory-boxes';
+      } else if (perms.checklists?.view) {
+        window.location.href = '/checklists';
       } else if (perms.purchases?.view) {
         window.location.href = '/purchases';
       } else if (perms.warehouse?.view) {
         window.location.href = '/warehouse';
+      } else if (perms.transfers?.view) {
+        window.location.href = '/transfers';
+      } else if (perms.returnsStore?.view) {
+        window.location.href = '/returns-store';
+      } else if (perms.returnsStore2?.view) {
+        window.location.href = '/returns-store2';
       } else if (perms.store?.view) {
         window.location.href = '/store';
       } else if (perms.store2?.view) {
         window.location.href = '/store2';
       } else if (perms.sales?.view) {
         window.location.href = '/sales';
+      } else if (perms.salesStore2?.view) {
+        window.location.href = '/sales-store2';
+      } else if (perms.closingStore1?.view) {
+        window.location.href = '/closing/store1';
+      } else if (perms.closingStore2?.view) {
+        window.location.href = '/closing/store2';
+      } else if (perms.partsInventory?.view) {
+        window.location.href = '/parts-inventory';
+      } else if (perms.parts?.view) {
+        window.location.href = '/parts-requests';
+      } else if (perms.purchaseSheets?.view) {
+        window.location.href = '/sheets';
+      } else if (perms.documents?.view) {
+        window.location.href = '/documents';
+      } else if (perms.expenses?.view) {
+        window.location.href = '/expenses';
+      } else if (perms.time?.view) {
+        window.location.href = '/time';
       } else if (perms.customers?.view) {
         window.location.href = '/customers';
       } else if (perms.technicians?.view) {
@@ -132,7 +163,12 @@ export default function Login({ onLogin }) {
       } else if (perms.settings?.view) {
         window.location.href = '/settings';
       } else {
-        window.location.href = '/login';
+        // If user has no view permissions for any page, show error
+        setError('Your account has no page access permissions. Please contact administrator.');
+        setLoading(false);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        return;
       }
       if (onLogin) onLogin();
     } catch (err) {

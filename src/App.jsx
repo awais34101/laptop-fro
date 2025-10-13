@@ -76,8 +76,8 @@ function App() {
             <Route path="/settings/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute roles={["admin"]}><UsersList /></ProtectedRoute>} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/items" element={<ProtectedRoute><Items /></ProtectedRoute>} />
-            <Route path="/inventory-boxes" element={<ProtectedRoute><InventoryBoxes /></ProtectedRoute>} />
+            <Route path="/items" element={<ProtectedRoute permission={{ section: 'items', action: 'view' }}><Items /></ProtectedRoute>} />
+            <Route path="/inventory-boxes" element={<ProtectedRoute permission={{ section: 'inventoryBoxes', action: 'view' }}><InventoryBoxes /></ProtectedRoute>} />
             <Route path="/checklists" element={<ProtectedRoute><ChecklistEnhanced /></ProtectedRoute>} />
             <Route path="/checklist-reports" element={<ProtectedRoute><ChecklistReports /></ProtectedRoute>} />
             <Route path="/purchases" element={<ProtectedRoute><Purchases /></ProtectedRoute>} />

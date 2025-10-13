@@ -88,6 +88,8 @@ export default function UsersList() {
   const sections = [
     { key: 'dashboard', label: 'Dashboard', actions: ['view'] },
     { key: 'items', label: 'Items', actions: ['view', 'add', 'edit', 'delete'] },
+    { key: 'inventoryBoxes', label: 'Inventory Boxes', actions: ['view', 'add', 'edit', 'delete'] },
+    { key: 'checklists', label: 'Checklists', actions: ['view', 'add', 'edit', 'delete', 'complete'] },
     // Purchasing group - separate sections
     { key: 'purchases', label: 'Purchases', actions: ['view', 'add', 'edit', 'delete'] },
     { key: 'purchaseSheets', label: 'Purchase Sheets', actions: ['view', 'add', 'edit', 'delete'] },
@@ -252,6 +254,12 @@ export default function UsersList() {
               </TextField>
             )}
             <FormControlLabel control={<Switch checked={form.canViewFinancials} onChange={handleChange} name="canViewFinancials" />} label="Can View Financials" />
+            
+            <Alert severity="info" sx={{ mt: 2, mb: 2 }}>
+              <strong>Important:</strong> Staff users must have at least one "view" permission selected to log in successfully. 
+              If Dashboard is not selected, they will be redirected to the first page they have access to.
+            </Alert>
+            
             <Box mt={2} mb={1}>
               <Typography variant="subtitle1">Permissions</Typography>
               {sections.map(sec => (
