@@ -431,6 +431,37 @@ const InventoryBoxes = () => {
     }
   };
 
+  const handleAutoReplenish = async () => {
+    if (!window.confirm(`Auto-replenish all boxes in ${selectedLocation} from unassigned inventory?`)) return;
+    
+    try {
+      setLoading(true);
+      // Save scroll position
+      const scrollPosition = window.scrollY || window.pageYOffset;
+      
+      const response = await api.post(`/inventory-boxes/location/${selectedLocation}/auto-replenish`);
+      
+      if (response.data.totalReplenished > 0) {
+        setSuccess(`Auto-replenished ${response.data.totalReplenished} items across ${response.data.boxesUpdated} boxes!`);
+      } else {
+        setSuccess('No items needed replenishment. All boxes are up to capacity or no unassigned inventory available.');
+      }
+      
+      await fetchBoxesByLocation(selectedLocation);
+      fetchAvailableInventory(selectedLocation);
+      fetchStats();
+      
+      // Restore scroll position
+      setTimeout(() => {
+        window.scrollTo(0, scrollPosition);
+      }, 0);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to auto-replenish boxes');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'Active': return 'success';
@@ -527,6 +558,24 @@ const InventoryBoxes = () => {
                 }}
               >
                 Smart Create
+              </Button>
+            </Tooltip>
+            
+            <Tooltip title="Automatically fill boxes from unassigned inventory">
+              <Button 
+                variant="contained" 
+                color="info"
+                startIcon={<RefreshIcon />}
+                onClick={handleAutoReplenish}
+                disabled={loading}
+                sx={{ 
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  px: 3,
+                  boxShadow: '0 4px 20px 0 rgba(33, 150, 243, 0.4)'
+                }}
+              >
+                Auto Replenish
               </Button>
             </Tooltip>
           </Stack>
