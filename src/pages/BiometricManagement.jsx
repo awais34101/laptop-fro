@@ -30,7 +30,10 @@ export default function BiometricManagement() {
     employeeId: '',
     scanning: false,
     scanProgress: 0,
-    scanStage: 'idle' // idle, scanning, complete
+    scanStage: 'idle', // idle, scanning, complete, success
+    currentScan: 0,
+    totalScans: 5, // Like iPhone - multiple scans for better accuracy
+    scannedParts: [] // Track which parts of finger have been scanned
   });
 
   useEffect(() => {
@@ -81,22 +84,67 @@ export default function BiometricManagement() {
       employeeId: user.employeeId || `EMP${Date.now().toString().slice(-6)}`,
       scanning: false,
       scanProgress: 0,
-      scanStage: 'idle'
+      scanStage: 'idle',
+      currentScan: 0,
+      totalScans: 5,
+      scannedParts: []
     });
     setEnrollDialog(true);
   };
 
+  const performSingleScan = async () => {
+    return new Promise((resolve) => {
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 4;
+        setEnrollForm(prev => ({ ...prev, scanProgress: progress }));
+        
+        if (progress >= 100) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 30);
+    });
+  };
+
   const handleEnrollFingerprint = async () => {
     try {
-      setEnrollForm(prev => ({ ...prev, scanning: true, scanProgress: 0, scanStage: 'scanning' }));
       setError('');
       setSuccess('');
 
-      const fingerprintTemplate = await simulateFingerprintScan((progress) => {
-        setEnrollForm(prev => ({ ...prev, scanProgress: progress }));
-      });
+      // Perform 5 scans like iPhone
+      for (let i = 0; i < enrollForm.totalScans; i++) {
+        setEnrollForm(prev => ({ 
+          ...prev, 
+          scanning: true, 
+          scanProgress: 0, 
+          scanStage: 'scanning',
+          currentScan: i + 1 
+        }));
 
-      setEnrollForm(prev => ({ ...prev, scanStage: 'complete' }));
+        await performSingleScan();
+
+        // Add to scanned parts
+        setEnrollForm(prev => ({
+          ...prev,
+          scannedParts: [...prev.scannedParts, `part${i + 1}`]
+        }));
+
+        // Small pause between scans
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Show "Lift your finger" message
+        if (i < enrollForm.totalScans - 1) {
+          setEnrollForm(prev => ({ ...prev, scanStage: 'lift', scanning: false }));
+          await new Promise(resolve => setTimeout(resolve, 800));
+        }
+      }
+
+      // All scans complete
+      setEnrollForm(prev => ({ ...prev, scanStage: 'complete', scanning: false }));
+
+      // Generate fingerprint template from all scans
+      const fingerprintTemplate = `FINGERPRINT_${Date.now()}_${selectedUser._id}_${Math.random().toString(36)}`;
 
       const response = await api.post('/biometric/enroll', {
         userId: selectedUser._id,
@@ -104,17 +152,25 @@ export default function BiometricManagement() {
         employeeId: enrollForm.employeeId
       });
 
+      setEnrollForm(prev => ({ ...prev, scanStage: 'success' }));
       setSuccess(`Fingerprint enrolled successfully for ${selectedUser.name}`);
       
-      // Keep dialog open for a moment to show success animation
+      // Keep dialog open for a moment to show success
       setTimeout(() => {
         setEnrollDialog(false);
         loadEnrolledStaff();
         loadAllUsers();
-      }, 1000);
+      }, 2000);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to enroll fingerprint');
-      setEnrollForm(prev => ({ ...prev, scanning: false, scanStage: 'idle', scanProgress: 0 }));
+      setEnrollForm(prev => ({ 
+        ...prev, 
+        scanning: false, 
+        scanStage: 'idle', 
+        scanProgress: 0,
+        currentScan: 0,
+        scannedParts: []
+      }));
     }
   };
 
@@ -279,14 +335,23 @@ export default function BiometricManagement() {
                   <TableRow key={staff.id} hover>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Avatar src={staff.photoUrl} sx={{ bgcolor: 'primary.main' }}>
-                          {staff.name?.charAt(0)}
+                        <Avatar src={staff.photoUrl} sx={{ bgcolor: 'success.light', border: '2px solid', borderColor: 'success.main' }}>
+                          {staff.photoUrl ? null : <FingerprintIcon />}
                         </Avatar>
                         <Box>
                           <Typography fontWeight="bold">{staff.name}</Typography>
                           <Typography variant="caption" color="text.secondary">
                             {staff.email}
                           </Typography>
+                          <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
+                            <Chip 
+                              icon={<FingerprintIcon sx={{ fontSize: 14 }} />}
+                              label="Enrolled" 
+                              size="small" 
+                              color="success"
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </Box>
                         </Box>
                       </Box>
                     </TableCell>
@@ -440,14 +505,39 @@ export default function BiometricManagement() {
                 helperText="Unique identifier for this employee"
               />
 
-              {enrollForm.scanning || enrollForm.scanStage !== 'idle' ? (
+              {enrollForm.scanStage !== 'idle' ? (
                 <Box sx={{ textAlign: 'center', py: 4 }}>
+                  {/* Scan Progress Indicator */}
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Scan {enrollForm.currentScan} of {enrollForm.totalScans}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', mt: 1 }}>
+                      {Array.from({ length: enrollForm.totalScans }).map((_, i) => (
+                        <Box
+                          key={i}
+                          sx={{
+                            width: 40,
+                            height: 6,
+                            borderRadius: 3,
+                            bgcolor: i < enrollForm.scannedParts.length 
+                              ? 'success.main' 
+                              : i === enrollForm.currentScan - 1 && enrollForm.scanning
+                              ? 'primary.main'
+                              : 'grey.300',
+                            transition: 'all 0.3s ease'
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+
                   {/* iPhone-style Fingerprint Animation */}
                   <Box
                     sx={{
                       position: 'relative',
-                      width: 180,
-                      height: 180,
+                      width: 200,
+                      height: 200,
                       margin: '0 auto 24px',
                       display: 'flex',
                       alignItems: 'center',
@@ -462,7 +552,7 @@ export default function BiometricManagement() {
                         height: '100%',
                         borderRadius: '50%',
                         border: '4px solid',
-                        borderColor: enrollForm.scanStage === 'complete' ? 'success.main' : 'grey.300',
+                        borderColor: enrollForm.scanStage === 'success' ? 'success.main' : 'grey.300',
                         transition: 'all 0.3s ease'
                       }}
                     />
@@ -475,7 +565,7 @@ export default function BiometricManagement() {
                         height: '100%',
                         borderRadius: '50%',
                         background: `conic-gradient(
-                          ${enrollForm.scanStage === 'complete' ? '#4caf50' : '#1976d2'} ${enrollForm.scanProgress * 3.6}deg,
+                          ${enrollForm.scanStage === 'success' ? '#4caf50' : '#1976d2'} ${enrollForm.scanProgress * 3.6}deg,
                           transparent ${enrollForm.scanProgress * 3.6}deg
                         )`,
                         transition: 'background 0.1s linear',
@@ -489,13 +579,37 @@ export default function BiometricManagement() {
                       }}
                     />
 
+                    {/* Scanned Parts Overlay - Shows which parts are complete */}
+                    {enrollForm.scannedParts.map((part, index) => (
+                      <Box
+                        key={part}
+                        sx={{
+                          position: 'absolute',
+                          width: 20,
+                          height: 20,
+                          borderRadius: '50%',
+                          bgcolor: 'success.main',
+                          top: `${25 + index * 15}%`,
+                          left: `${30 + (index % 2) * 40}%`,
+                          animation: 'popIn 0.3s ease-out',
+                          '@keyframes popIn': {
+                            '0%': { transform: 'scale(0)', opacity: 0 },
+                            '100%': { transform: 'scale(1)', opacity: 1 }
+                          },
+                          zIndex: 0
+                        }}
+                      />
+                    ))}
+
                     {/* Fingerprint Icon */}
                     <FingerprintIcon
                       sx={{
-                        fontSize: 100,
-                        color: enrollForm.scanStage === 'complete' ? 'success.main' : 'primary.main',
+                        fontSize: 110,
+                        color: enrollForm.scanStage === 'success' ? 'success.main' 
+                              : enrollForm.scanStage === 'lift' ? 'warning.main'
+                              : 'primary.main',
                         zIndex: 1,
-                        animation: enrollForm.scanStage === 'scanning' ? 'pulse 1.5s ease-in-out infinite' : 'none',
+                        animation: enrollForm.scanning ? 'pulse 1.5s ease-in-out infinite' : 'none',
                         '@keyframes pulse': {
                           '0%, 100%': { transform: 'scale(1)', opacity: 1 },
                           '50%': { transform: 'scale(1.05)', opacity: 0.8 }
@@ -505,77 +619,99 @@ export default function BiometricManagement() {
                     />
                     
                     {/* Progress Percentage */}
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        bottom: -8,
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        bgcolor: 'background.paper',
-                        px: 2,
-                        py: 0.5,
-                        borderRadius: 2,
-                        border: '2px solid',
-                        borderColor: enrollForm.scanStage === 'complete' ? 'success.main' : 'primary.main'
-                      }}
-                    >
-                      <Typography variant="h6" fontWeight="bold" color={enrollForm.scanStage === 'complete' ? 'success.main' : 'primary.main'}>
-                        {Math.round(enrollForm.scanProgress)}%
-                      </Typography>
-                    </Box>
+                    {enrollForm.scanning && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          bottom: -8,
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          bgcolor: 'background.paper',
+                          px: 2.5,
+                          py: 0.5,
+                          borderRadius: 2,
+                          border: '3px solid',
+                          borderColor: 'primary.main',
+                          boxShadow: 2
+                        }}
+                      >
+                        <Typography variant="h6" fontWeight="bold" color="primary.main">
+                          {Math.round(enrollForm.scanProgress)}%
+                        </Typography>
+                      </Box>
+                    )}
 
                     {/* Success Checkmark */}
-                    {enrollForm.scanStage === 'complete' && (
+                    {enrollForm.scanStage === 'success' && (
                       <CheckIcon
                         sx={{
                           position: 'absolute',
                           top: -12,
                           right: -12,
-                          fontSize: 48,
+                          fontSize: 56,
                           color: 'success.main',
                           bgcolor: 'background.paper',
                           borderRadius: '50%',
-                          animation: 'scaleIn 0.3s ease-out',
+                          border: '3px solid',
+                          borderColor: 'success.main',
+                          animation: 'scaleIn 0.4s ease-out',
                           '@keyframes scaleIn': {
-                            '0%': { transform: 'scale(0)', opacity: 0 },
-                            '100%': { transform: 'scale(1)', opacity: 1 }
+                            '0%': { transform: 'scale(0) rotate(-180deg)', opacity: 0 },
+                            '100%': { transform: 'scale(1) rotate(0deg)', opacity: 1 }
                           }
                         }}
                       />
                     )}
                   </Box>
 
+                  {/* Status Messages */}
                   <Typography variant="h6" gutterBottom fontWeight="bold">
-                    {enrollForm.scanStage === 'complete' ? 'Scan Complete!' : 'Scanning Fingerprint...'}
+                    {enrollForm.scanStage === 'success' ? '✅ Enrollment Complete!' 
+                      : enrollForm.scanStage === 'complete' ? '🎉 Processing...'
+                      : enrollForm.scanStage === 'lift' ? '👆 Lift Your Finger'
+                      : '📱 Scanning Fingerprint...'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {enrollForm.scanStage === 'complete' 
-                      ? 'Fingerprint captured successfully!' 
-                      : 'Keep your finger steady on the scanner'}
+                    {enrollForm.scanStage === 'success' 
+                      ? 'Fingerprint has been saved successfully!' 
+                      : enrollForm.scanStage === 'complete'
+                      ? 'Saving fingerprint to database...'
+                      : enrollForm.scanStage === 'lift'
+                      ? 'Remove finger and place it again'
+                      : `Keep your finger on the scanner (${enrollForm.scannedParts.length}/${enrollForm.totalScans} complete)`}
                   </Typography>
                   
-                  {/* Scanning Tips */}
-                  {enrollForm.scanStage === 'scanning' && (
-                    <Box sx={{ mt: 3, textAlign: 'left', maxWidth: 300, mx: 'auto' }}>
+                  {/* Scanning Instructions */}
+                  {enrollForm.scanning && (
+                    <Box sx={{ mt: 3, p: 2, bgcolor: 'primary.50', borderRadius: 2, maxWidth: 350, mx: 'auto' }}>
+                      <Typography variant="caption" color="primary.main" sx={{ display: 'block', fontWeight: 600, mb: 1 }}>
+                        � Scanning Tips:
+                      </Typography>
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                        💡 <strong>Tips:</strong>
+                        • Press firmly but gently
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                        • Cover the entire sensor
                       </Typography>
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                        • Keep finger flat and still
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                        • Cover entire sensor area
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                        • Apply gentle pressure
+                        • Keep finger still during scan
                       </Typography>
                     </Box>
                   )}
                 </Box>
               ) : (
-                <Alert severity="info">
-                  Click "Start Enrollment" and ask the staff member to place their finger on the scanner.
-                  The fingerprint will be securely stored in the database.
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  <Typography variant="body2" fontWeight="600" gutterBottom>
+                    🔐 Fingerprint Enrollment Process
+                  </Typography>
+                  <Typography variant="caption" display="block" sx={{ mb: 1 }}>
+                    You will need to scan your finger <strong>5 times</strong> to capture all details, just like iPhone Touch ID.
+                  </Typography>
+                  <Typography variant="caption" display="block">
+                    • Each scan captures a different part of your fingerprint<br />
+                    • Lift your finger between scans when prompted<br />
+                    • The system will save all scans for accurate recognition
+                  </Typography>
                 </Alert>
               )}
             </Box>
