@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Drawer, List, ListItem, ListItemIcon, ListItemText, Toolbar, Box, Divider, Button, Typography, Collapse, Avatar, Chip } from '@mui/material';
+import { Drawer, List, ListItem, ListItemIcon, ListItemText, Toolbar, Box, Divider, Button, Typography, Collapse, Avatar, Chip, useTheme, useMediaQuery } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -95,8 +95,10 @@ const navSections = [
   }
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ mobileOpen, onDrawerToggle }) {
   const location = useLocation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const permissions = user.permissions || {};
   const isAdmin = user.role === 'admin';
@@ -126,22 +128,8 @@ export default function Sidebar() {
 
   if (!token) return null;
 
-  return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: drawerWidth,
-        flexShrink: 0,
-        [`& .MuiDrawer-paper`]: {
-          width: drawerWidth,
-          boxSizing: 'border-box',
-          background: 'linear-gradient(180deg, #1a237e 0%, #283593 50%, #3949ab 100%)',
-          color: '#fff',
-          borderRight: 'none',
-          boxShadow: '4px 0 24px rgba(0, 0, 0, 0.15)',
-        },
-      }}
-    >
+  const drawerContent = (
+    <>
       {/* Header with Logo */}
       <Box 
         sx={{ 
@@ -452,6 +440,53 @@ export default function Sidebar() {
           Logout
         </Button>
       </Box>
-    </Drawer>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Drawer - Always visible */}
+      <Drawer
+        variant="permanent"
+        sx={{
+          display: { xs: 'none', md: 'block' },
+          width: drawerWidth,
+          flexShrink: 0,
+          [`& .MuiDrawer-paper`]: {
+            width: drawerWidth,
+            boxSizing: 'border-box',
+            background: 'linear-gradient(180deg, #1a237e 0%, #283593 50%, #3949ab 100%)',
+            color: '#fff',
+            borderRight: 'none',
+            boxShadow: '4px 0 24px rgba(0, 0, 0, 0.15)',
+          },
+        }}
+      >
+        {drawerContent}
+      </Drawer>
+
+      {/* Mobile Drawer - Toggleable */}
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={onDrawerToggle}
+        ModalProps={{
+          keepMounted: true, // Better performance on mobile
+        }}
+        sx={{
+          display: { xs: 'block', md: 'none' },
+          [`& .MuiDrawer-paper`]: {
+            width: drawerWidth,
+            boxSizing: 'border-box',
+            background: 'linear-gradient(180deg, #1a237e 0%, #283593 50%, #3949ab 100%)',
+            color: '#fff',
+            borderRight: 'none',
+            boxShadow: '4px 0 24px rgba(0, 0, 0, 0.15)',
+          },
+        }}
+      >
+        {drawerContent}
+      </Drawer>
+    </>
   );
 }

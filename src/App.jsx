@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { InventoryProvider } from './context/InventoryContext';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
@@ -34,7 +33,8 @@ import BiometricKiosk from './pages/BiometricKiosk';
 import BiometricManagement from './pages/BiometricManagement';
 import Sidebar from './components/Sidebar';
 import ProtectedRoute from './components/ProtectedRoute';
-import { Box, Toolbar, CssBaseline } from '@mui/material';
+import { Box, Toolbar, CssBaseline, IconButton, AppBar, Typography, useTheme, useMediaQuery } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
 
 const drawerWidth = 260;
 
@@ -57,22 +57,68 @@ function InventoryInitializer() {
 
 function App() {
   const location = useLocation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  // Hide sidebar on login page
+  // Hide sidebar on login page and biometric kiosk
   const hideSidebar = location.pathname === '/login' || location.pathname === '/biometric-kiosk';
 
   const navigate = useNavigate();
 
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
 
   return (
     <InventoryProvider>
       <InventoryInitializer />
       <Box sx={{ display: 'flex' }}>
         <CssBaseline />
-        {!hideSidebar && <Sidebar />}
-        <Box component="main" sx={{ flexGrow: 1, p: 0 }}>
+        
+        {/* Top App Bar for Mobile */}
+        {!hideSidebar && isMobile && (
+          <AppBar
+            position="fixed"
+            sx={{
+              width: '100%',
+              zIndex: (theme) => theme.zIndex.drawer + 1,
+              bgcolor: 'primary.main'
+            }}
+          >
+            <Toolbar>
+              <IconButton
+                color="inherit"
+                edge="start"
+                onClick={handleDrawerToggle}
+                sx={{ mr: 2 }}
+              >
+                <MenuIcon />
+              </IconButton>
+              <Typography variant="h6" noWrap component="div">
+                PRO CRM
+              </Typography>
+            </Toolbar>
+          </AppBar>
+        )}
+
+        {/* Sidebar */}
+        {!hideSidebar && <Sidebar mobileOpen={mobileOpen} onDrawerToggle={handleDrawerToggle} />}
+        
+        {/* Main Content */}
+        <Box 
+          component="main" 
+          sx={{ 
+            flexGrow: 1, 
+            p: { xs: 1, sm: 2, md: 3 },
+            width: '100%',
+            minHeight: '100vh',
+            mt: !hideSidebar && isMobile ? 8 : 0
+          }}
+        >
           <Routes>
             <Route path="/login" element={<Login onLogin={() => navigate('/')} />} />
             <Route path="/biometric-kiosk" element={<BiometricKiosk />} />

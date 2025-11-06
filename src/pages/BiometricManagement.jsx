@@ -28,7 +28,9 @@ export default function BiometricManagement() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [enrollForm, setEnrollForm] = useState({
     employeeId: '',
-    scanning: false
+    scanning: false,
+    scanProgress: 0,
+    scanStage: 'idle' // idle, scanning, complete
   });
 
   useEffect(() => {
@@ -57,12 +59,19 @@ export default function BiometricManagement() {
     }
   };
 
-  const simulateFingerprintScan = async () => {
+  const simulateFingerprintScan = async (onProgress) => {
     return new Promise((resolve) => {
-      setTimeout(() => {
-        const mockTemplate = `FINGERPRINT_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-        resolve(mockTemplate);
-      }, 2000);
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 2;
+        if (onProgress) onProgress(progress);
+        
+        if (progress >= 100) {
+          clearInterval(interval);
+          const mockTemplate = `FINGERPRINT_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+          resolve(mockTemplate);
+        }
+      }, 40); // Update every 40ms for smooth animation (100/2 * 40 = 2000ms total)
     });
   };
 
@@ -70,18 +79,24 @@ export default function BiometricManagement() {
     setSelectedUser(user);
     setEnrollForm({
       employeeId: user.employeeId || `EMP${Date.now().toString().slice(-6)}`,
-      scanning: false
+      scanning: false,
+      scanProgress: 0,
+      scanStage: 'idle'
     });
     setEnrollDialog(true);
   };
 
   const handleEnrollFingerprint = async () => {
     try {
-      setEnrollForm(prev => ({ ...prev, scanning: true }));
+      setEnrollForm(prev => ({ ...prev, scanning: true, scanProgress: 0, scanStage: 'scanning' }));
       setError('');
       setSuccess('');
 
-      const fingerprintTemplate = await simulateFingerprintScan();
+      const fingerprintTemplate = await simulateFingerprintScan((progress) => {
+        setEnrollForm(prev => ({ ...prev, scanProgress: progress }));
+      });
+
+      setEnrollForm(prev => ({ ...prev, scanStage: 'complete' }));
 
       const response = await api.post('/biometric/enroll', {
         userId: selectedUser._id,
@@ -90,13 +105,16 @@ export default function BiometricManagement() {
       });
 
       setSuccess(`Fingerprint enrolled successfully for ${selectedUser.name}`);
-      setEnrollDialog(false);
-      loadEnrolledStaff();
-      loadAllUsers();
+      
+      // Keep dialog open for a moment to show success animation
+      setTimeout(() => {
+        setEnrollDialog(false);
+        loadEnrolledStaff();
+        loadAllUsers();
+      }, 1000);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to enroll fingerprint');
-    } finally {
-      setEnrollForm(prev => ({ ...prev, scanning: false }));
+      setEnrollForm(prev => ({ ...prev, scanning: false, scanStage: 'idle', scanProgress: 0 }));
     }
   };
 
@@ -422,16 +440,137 @@ export default function BiometricManagement() {
                 helperText="Unique identifier for this employee"
               />
 
-              {enrollForm.scanning ? (
-                <Box sx={{ textAlign: 'center', py: 3 }}>
-                  <FingerprintIcon sx={{ fontSize: 80, color: 'primary.main', mb: 2 }} />
-                  <Typography variant="h6" gutterBottom>
-                    Scanning Fingerprint...
+              {enrollForm.scanning || enrollForm.scanStage !== 'idle' ? (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  {/* iPhone-style Fingerprint Animation */}
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      width: 180,
+                      height: 180,
+                      margin: '0 auto 24px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {/* Background Circle */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: '50%',
+                        border: '4px solid',
+                        borderColor: enrollForm.scanStage === 'complete' ? 'success.main' : 'grey.300',
+                        transition: 'all 0.3s ease'
+                      }}
+                    />
+                    
+                    {/* Progress Circle */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: '50%',
+                        background: `conic-gradient(
+                          ${enrollForm.scanStage === 'complete' ? '#4caf50' : '#1976d2'} ${enrollForm.scanProgress * 3.6}deg,
+                          transparent ${enrollForm.scanProgress * 3.6}deg
+                        )`,
+                        transition: 'background 0.1s linear',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          inset: 8,
+                          borderRadius: '50%',
+                          bgcolor: 'background.paper'
+                        }
+                      }}
+                    />
+
+                    {/* Fingerprint Icon */}
+                    <FingerprintIcon
+                      sx={{
+                        fontSize: 100,
+                        color: enrollForm.scanStage === 'complete' ? 'success.main' : 'primary.main',
+                        zIndex: 1,
+                        animation: enrollForm.scanStage === 'scanning' ? 'pulse 1.5s ease-in-out infinite' : 'none',
+                        '@keyframes pulse': {
+                          '0%, 100%': { transform: 'scale(1)', opacity: 1 },
+                          '50%': { transform: 'scale(1.05)', opacity: 0.8 }
+                        },
+                        transition: 'color 0.3s ease'
+                      }}
+                    />
+                    
+                    {/* Progress Percentage */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        bottom: -8,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        bgcolor: 'background.paper',
+                        px: 2,
+                        py: 0.5,
+                        borderRadius: 2,
+                        border: '2px solid',
+                        borderColor: enrollForm.scanStage === 'complete' ? 'success.main' : 'primary.main'
+                      }}
+                    >
+                      <Typography variant="h6" fontWeight="bold" color={enrollForm.scanStage === 'complete' ? 'success.main' : 'primary.main'}>
+                        {Math.round(enrollForm.scanProgress)}%
+                      </Typography>
+                    </Box>
+
+                    {/* Success Checkmark */}
+                    {enrollForm.scanStage === 'complete' && (
+                      <CheckIcon
+                        sx={{
+                          position: 'absolute',
+                          top: -12,
+                          right: -12,
+                          fontSize: 48,
+                          color: 'success.main',
+                          bgcolor: 'background.paper',
+                          borderRadius: '50%',
+                          animation: 'scaleIn 0.3s ease-out',
+                          '@keyframes scaleIn': {
+                            '0%': { transform: 'scale(0)', opacity: 0 },
+                            '100%': { transform: 'scale(1)', opacity: 1 }
+                          }
+                        }}
+                      />
+                    )}
+                  </Box>
+
+                  <Typography variant="h6" gutterBottom fontWeight="bold">
+                    {enrollForm.scanStage === 'complete' ? 'Scan Complete!' : 'Scanning Fingerprint...'}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Please place finger on the scanner
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {enrollForm.scanStage === 'complete' 
+                      ? 'Fingerprint captured successfully!' 
+                      : 'Keep your finger steady on the scanner'}
                   </Typography>
-                  <LinearProgress sx={{ mt: 2 }} />
+                  
+                  {/* Scanning Tips */}
+                  {enrollForm.scanStage === 'scanning' && (
+                    <Box sx={{ mt: 3, textAlign: 'left', maxWidth: 300, mx: 'auto' }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                        💡 <strong>Tips:</strong>
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                        • Keep finger flat and still
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                        • Cover entire sensor area
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                        • Apply gentle pressure
+                      </Typography>
+                    </Box>
+                  )}
                 </Box>
               ) : (
                 <Alert severity="info">

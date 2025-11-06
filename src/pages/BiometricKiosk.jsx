@@ -21,6 +21,7 @@ export default function BiometricKiosk() {
   const [clockedIn, setClockedIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [scanProgress, setScanProgress] = useState(0);
 
   // Update clock every second
   useEffect(() => {
@@ -32,14 +33,19 @@ export default function BiometricKiosk() {
 
   // Simulate fingerprint scanning
   // In production, this would integrate with actual fingerprint hardware
-  const simulateFingerprintScan = async () => {
+  const simulateFingerprintScan = async (onProgress) => {
     return new Promise((resolve) => {
-      setTimeout(() => {
-        // Generate a mock fingerprint template
-        // In production, this would come from the actual fingerprint reader
-        const mockTemplate = `FINGERPRINT_${Date.now()}_${Math.random().toString(36)}`;
-        resolve(mockTemplate);
-      }, 2000); // 2 second scan simulation
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 2;
+        if (onProgress) onProgress(progress);
+        
+        if (progress >= 100) {
+          clearInterval(interval);
+          const mockTemplate = `FINGERPRINT_${Date.now()}_${Math.random().toString(36)}`;
+          resolve(mockTemplate);
+        }
+      }, 40); // Update every 40ms for smooth animation (100/2 * 40 = 2000ms total)
     });
   };
 
@@ -49,9 +55,12 @@ export default function BiometricKiosk() {
       setMessage('Please place your finger on the scanner...');
       setLoading(true);
       setUser(null);
+      setScanProgress(0);
 
       // Get fingerprint template
-      const fingerprintTemplate = await simulateFingerprintScan();
+      const fingerprintTemplate = await simulateFingerprintScan((progress) => {
+        setScanProgress(progress);
+      });
 
       // Verify fingerprint with backend
       const response = await api.post('/biometric/verify', { fingerprintTemplate });
@@ -68,6 +77,7 @@ export default function BiometricKiosk() {
       setTimeout(() => {
         setStatus('idle');
         setMessage('');
+        setScanProgress(0);
       }, 3000);
     } finally {
       setLoading(false);
@@ -79,8 +89,11 @@ export default function BiometricKiosk() {
       setLoading(true);
       setStatus('scanning');
       setMessage('Scanning for clock in...');
+      setScanProgress(0);
 
-      const fingerprintTemplate = await simulateFingerprintScan();
+      const fingerprintTemplate = await simulateFingerprintScan((progress) => {
+        setScanProgress(progress);
+      });
       const response = await api.post('/biometric/clock-in', { fingerprintTemplate });
 
       setStatus('success');
@@ -91,6 +104,7 @@ export default function BiometricKiosk() {
         setStatus('idle');
         setUser(null);
         setMessage('');
+        setScanProgress(0);
       }, 4000);
     } catch (error) {
       setStatus('error');
@@ -99,6 +113,7 @@ export default function BiometricKiosk() {
         setStatus('idle');
         setUser(null);
         setMessage('');
+        setScanProgress(0);
       }, 3000);
     } finally {
       setLoading(false);
@@ -110,8 +125,11 @@ export default function BiometricKiosk() {
       setLoading(true);
       setStatus('scanning');
       setMessage('Scanning for clock out...');
+      setScanProgress(0);
 
-      const fingerprintTemplate = await simulateFingerprintScan();
+      const fingerprintTemplate = await simulateFingerprintScan((progress) => {
+        setScanProgress(progress);
+      });
       const response = await api.post('/biometric/clock-out', { fingerprintTemplate });
 
       setStatus('success');
@@ -122,6 +140,7 @@ export default function BiometricKiosk() {
         setStatus('idle');
         setUser(null);
         setMessage('');
+        setScanProgress(0);
       }, 4000);
     } catch (error) {
       setStatus('error');
@@ -130,6 +149,7 @@ export default function BiometricKiosk() {
         setStatus('idle');
         setUser(null);
         setMessage('');
+        setScanProgress(0);
       }, 3000);
     } finally {
       setLoading(false);
@@ -268,9 +288,91 @@ export default function BiometricKiosk() {
               {/* Scanning State */}
               {status === 'scanning' && (
                 <Box sx={{ textAlign: 'center' }}>
-                  <CircularProgress size={80} sx={{ mb: 3 }} />
+                  {/* iPhone-style Fingerprint Animation */}
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      width: 200,
+                      height: 200,
+                      margin: '0 auto 32px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {/* Background Circle */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: '50%',
+                        border: '4px solid',
+                        borderColor: 'grey.300',
+                        transition: 'all 0.3s ease'
+                      }}
+                    />
+                    
+                    {/* Progress Circle */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: '50%',
+                        background: `conic-gradient(
+                          #667eea ${scanProgress * 3.6}deg,
+                          transparent ${scanProgress * 3.6}deg
+                        )`,
+                        transition: 'background 0.1s linear',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          inset: 8,
+                          borderRadius: '50%',
+                          bgcolor: 'background.paper'
+                        }
+                      }}
+                    />
+
+                    {/* Fingerprint Icon */}
+                    <FingerprintIcon
+                      sx={{
+                        fontSize: 120,
+                        color: 'primary.main',
+                        zIndex: 1,
+                        animation: 'pulse 1.5s ease-in-out infinite',
+                        '@keyframes pulse': {
+                          '0%, 100%': { transform: 'scale(1)', opacity: 1 },
+                          '50%': { transform: 'scale(1.05)', opacity: 0.8 }
+                        }
+                      }}
+                    />
+                    
+                    {/* Progress Percentage */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        bottom: -8,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        bgcolor: 'background.paper',
+                        px: 2.5,
+                        py: 0.5,
+                        borderRadius: 2,
+                        border: '3px solid',
+                        borderColor: 'primary.main',
+                        boxShadow: 2
+                      }}
+                    >
+                      <Typography variant="h5" fontWeight="bold" color="primary.main">
+                        {Math.round(scanProgress)}%
+                      </Typography>
+                    </Box>
+                  </Box>
+
                   <Typography variant="h6" fontWeight="bold" gutterBottom>
-                    Scanning...
+                    Scanning Fingerprint...
                   </Typography>
                   <Typography variant="body1" color="text.secondary">
                     {message}

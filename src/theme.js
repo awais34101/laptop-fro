@@ -1,6 +1,15 @@
 import { createTheme } from '@mui/material/styles';
 
 const theme = createTheme({
+  breakpoints: {
+    values: {
+      xs: 0,      // Phone
+      sm: 600,    // Tablet
+      md: 960,    // Small laptop
+      lg: 1280,   // Desktop
+      xl: 1920,   // Large screen
+    },
+  },
   palette: {
     primary: {
       main: '#667eea',
