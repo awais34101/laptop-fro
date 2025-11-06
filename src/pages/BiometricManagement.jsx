@@ -50,8 +50,8 @@ export default function BiometricManagement() {
 
   const loadAllUsers = async () => {
     try {
-      const response = await api.get('/users');
-      setAllUsers(response.data || []);
+      const response = await api.get('/users/list');
+      setAllUsers(response.data.users || []);
     } catch (err) {
       console.error('Failed to load users:', err);
     }
