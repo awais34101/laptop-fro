@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Paper, Button, Card, CardContent, Avatar, Alert,
-  Slide, Zoom, CircularProgress, Stack, Chip, IconButton
+  Slide, Zoom, CircularProgress, Stack, Chip, IconButton, Dialog, DialogTitle,
+  DialogContent, List, ListItem, ListItemAvatar, ListItemText, DialogActions
 } from '@mui/material';
 import {
   Fingerprint as FingerprintIcon,
@@ -10,7 +11,8 @@ import {
   CheckCircle as CheckIcon,
   Error as ErrorIcon,
   AccessTime as TimeIcon,
-  Home as HomeIcon
+  Home as HomeIcon,
+  Close as CloseIcon
 } from '@mui/icons-material';
 import api from '../services/api';
 
@@ -22,6 +24,10 @@ export default function BiometricKiosk() {
   const [loading, setLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [scanProgress, setScanProgress] = useState(0);
+  
+  // Demo mode - select user
+  const [showUserSelect, setShowUserSelect] = useState(false);
+  const [enrolledUsers, setEnrolledUsers] = useState([]);
 
   // Update clock every second
   useEffect(() => {
@@ -31,9 +37,23 @@ export default function BiometricKiosk() {
     return () => clearInterval(timer);
   }, []);
 
+  // Load enrolled users for demo mode
+  useEffect(() => {
+    loadEnrolledUsers();
+  }, []);
+
+  const loadEnrolledUsers = async () => {
+    try {
+      const response = await api.get('/biometric/enrolled');
+      setEnrolledUsers(response.data.staff || []);
+    } catch (err) {
+      console.error('Failed to load enrolled users:', err);
+    }
+  };
+
   // Simulate fingerprint scanning
   // In production, this would integrate with actual fingerprint hardware
-  const simulateFingerprintScan = async (onProgress) => {
+  const simulateFingerprintScan = async (onProgress, selectedUserId = null) => {
     return new Promise((resolve) => {
       let progress = 0;
       const interval = setInterval(() => {
@@ -42,14 +62,37 @@ export default function BiometricKiosk() {
         
         if (progress >= 100) {
           clearInterval(interval);
-          const mockTemplate = `FINGERPRINT_${Date.now()}_${Math.random().toString(36)}`;
+          // If userId provided (demo mode), use it; otherwise generate random
+          const mockTemplate = selectedUserId 
+            ? `FINGERPRINT_${Date.now()}_${selectedUserId}_${Math.random().toString(36)}`
+            : `FINGERPRINT_${Date.now()}_${Math.random().toString(36)}`;
           resolve(mockTemplate);
         }
       }, 40); // Update every 40ms for smooth animation (100/2 * 40 = 2000ms total)
     });
   };
 
-  const handleScan = async () => {
+  const handleScanClick = () => {
+    // In demo mode, show user selection
+    if (enrolledUsers.length > 0) {
+      setShowUserSelect(true);
+    } else {
+      // No enrolled users
+      setStatus('error');
+      setMessage('No fingerprints enrolled in the system. Please visit Biometric Setup first.');
+      setTimeout(() => {
+        setStatus('idle');
+        setMessage('');
+      }, 3000);
+    }
+  };
+
+  const handleUserSelect = async (selectedUser) => {
+    setShowUserSelect(false);
+    await handleScan(selectedUser.id);
+  };
+
+  const handleScan = async (userId = null) => {
     try {
       setStatus('scanning');
       setMessage('Please place your finger on the scanner...');
@@ -57,10 +100,10 @@ export default function BiometricKiosk() {
       setUser(null);
       setScanProgress(0);
 
-      // Get fingerprint template
+      // Get fingerprint template with userId
       const fingerprintTemplate = await simulateFingerprintScan((progress) => {
         setScanProgress(progress);
-      });
+      }, userId);
 
       // Verify fingerprint with backend
       const response = await api.post('/biometric/verify', { fingerprintTemplate });
@@ -93,7 +136,8 @@ export default function BiometricKiosk() {
 
       const fingerprintTemplate = await simulateFingerprintScan((progress) => {
         setScanProgress(progress);
-      });
+      }, user.id);
+
       const response = await api.post('/biometric/clock-in', { fingerprintTemplate });
 
       setStatus('success');
@@ -129,7 +173,7 @@ export default function BiometricKiosk() {
 
       const fingerprintTemplate = await simulateFingerprintScan((progress) => {
         setScanProgress(progress);
-      });
+      }, user.id);
       const response = await api.post('/biometric/clock-out', { fingerprintTemplate });
 
       setStatus('success');
@@ -267,7 +311,7 @@ export default function BiometricKiosk() {
                     variant="contained"
                     size="large"
                     startIcon={<FingerprintIcon />}
-                    onClick={handleScan}
+                    onClick={handleScanClick}
                     disabled={loading}
                     sx={{
                       py: 2,
@@ -526,6 +570,90 @@ export default function BiometricKiosk() {
           </Typography>
         </Paper>
       </Box>
+
+      {/* Demo Mode - User Selection Dialog */}
+      <Dialog 
+        open={showUserSelect} 
+        onClose={() => setShowUserSelect(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <FingerprintIcon color="primary" />
+              <Typography variant="h6" fontWeight="bold">
+                Select User (Demo Mode)
+              </Typography>
+            </Box>
+            <IconButton onClick={() => setShowUserSelect(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <Typography variant="body2" fontWeight="600">
+              🎯 Simulation Mode
+            </Typography>
+            <Typography variant="caption" display="block">
+              In real production, the scanner would automatically detect which finger is scanning.
+              For now, select which user you want to simulate.
+            </Typography>
+          </Alert>
+          <List>
+            {enrolledUsers.map((enrolledUser) => (
+              <ListItem
+                key={enrolledUser.id}
+                button
+                onClick={() => handleUserSelect(enrolledUser)}
+                sx={{
+                  borderRadius: 2,
+                  mb: 1,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  '&:hover': {
+                    bgcolor: 'primary.50',
+                    borderColor: 'primary.main'
+                  }
+                }}
+              >
+                <ListItemAvatar>
+                  <Avatar 
+                    src={enrolledUser.photoUrl} 
+                    sx={{ bgcolor: 'primary.main', border: '2px solid', borderColor: 'success.main' }}
+                  >
+                    {enrolledUser.photoUrl ? null : <FingerprintIcon />}
+                  </Avatar>
+                </ListItemAvatar>
+                <ListItemText
+                  primary={
+                    <Typography fontWeight="bold">{enrolledUser.name}</Typography>
+                  }
+                  secondary={
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {enrolledUser.email}
+                      </Typography>
+                      <Chip 
+                        label={`${enrolledUser.role} • ${enrolledUser.employeeId}`}
+                        size="small"
+                        color="success"
+                        sx={{ mt: 0.5, height: 20, fontSize: '0.7rem' }}
+                      />
+                    </Box>
+                  }
+                />
+              </ListItem>
+            ))}
+          </List>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowUserSelect(false)}>
+            Cancel
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
