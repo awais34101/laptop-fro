@@ -30,6 +30,8 @@ import Sheets from './pages/Sheets';
 import ChecklistEnhanced from './pages/ChecklistEnhanced';
 import ChecklistReports from './pages/ChecklistReports';
 import InventoryBoxes from './pages/InventoryBoxes';
+import BiometricKiosk from './pages/BiometricKiosk';
+import BiometricManagement from './pages/BiometricManagement';
 import Sidebar from './components/Sidebar';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Box, Toolbar, CssBaseline } from '@mui/material';
@@ -59,7 +61,7 @@ function App() {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   // Hide sidebar on login page
-  const hideSidebar = location.pathname === '/login';
+  const hideSidebar = location.pathname === '/login' || location.pathname === '/biometric-kiosk';
 
   const navigate = useNavigate();
 
@@ -73,6 +75,8 @@ function App() {
         <Box component="main" sx={{ flexGrow: 1, p: 0 }}>
           <Routes>
             <Route path="/login" element={<Login onLogin={() => navigate('/')} />} />
+            <Route path="/biometric-kiosk" element={<BiometricKiosk />} />
+            <Route path="/biometric-management" element={<ProtectedRoute roles={["admin", "manager"]}><BiometricManagement /></ProtectedRoute>} />
             <Route path="/settings/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute roles={["admin"]}><UsersList /></ProtectedRoute>} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

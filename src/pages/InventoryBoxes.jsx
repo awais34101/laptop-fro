@@ -432,19 +432,26 @@ const InventoryBoxes = () => {
   };
 
   const handleAutoReplenish = async () => {
-    if (!window.confirm(`Auto-replenish all boxes in ${selectedLocation} from unassigned inventory?`)) return;
+    if (!selectedItem) {
+      setError('Please select an item first to auto-replenish');
+      return;
+    }
+
+    if (!window.confirm(`Auto-replenish ${selectedItem.itemName} in ${selectedLocation} boxes?`)) return;
     
     try {
       setLoading(true);
       // Save scroll position
       const scrollPosition = window.scrollY || window.pageYOffset;
       
-      const response = await api.post(`/inventory-boxes/location/${selectedLocation}/auto-replenish`);
+      const response = await api.post(`/inventory-boxes/location/${selectedLocation}/auto-replenish`, {
+        itemId: selectedItem.itemId
+      });
       
       if (response.data.totalReplenished > 0) {
-        setSuccess(`Auto-replenished ${response.data.totalReplenished} items across ${response.data.boxesUpdated} boxes!`);
+        setSuccess(`Auto-replenished ${response.data.totalReplenished} ${selectedItem.itemName} across ${response.data.boxesUpdated} boxes!`);
       } else {
-        setSuccess('No items needed replenishment. All boxes are up to capacity or no unassigned inventory available.');
+        setSuccess(`No ${selectedItem.itemName} needed replenishment. All boxes are up to capacity or no unassigned inventory available.`);
       }
       
       await fetchBoxesByLocation(selectedLocation);
@@ -561,13 +568,13 @@ const InventoryBoxes = () => {
               </Button>
             </Tooltip>
             
-            <Tooltip title="Automatically fill boxes from unassigned inventory">
+            <Tooltip title={selectedItem ? "Automatically fill boxes with selected item" : "Please select an item first"}>
               <Button 
                 variant="contained" 
                 color="info"
                 startIcon={<RefreshIcon />}
                 onClick={handleAutoReplenish}
-                disabled={loading}
+                disabled={loading || !selectedItem}
                 sx={{ 
                   borderRadius: 2,
                   textTransform: 'none',

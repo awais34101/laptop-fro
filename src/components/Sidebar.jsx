@@ -13,6 +13,9 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import FingerprintIcon from '@mui/icons-material/Fingerprint';
+import TabletIcon from '@mui/icons-material/Tablet';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
@@ -82,7 +85,9 @@ const navSections = [
     items: [
       { text: 'Documents', icon: <DescriptionIcon />, path: '/documents', perm: { section: 'documents', action: 'view' } },
       { text: 'Expenses', icon: <ShoppingCartIcon />, path: '/expenses', perm: { section: 'expenses', action: 'view' } },
-      { text: 'Time', icon: <PeopleIcon />, path: '/time', perm: { section: 'time', action: 'view' } },
+      { text: 'Time', icon: <AccessTimeIcon />, path: '/time', perm: { section: 'time', action: 'view' } },
+      { text: 'Biometric Kiosk', icon: <TabletIcon />, path: '/biometric-kiosk', perm: null, badge: 'iPad' },
+      { text: 'Biometric Setup', icon: <FingerprintIcon />, path: '/biometric-management', perm: { section: 'users', action: 'edit' }, badge: 'Admin' },
       { text: 'Customers', icon: <PeopleIcon />, path: '/customers', perm: { section: 'customers', action: 'view' } },
       { text: 'Technicians', icon: <PeopleIcon />, path: '/technicians', perm: { section: 'technicians', action: 'view' } },
       { text: 'Settings', icon: <SettingsIcon />, path: '/settings', perm: { section: 'settings', action: 'view' } },
@@ -270,7 +275,7 @@ export default function Sidebar() {
                 {/* Section Items */}
                 <Collapse in={isOpen} timeout="auto" unmountOnExit>
                   <List component="div" disablePadding>
-                    {visibleItems.map(({ text, icon, path }) => {
+                    {visibleItems.map(({ text, icon, path, badge }) => {
                       const isActive = location.pathname === path;
                       return (
                         <ListItem
@@ -322,6 +327,23 @@ export default function Sidebar() {
                               }
                             }}
                           />
+                          {badge && (
+                            <Chip
+                              label={badge}
+                              size="small"
+                              sx={{
+                                height: 20,
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                background: badge === 'iPad' 
+                                  ? 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
+                                  : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                                color: '#fff',
+                                border: '1px solid rgba(255,255,255,0.3)',
+                                ml: 1
+                              }}
+                            />
+                          )}
                           {isActive && (
                             <Box
                               sx={{
