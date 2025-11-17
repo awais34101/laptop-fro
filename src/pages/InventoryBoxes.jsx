@@ -64,6 +64,10 @@ const InventoryBoxes = () => {
 
   useEffect(() => {
     setError(''); // Clear errors when changing location
+    
+    // Reset selected item when changing location
+    setSelectedItem(null);
+    
     fetchBoxesByLocation(selectedLocation);
     fetchAvailableInventory(selectedLocation);
     fetchStats();
@@ -469,6 +473,50 @@ const InventoryBoxes = () => {
     }
   };
 
+  const handleAutoReplenishAll = async () => {
+    if (!window.confirm(
+      `Smart Auto-Replenish ALL items in ${selectedLocation}?\n\n` +
+      `This will automatically detect all items that were previously in boxes and refill them with available inventory.\n\n` +
+      `Continue?`
+    )) return;
+    
+    try {
+      setLoading(true);
+      // Save scroll position
+      const scrollPosition = window.scrollY || window.pageYOffset;
+      
+      const response = await api.post(`/inventory-boxes/location/${selectedLocation}/auto-replenish-all`);
+      
+      if (response.data.totalItemsReplenished > 0) {
+        const details = response.data.details.map(d => 
+          `• ${d.itemName}: ${d.quantityReplenished} items across ${d.boxesUpdated} boxes`
+        ).join('\n');
+        
+        setSuccess(
+          `✓ Smart Auto-Replenish Complete!\n\n` +
+          `Total: ${response.data.totalItemsReplenished} items replenished\n` +
+          `${response.data.details.length} item types updated\n\n` +
+          `Details:\n${details}`
+        );
+      } else {
+        setSuccess(response.data.message || 'No items needed replenishment. All boxes are at capacity.');
+      }
+      
+      await fetchBoxesByLocation(selectedLocation);
+      fetchAvailableInventory(selectedLocation);
+      fetchStats();
+      
+      // Restore scroll position
+      setTimeout(() => {
+        window.scrollTo(0, scrollPosition);
+      }, 0);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to auto-replenish all boxes');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'Active': return 'success';
@@ -568,21 +616,26 @@ const InventoryBoxes = () => {
               </Button>
             </Tooltip>
             
-            <Tooltip title={selectedItem ? "Automatically fill boxes with selected item" : "Please select an item first"}>
+            <Tooltip title="One-click auto-replenish ALL items that need restocking">
               <Button 
                 variant="contained" 
-                color="info"
-                startIcon={<RefreshIcon />}
-                onClick={handleAutoReplenish}
-                disabled={loading || !selectedItem}
+                color="warning"
+                startIcon={<AutoAwesomeIcon />}
+                onClick={handleAutoReplenishAll}
+                disabled={loading}
                 sx={{ 
                   borderRadius: 2,
                   textTransform: 'none',
                   px: 3,
-                  boxShadow: '0 4px 20px 0 rgba(33, 150, 243, 0.4)'
+                  fontWeight: 'bold',
+                  boxShadow: '0 4px 20px 0 rgba(255, 152, 0, 0.4)',
+                  background: 'linear-gradient(45deg, #FF9800 30%, #FFB74D 90%)',
+                  '&:hover': {
+                    background: 'linear-gradient(45deg, #F57C00 30%, #FF9800 90%)',
+                  }
                 }}
               >
-                Auto Replenish
+                🚀 Smart Replenish All
               </Button>
             </Tooltip>
           </Stack>
@@ -728,6 +781,123 @@ const InventoryBoxes = () => {
           <Tab icon={<LocationIcon />} label="Warehouse" value="Warehouse" />
         </Tabs>
       </Paper>
+
+      {/* Auto-Replenish Section */}
+      {availableItems.length > 0 && (
+        <Paper 
+          elevation={0}
+          sx={{ 
+            p: 3, 
+            mb: 3, 
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 203, 243, 0.1) 100%)',
+            border: '2px solid',
+            borderColor: 'info.light'
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+            <Avatar sx={{ bgcolor: 'info.main' }}>
+              <RefreshIcon />
+            </Avatar>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h6" fontWeight="bold" color="info.main">
+                Manual Item Replenish
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Select a specific item to replenish in boxes (Optional - Use "Smart Replenish All" for automatic detection)
+              </Typography>
+            </Box>
+          </Box>
+          
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} md={8}>
+              <Autocomplete
+                options={availableItems}
+                loading={loadingItems}
+                value={selectedItem}
+                getOptionLabel={(option) => 
+                  `${option.itemName} - Available: ${option.availableForBoxing} ${option.unit || 'pcs'}`
+                }
+                onChange={(e, value) => {
+                  setSelectedItem(value);
+                  if (value) {
+                    setSuccess(`Selected ${value.itemName} for manual replenish`);
+                  }
+                }}
+                noOptionsText={loadingItems ? "Loading items..." : "No items available for boxing"}
+                renderInput={(params) => (
+                  <TextField 
+                    {...params} 
+                    label="Select Specific Item (Optional)" 
+                    placeholder="Or use Smart Replenish All button above"
+                    InputProps={{
+                      ...params.InputProps,
+                      startAdornment: (
+                        <>
+                          <InputAdornment position="start">
+                            <CategoryIcon color="info" />
+                          </InputAdornment>
+                          {params.InputProps.startAdornment}
+                        </>
+                      )
+                    }}
+                  />
+                )}
+                renderOption={(props, option) => (
+                  <li {...props}>
+                    <Box sx={{ width: '100%' }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="body1" fontWeight="bold">{option.itemName}</Typography>
+                        <Chip 
+                          label={`${option.availableForBoxing} available`}
+                          color="success" 
+                          size="small" 
+                        />
+                      </Box>
+                      <Typography variant="caption" color="textSecondary">
+                        Total: {option.totalQuantity} {option.unit} | In boxes: {option.quantityInBoxes} | 
+                        Available for boxing: {option.availableForBoxing}
+                      </Typography>
+                    </Box>
+                  </li>
+                )}
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Button 
+                fullWidth
+                variant="contained" 
+                color="info"
+                size="large"
+                startIcon={<RefreshIcon />}
+                onClick={handleAutoReplenish}
+                disabled={loading || !selectedItem}
+                sx={{ 
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  py: 1.5,
+                  fontWeight: 'bold',
+                  boxShadow: selectedItem ? '0 4px 20px 0 rgba(33, 150, 243, 0.4)' : 'none'
+                }}
+              >
+                Replenish This Item
+              </Button>
+            </Grid>
+          </Grid>
+          
+          {selectedItem && (
+            <Alert severity="info" sx={{ mt: 2, borderRadius: 2 }}>
+              <Typography variant="body2">
+                <strong>{selectedItem.itemName}</strong> selected for manual replenish
+              </Typography>
+              <Typography variant="caption">
+                When you click "Replenish This Item", the system will distribute {selectedItem.availableForBoxing} {selectedItem.unit} 
+                across boxes that previously had this item in {selectedLocation}.
+              </Typography>
+            </Alert>
+          )}
+        </Paper>
+      )}
 
       {/* Search and Filter Bar */}
       <Paper 
