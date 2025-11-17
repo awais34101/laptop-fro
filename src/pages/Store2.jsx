@@ -3,7 +3,7 @@ import api from '../services/api';
 import { 
   Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, 
   Paper, TextField, CircularProgress, Alert, Grid, Card, CardContent, Chip, InputAdornment,
-  IconButton, Tooltip, LinearProgress, alpha, TableSortLabel, Badge
+  IconButton, Tooltip, LinearProgress, alpha, TableSortLabel, Badge, Button
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -14,8 +14,14 @@ import {
   Warning as WarningIcon,
   CheckCircle as InStockIcon,
   Inventory as InventoryIcon,
-  Speed as SpeedIcon
+  Speed as SpeedIcon,
+  Download as DownloadIcon,
+  PictureAsPdf as PdfIcon,
+  TableChart as ExcelIcon
 } from '@mui/icons-material';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function Store2() {
   const [inventory, setInventory] = useState([]);
@@ -107,6 +113,112 @@ export default function Store2() {
     setOrderBy(property);
   };
 
+  // Export to Excel
+  const exportToExcel = () => {
+    const exportData = filteredInventory.map((s) => {
+      const status = getStockStatus(s.remaining_quantity, s.item?._id);
+      return {
+        'Item Name': s.item?.name || 'Unknown Item',
+        'Remaining Quantity': s.remaining_quantity,
+        'Stock Level': s.remaining_quantity === 0 ? '0%' : 
+                      s.remaining_quantity <= 20 ? 'Low' : 'Good',
+        'Status': status.label
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Store 2 Inventory');
+    
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 30 }, // Item Name
+      { wch: 20 }, // Remaining Quantity
+      { wch: 15 }, // Stock Level
+      { wch: 15 }  // Status
+    ];
+
+    const fileName = `Store2_Inventory_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
+  // Export to PDF
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Store 2 Inventory Report', 14, 22);
+    
+    // Add date
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 30);
+    
+    // Add statistics
+    doc.setFontSize(10);
+    doc.text(`Total Items: ${stats.totalItems}  |  In Stock: ${stats.inStock}  |  Low Stock: ${stats.lowStock}  |  Out of Stock: ${stats.outOfStock}  |  Slow Moving: ${stats.slowMoving}`, 14, 38);
+    
+    // Prepare table data
+    const tableData = filteredInventory.map((s) => {
+      const status = getStockStatus(s.remaining_quantity, s.item?._id);
+      return [
+        s.item?.name || 'Unknown Item',
+        s.remaining_quantity.toLocaleString(),
+        s.remaining_quantity === 0 ? '0%' : 
+          s.remaining_quantity <= 20 ? 'Low' : 'Good',
+        status.label
+      ];
+    });
+
+    // Add table
+    autoTable(doc, {
+      startY: 45,
+      head: [['Item Name', 'Remaining Quantity', 'Stock Level', 'Status']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: { 
+        fillColor: [6, 190, 182],
+        textColor: 255,
+        fontStyle: 'bold',
+        fontSize: 10
+      },
+      styles: { 
+        fontSize: 9,
+        cellPadding: 3
+      },
+      columnStyles: {
+        0: { cellWidth: 80 },
+        1: { cellWidth: 40, halign: 'center' },
+        2: { cellWidth: 30, halign: 'center' },
+        3: { cellWidth: 35, halign: 'center' }
+      },
+      didParseCell: function(data) {
+        // Color code status cells
+        if (data.column.index === 3) {
+          const status = data.cell.text[0];
+          if (status === 'Out of Stock') {
+            data.cell.styles.textColor = [211, 47, 47];
+            data.cell.styles.fontStyle = 'bold';
+          } else if (status === 'Low Stock') {
+            data.cell.styles.textColor = [237, 108, 2];
+            data.cell.styles.fontStyle = 'bold';
+          } else if (status === 'Slow Moving') {
+            data.cell.styles.textColor = [255, 152, 0];
+            data.cell.styles.fontStyle = 'bold';
+          } else if (status === 'In Stock') {
+            data.cell.styles.textColor = [46, 125, 50];
+            data.cell.styles.fontStyle = 'bold';
+          }
+        }
+      }
+    });
+
+    const fileName = `Store2_Inventory_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
+  };
+
   return (
     <Box sx={{ minHeight: '100vh', background: '#f5f7fa', p: 3 }}>
       <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
@@ -130,19 +242,63 @@ export default function Store2() {
               </Typography>
             </Box>
           </Box>
-          <Tooltip title="Refresh Inventory">
-            <IconButton 
-              onClick={loadInventory}
-              disabled={loading}
-              sx={{ 
-                background: '#fff', 
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                '&:hover': { background: '#f7fafc', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="contained"
+              startIcon={<ExcelIcon />}
+              onClick={exportToExcel}
+              disabled={loading || filteredInventory.length === 0}
+              sx={{
+                background: 'linear-gradient(135deg, #1e7e34 0%, #28a745 100%)',
+                color: '#fff',
+                fontWeight: 600,
+                textTransform: 'none',
+                borderRadius: 2,
+                px: 2.5,
+                boxShadow: '0 4px 12px rgba(30, 126, 52, 0.3)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #155d27 0%, #218838 100%)',
+                  boxShadow: '0 6px 16px rgba(30, 126, 52, 0.4)'
+                }
               }}
             >
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
+              Export Excel
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<PdfIcon />}
+              onClick={exportToPDF}
+              disabled={loading || filteredInventory.length === 0}
+              sx={{
+                background: 'linear-gradient(135deg, #c82333 0%, #dc3545 100%)',
+                color: '#fff',
+                fontWeight: 600,
+                textTransform: 'none',
+                borderRadius: 2,
+                px: 2.5,
+                boxShadow: '0 4px 12px rgba(200, 35, 51, 0.3)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #a71d2a 0%, #c82333 100%)',
+                  boxShadow: '0 6px 16px rgba(200, 35, 51, 0.4)'
+                }
+              }}
+            >
+              Export PDF
+            </Button>
+            <Tooltip title="Refresh Inventory">
+              <IconButton 
+                onClick={loadInventory}
+                disabled={loading}
+                sx={{ 
+                  background: '#fff', 
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                  '&:hover': { background: '#f7fafc', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }
+                }}
+              >
+                <RefreshIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Box>
 
         {/* Error Alert */}
