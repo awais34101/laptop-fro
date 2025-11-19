@@ -45,16 +45,25 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 
 export default function Transfers() {
   const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this transfer? This action cannot be undone.')) return;
     try {
       await api.delete(`/transfers/${id}`);
-      setSuccess('Transfer deleted');
+      setSuccess('✅ Transfer deleted successfully');
       fetchTransfers();
       setTimeout(async () => {
         await fetchInventory();
         window.dispatchEvent(new Event('inventoryChanged'));
       }, 200);
     } catch (err) {
-      setError(err.response?.data?.error || 'Error deleting transfer');
+      const errorMessage = err.response?.data?.error;
+      if (errorMessage) {
+        setError(errorMessage);
+      } else if (err.response?.status === 404) {
+        setError('❌ Transfer not found: The transfer may have been already deleted. Refreshing the list...');
+        fetchTransfers();
+      } else {
+        setError('❌ Cannot delete transfer: An error occurred while trying to delete the transfer. Please try again.');
+      }
     }
   };
   const [transfers, setTransfers] = useState([]);
@@ -177,6 +186,49 @@ export default function Transfers() {
   };
 
   const handleSubmit = async () => {
+    // Clear previous messages
+    setError('');
+    setSuccess('');
+    
+    // Frontend validation checks with specific error messages
+    if (form.from === form.to) {
+      setError('❌ Cannot create transfer: Source and destination must be different. Please select different locations for \"From\" and \"To\".');
+      return;
+    }
+    
+    if (!form.from || !form.to) {
+      setError('❌ Both source and destination locations are required. Please select \"From\" and \"To\" locations.');
+      return;
+    }
+    
+    if (form.items.length === 0) {
+      setError('❌ No items added to transfer. Please add at least one item to the transfer.');
+      return;
+    }
+    
+    const emptyItemRow = form.items.find(it => !it.item);
+    if (emptyItemRow) {
+      setError('❌ Item selection required. Please select an item from the dropdown for all rows.');
+      return;
+    }
+    
+    const invalidQtyRow = form.items.find(it => !it.quantity || Number(it.quantity) <= 0 || Number.isNaN(Number(it.quantity)));
+    if (invalidQtyRow) {
+      setError('❌ Invalid quantity. Quantity must be a positive number greater than 0 for all items.');
+      return;
+    }
+    
+    // Check stock availability for each item
+    for (const it of form.items) {
+      const availableQty = getLocationQty(form.from, it.item);
+      const requestedQty = Number(it.quantity);
+      if (requestedQty > availableQty) {
+        const itemName = items.find(i => i._id === it.item)?.name || 'Unknown Item';
+        setError(`❌ Insufficient stock: You are trying to transfer ${requestedQty} units of \"${itemName}\" from ${form.from.toUpperCase()} but only ${availableQty} units are available. Please adjust the quantity.`);
+        return;
+      }
+    }
+    
     try {
       setSubmitting(true);
       // If a sheet is selected, use the sheet-specific transfer flow
@@ -221,7 +273,19 @@ export default function Transfers() {
       setSheetOptions([]);
       setOpen(false);
     } catch (err) {
-      setError(err.response?.data?.error || 'Error');
+      // Display detailed error from backend or provide helpful message
+      const errorMessage = err.response?.data?.error;
+      if (errorMessage) {
+        setError(errorMessage);
+      } else if (err.message.includes('Network') || err.message.includes('network')) {
+        setError('❌ Network error: Cannot connect to the server. Please check your internet connection and try again.');
+      } else if (err.response?.status === 400) {
+        setError('❌ Invalid transfer data: Please check all fields and make sure they are filled correctly with valid values.');
+      } else if (err.response?.status === 404) {
+        setError('❌ Transfer not found: The transfer record may have been deleted. Please refresh the page and try again.');
+      } else {
+        setError('❌ Cannot complete transfer: An unexpected error occurred. Please try again or contact support if the problem persists.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -1301,10 +1365,18 @@ export default function Transfers() {
               sx={{ 
                 mb: 3, 
                 borderRadius: '12px',
-                border: '1px solid #ef5350'
+                fontWeight: 600,
+                fontSize: '0.95rem',
+                border: '2px solid #d32f2f',
+                background: 'linear-gradient(135deg, rgba(211, 47, 47, 0.1) 0%, rgba(244, 67, 54, 0.15) 100%)',
+                '& .MuiAlert-icon': {
+                  fontSize: '1.5rem'
+                }
               }}
             >
-              {error}
+              <Box sx={{ whiteSpace: 'pre-wrap' }}>
+                {error}
+              </Box>
             </Alert>
           )}
           {success && (
@@ -1313,7 +1385,13 @@ export default function Transfers() {
               sx={{ 
                 mb: 3, 
                 borderRadius: '12px',
-                border: '1px solid #66bb6a'
+                fontWeight: 600,
+                fontSize: '0.95rem',
+                border: '2px solid #2e7d32',
+                background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.1) 0%, rgba(76, 175, 80, 0.15) 100%)',
+                '& .MuiAlert-icon': {
+                  fontSize: '1.5rem'
+                }
               }}
             >
               {success}
