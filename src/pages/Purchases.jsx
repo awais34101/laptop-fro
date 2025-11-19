@@ -79,13 +79,39 @@ export default function Purchases() {
   const handleSubmit = async () => {
     // Basic validation to avoid mistakes
     setError('');
-    const invalidRow = rows.find(r => !r.item || Number(r.quantity) <= 0 || Number.isNaN(Number(r.quantity)) || Number(r.price) < 0 || Number.isNaN(Number(r.price)));
-    if (!supplier || !invoiceNumber) {
-      setError('Supplier and Invoice Number are required.');
+    setSuccess('');
+    
+    // Validation checks with specific error messages
+    if (!supplier || !supplier.trim()) {
+      setError('❌ Supplier name is required. Please enter the supplier name before saving.');
       return;
     }
-    if (invalidRow) {
-      setError('Please select an item and enter valid quantity (> 0) and price (>= 0) for all rows.');
+    
+    if (!invoiceNumber || !invoiceNumber.trim()) {
+      setError('❌ Invoice number is required. Please enter a unique invoice number before saving.');
+      return;
+    }
+    
+    if (rows.length === 0) {
+      setError('❌ No items added. Please add at least one item to the purchase invoice.');
+      return;
+    }
+    
+    const emptyItemRow = rows.find(r => !r.item);
+    if (emptyItemRow) {
+      setError('❌ Item selection required. Please select an item from the dropdown for all rows.');
+      return;
+    }
+    
+    const invalidQtyRow = rows.find(r => !r.quantity || Number(r.quantity) <= 0 || Number.isNaN(Number(r.quantity)));
+    if (invalidQtyRow) {
+      setError('❌ Invalid quantity. Quantity must be a positive number greater than 0 for all items.');
+      return;
+    }
+    
+    const invalidPriceRow = rows.find(r => r.price === '' || Number(r.price) < 0 || Number.isNaN(Number(r.price)));
+    if (invalidPriceRow) {
+      setError('❌ Invalid price. Price must be a valid number (0 or greater) for all items.');
       return;
     }
 
@@ -122,7 +148,19 @@ export default function Purchases() {
       // Close only on success
       setOpen(false);
     } catch (err) {
-      setError(err.response?.data?.error || 'Error');
+      // Display detailed error from backend or provide helpful message
+      const errorMessage = err.response?.data?.error;
+      if (errorMessage) {
+        setError(errorMessage);
+      } else if (err.message.includes('Network')) {
+        setError('❌ Network error: Cannot connect to the server. Please check your internet connection and try again.');
+      } else if (err.response?.status === 409) {
+        setError('❌ Duplicate invoice detected: This invoice number already exists for this supplier. Please use a different invoice number or check if this invoice was already entered.');
+      } else if (err.response?.status === 400) {
+        setError('❌ Invalid data: Please check all fields and make sure they are filled correctly with valid values.');
+      } else {
+        setError('❌ Cannot save purchase invoice: An unexpected error occurred. Please try again or contact support if the problem persists.');
+      }
     } finally {
       setSaving(false);
     }
@@ -133,14 +171,19 @@ export default function Purchases() {
     try {
       await api.delete(`/purchases/${id}`);
       setSuccess('Invoice deleted successfully');
-  await fetchPurchases(1);
-  setPage(1);
-        setTimeout(async () => {
-          await fetchInventory();
-          window.dispatchEvent(new Event('inventoryChanged'));
-        }, 200);
+      await fetchPurchases(1);
+      setPage(1);
+      setTimeout(async () => {
+        await fetchInventory();
+        window.dispatchEvent(new Event('inventoryChanged'));
+      }, 200);
     } catch (err) {
-      setError(err.response?.data?.error || 'Delete failed');
+      const errorMessage = err.response?.data?.error;
+      if (errorMessage) {
+        setError(errorMessage);
+      } else {
+        setError('❌ Cannot delete invoice: An error occurred while trying to delete the invoice. Please try again.');
+      }
     }
   };
 
@@ -641,21 +684,35 @@ export default function Purchases() {
             <Alert 
               severity="error" 
               sx={{ 
-                mb: 2, 
+                mb: 3, 
                 borderRadius: 2,
-                fontWeight: 600 
+                fontWeight: 600,
+                fontSize: '0.95rem',
+                border: '2px solid #d32f2f',
+                background: 'linear-gradient(135deg, rgba(211, 47, 47, 0.1) 0%, rgba(244, 67, 54, 0.15) 100%)',
+                '& .MuiAlert-icon': {
+                  fontSize: '1.5rem'
+                }
               }}
             >
-              {error}
+              <Box sx={{ whiteSpace: 'pre-wrap' }}>
+                {error}
+              </Box>
             </Alert>
           )}
           {success && (
             <Alert 
               severity="success" 
               sx={{ 
-                mb: 2, 
+                mb: 3, 
                 borderRadius: 2,
-                fontWeight: 600 
+                fontWeight: 600,
+                fontSize: '0.95rem',
+                border: '2px solid #2e7d32',
+                background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.1) 0%, rgba(76, 175, 80, 0.15) 100%)',
+                '& .MuiAlert-icon': {
+                  fontSize: '1.5rem'
+                }
               }}
             >
               {success}
