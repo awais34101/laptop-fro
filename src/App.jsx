@@ -31,6 +31,7 @@ import ChecklistReports from './pages/ChecklistReports';
 import InventoryBoxes from './pages/InventoryBoxes';
 import BiometricKiosk from './pages/BiometricKiosk';
 import BiometricManagement from './pages/BiometricManagement';
+import ProfitLoss from './pages/ProfitLoss';
 import Sidebar from './components/Sidebar';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Box, Toolbar, CssBaseline, IconButton, AppBar, Typography, useTheme, useMediaQuery } from '@mui/material';
@@ -185,6 +186,7 @@ function App() {
               }
             />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/profit-loss" element={<ProtectedRoute><ProfitLoss /></ProtectedRoute>} />
             <Route path="/closing/store1" element={<ProtectedRoute><Closing storeType="store1" /></ProtectedRoute>} />
             <Route path="/closing/store2" element={<ProtectedRoute><Closing storeType="store2" /></ProtectedRoute>} />
           </Routes>

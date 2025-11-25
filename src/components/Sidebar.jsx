@@ -16,6 +16,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import FingerprintIcon from '@mui/icons-material/Fingerprint';
 import TabletIcon from '@mui/icons-material/Tablet';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
@@ -81,6 +82,12 @@ const navSections = [
     ]
   },
   {
+    label: 'Reports',
+    items: [
+      { text: 'Profit & Loss', icon: <TrendingUpIcon />, path: '/profit-loss', perm: { section: 'sales', action: 'view' } },
+    ]
+  },
+  {
     label: 'Other',
     items: [
       { text: 'Documents', icon: <DescriptionIcon />, path: '/documents', perm: { section: 'documents', action: 'view' } },
@@ -113,6 +120,7 @@ export default function Sidebar({ mobileOpen, onDrawerToggle }) {
     'Store 2': true,
     Parts: true,
     Sheets: true,
+    Reports: true,
     Other: true
   });
 
