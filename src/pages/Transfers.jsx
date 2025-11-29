@@ -89,7 +89,8 @@ export default function Transfers() {
     from: '',
     to: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    item: ''
   });
   const [showFilters, setShowFilters] = useState(false);
 
@@ -114,10 +115,16 @@ export default function Transfers() {
   const fetchTransfers = async (p = page, currentFilters = filters) => {
     setLoading(true);
     try {
-      // Build query params with filters - use groupByDate mode
+      // Check if any filter is active
+      const hasActiveFilters = currentFilters.technician || currentFilters.from || 
+                               currentFilters.to || currentFilters.startDate || 
+                               currentFilters.endDate || currentFilters.item;
+      
+      // Build query params - disable groupByDate when filters are active
       const params = new URLSearchParams({
-        page: p,
-        groupByDate: 'true' // Enable date grouping
+        page: hasActiveFilters ? 1 : p,
+        limit: hasActiveFilters ? 10000 : PAGE_SIZE,
+        groupByDate: hasActiveFilters ? 'false' : 'true'
       });
       
       if (currentFilters.technician) params.append('technician', currentFilters.technician);
@@ -125,15 +132,16 @@ export default function Transfers() {
       if (currentFilters.to) params.append('to', currentFilters.to);
       if (currentFilters.startDate) params.append('startDate', currentFilters.startDate);
       if (currentFilters.endDate) params.append('endDate', currentFilters.endDate);
+      if (currentFilters.item) params.append('item', currentFilters.item);
       
       const r = await api.get(`/transfers?${params.toString()}`);
       
       if (r.data) {
         setTransfers(r.data.data || []);
-        setTotalPages(r.data.totalPages || 1);
-        setCurrentDate(r.data.currentDate || null);
-        setHasNext(r.data.hasNext || false);
-        setHasPrev(r.data.hasPrev || false);
+        setTotalPages(hasActiveFilters ? 1 : (r.data.totalPages || 1));
+        setCurrentDate(hasActiveFilters ? null : (r.data.currentDate || null));
+        setHasNext(hasActiveFilters ? false : (r.data.hasNext || false));
+        setHasPrev(hasActiveFilters ? false : (r.data.hasPrev || false));
       }
     } catch (e) {
       setError(e.response?.data?.error || e.message);
@@ -356,7 +364,8 @@ export default function Transfers() {
       from: '',
       to: '',
       startDate: '',
-      endDate: ''
+      endDate: '',
+      item: ''
     };
     setFilters(clearedFilters);
     setPage(1);
@@ -723,7 +732,41 @@ export default function Transfers() {
         {showFilters && (
           <Box sx={{ mt: 3 }}>
             <Grid container spacing={2} sx={{ mb: 3 }}>
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} md={3}>
+                <Autocomplete
+                  options={items}
+                  getOptionLabel={(option) => option.name || ''}
+                  value={items.find(i => i._id === filters.item) || null}
+                  onChange={(_, value) => handleFilterChange('item', value?._id || '')}
+                  filterOptions={(options, state) => {
+                    if (!state.inputValue) return [];
+                    return options.filter(option => 
+                      option.name.toLowerCase().includes(state.inputValue.toLowerCase())
+                    );
+                  }}
+                  renderInput={(params) => (
+                    <TextField 
+                      {...params} 
+                      label="Search by Item" 
+                      placeholder="Type item name..."
+                      size="small"
+                      helperText="Type to search items"
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '10px',
+                          '&:hover fieldset': {
+                            borderColor: '#667eea',
+                          },
+                        },
+                      }}
+                    />
+                  )}
+                  isOptionEqualToValue={(option, value) => option._id === value._id}
+                  noOptionsText="Type to search items"
+                />
+              </Grid>
+              
+              <Grid item xs={12} md={3}>
                 <TextField
                   select
                   label="Technician"
@@ -752,7 +795,7 @@ export default function Transfers() {
                 </TextField>
               </Grid>
               
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} md={3}>
                 <TextField
                   select
                   label="From Location"
@@ -791,7 +834,7 @@ export default function Transfers() {
                 </TextField>
               </Grid>
               
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} md={3}>
                 <TextField
                   select
                   label="To Location"
@@ -928,102 +971,114 @@ export default function Transfers() {
           p: 3,
           color: 'white'
         }}>
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between',
-            gap: 2,
-            flexWrap: 'wrap'
-          }}>
-            <Button 
-              variant="contained" 
-              disabled={loading || !hasPrev} 
-              onClick={() => { 
-                const p = Math.max(1, page - 1); 
-                setPage(p); 
-                fetchTransfers(p); 
-              }}
-              sx={{ 
-                fontWeight: 600, 
-                minWidth: 150,
-                borderRadius: '12px',
-                background: 'white',
-                color: '#667eea',
-                '&:hover': {
-                  background: '#f8f9fa',
-                  transform: 'translateX(-5px)',
-                },
-                '&:disabled': {
-                  background: 'rgba(255,255,255,0.3)',
-                  color: 'rgba(255,255,255,0.5)',
-                },
-                transition: 'all 0.3s ease'
-              }}
-            >
-              ← Previous Date
-            </Button>
-            
-            <Box sx={{ textAlign: 'center', flex: 1 }}>
-              <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>
-                {currentDate ? new Date(currentDate).toLocaleDateString('en-US', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                }) : 'No Date'}
+          {/* Check if any filters are active */}
+          {(filters.technician || filters.from || filters.to || filters.startDate || filters.endDate || filters.item) ? (
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="h5" sx={{ fontWeight: 800, mb: 1 }}>
+                Filtered Results
               </Typography>
-              <Box sx={{ 
-                display: 'inline-flex', 
-                alignItems: 'center', 
-                gap: 1.5,
-                bgcolor: 'rgba(255,255,255,0.2)',
-                px: 2,
-                py: 0.5,
-                borderRadius: '20px'
-              }}>
-                <Chip 
-                  label={`Day ${page} of ${totalPages}`} 
-                  size="small"
-                  sx={{ 
-                    bgcolor: 'white',
-                    color: '#667eea',
-                    fontWeight: 700
-                  }}
-                />
-                <Typography variant="body2" sx={{ fontWeight: 600, opacity: 0.95 }}>
-                  {transfers.length} transfer{transfers.length !== 1 ? 's' : ''}
-                </Typography>
-              </Box>
+              <Typography variant="h6" sx={{ opacity: 0.95 }}>
+                Found {transfers.length} transfer{transfers.length !== 1 ? 's' : ''} matching your filters
+              </Typography>
             </Box>
-            
-            <Button 
-              variant="contained" 
-              disabled={loading || !hasNext} 
-              onClick={() => { 
-                const p = Math.min(totalPages, page + 1); 
-                setPage(p); 
-                fetchTransfers(p); 
-              }}
-              sx={{ 
-                fontWeight: 600, 
-                minWidth: 150,
-                borderRadius: '12px',
-                background: 'white',
-                color: '#667eea',
-                '&:hover': {
-                  background: '#f8f9fa',
-                  transform: 'translateX(5px)',
-                },
-                '&:disabled': {
-                  background: 'rgba(255,255,255,0.3)',
-                  color: 'rgba(255,255,255,0.5)',
-                },
-                transition: 'all 0.3s ease'
-              }}
-            >
-              Next Date →
-            </Button>
-          </Box>
+          ) : (
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between',
+              gap: 2,
+              flexWrap: 'wrap'
+            }}>
+              <Button 
+                variant="contained" 
+                disabled={loading || !hasPrev} 
+                onClick={() => { 
+                  const p = Math.max(1, page - 1); 
+                  setPage(p); 
+                  fetchTransfers(p); 
+                }}
+                sx={{ 
+                  fontWeight: 600, 
+                  minWidth: 150,
+                  borderRadius: '12px',
+                  background: 'white',
+                  color: '#667eea',
+                  '&:hover': {
+                    background: '#f8f9fa',
+                    transform: 'translateX(-5px)',
+                  },
+                  '&:disabled': {
+                    background: 'rgba(255,255,255,0.3)',
+                    color: 'rgba(255,255,255,0.5)',
+                  },
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                ← Previous Date
+              </Button>
+              
+              <Box sx={{ textAlign: 'center', flex: 1 }}>
+                <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>
+                  {currentDate ? new Date(currentDate).toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  }) : 'No Date'}
+                </Typography>
+                <Box sx={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: 1.5,
+                  bgcolor: 'rgba(255,255,255,0.2)',
+                  px: 2,
+                  py: 0.5,
+                  borderRadius: '20px'
+                }}>
+                  <Chip 
+                    label={`Day ${page} of ${totalPages}`} 
+                    size="small"
+                    sx={{ 
+                      bgcolor: 'white',
+                      color: '#667eea',
+                      fontWeight: 700
+                    }}
+                  />
+                  <Typography variant="body2" sx={{ fontWeight: 600, opacity: 0.95 }}>
+                    {transfers.length} transfer{transfers.length !== 1 ? 's' : ''}
+                  </Typography>
+                </Box>
+              </Box>
+              
+              <Button 
+                variant="contained" 
+                disabled={loading || !hasNext} 
+                onClick={() => { 
+                  const p = Math.min(totalPages, page + 1); 
+                  setPage(p); 
+                  fetchTransfers(p); 
+                }}
+                sx={{ 
+                  fontWeight: 600, 
+                  minWidth: 150,
+                  borderRadius: '12px',
+                  background: 'white',
+                  color: '#667eea',
+                  '&:hover': {
+                    background: '#f8f9fa',
+                    transform: 'translateX(5px)',
+                  },
+                  '&:disabled': {
+                    background: 'rgba(255,255,255,0.3)',
+                    color: 'rgba(255,255,255,0.5)',
+                  },
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                Next Date →
+              </Button>
+            </Box>
+          )}
         </Box>
 
         {/* Transfer Invoice Cards */}

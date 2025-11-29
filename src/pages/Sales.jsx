@@ -26,23 +26,29 @@ export default function Sales() {
   const [saving, setSaving] = useState(false);
   const [pdfDialog, setPdfDialog] = useState(false);
   const [currentPdf, setCurrentPdf] = useState(null);
+  const [searchItem, setSearchItem] = useState('');
   const { store, fetchInventory } = useInventory();
 
   // Helper function to get Store inventory for an item
   const getStoreQty = (itemId) => store.find(s => s.item?._id === itemId)?.remaining_quantity ?? 0;
 
   const PAGE_SIZE = 1;
-  const fetchSales = async (p = page) => {
+  const fetchSales = async (p = page, itemId = searchItem) => {
     setLoading(true);
     try {
-      const r = await api.get(`/sales?page=${p}&limit=${PAGE_SIZE}`);
+      const params = new URLSearchParams({ 
+        page: itemId ? 1 : p, 
+        limit: itemId ? 10000 : PAGE_SIZE 
+      });
+      if (itemId) params.append('item', itemId);
+      const r = await api.get(`/sales?${params.toString()}`);
       if (Array.isArray(r.data)) {
         const sorted = [...r.data].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-        setSales(sorted.slice(0, 1));
-        setTotalPages(sorted.length ? sorted.length : 1);
+        setSales(itemId ? sorted : sorted.slice(0, 1));
+        setTotalPages(itemId ? 1 : (sorted.length ? sorted.length : 1));
       } else {
         setSales(r.data.data || []);
-        setTotalPages(r.data.totalPages || 1);
+        setTotalPages(itemId ? 1 : (r.data.totalPages || 1));
       }
     } catch (e) {
       setSales([]);
@@ -300,6 +306,71 @@ export default function Sales() {
         <Alert severity="success" sx={{ mb: 3, borderRadius: 3 }}>{success}</Alert>
       )}
 
+      {/* Search by Item */}
+      <Box 
+        sx={{ 
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: 3,
+          p: 2,
+          mb: 3,
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
+        }}
+      >
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <Autocomplete
+            options={items}
+            getOptionLabel={(option) => option.name || ''}
+            value={items.find(i => i._id === searchItem) || null}
+            onChange={(_, value) => {
+              const itemId = value?._id || '';
+              setSearchItem(itemId);
+              setPage(1);
+              fetchSales(1, itemId);
+            }}
+            filterOptions={(options, state) => {
+              if (!state.inputValue) return [];
+              return options.filter(option => 
+                option.name.toLowerCase().includes(state.inputValue.toLowerCase())
+              );
+            }}
+            renderInput={(params) => (
+              <TextField 
+                {...params} 
+                label="Search Invoice by Item" 
+                placeholder="Type item name..."
+                helperText="Search sales invoices containing specific items"
+                sx={{ minWidth: 300 }}
+              />
+            )}
+            isOptionEqualToValue={(option, value) => option._id === value._id}
+            noOptionsText="Type to search items"
+            sx={{ flex: 1, minWidth: 300 }}
+          />
+          {searchItem && (
+            <Button 
+              variant="outlined"
+              onClick={() => {
+                setSearchItem('');
+                setPage(1);
+                fetchSales(1, '');
+              }}
+              sx={{
+                borderColor: '#1976d2',
+                color: '#1976d2',
+                fontWeight: 600,
+                '&:hover': {
+                  borderColor: '#1565c0',
+                  background: 'rgba(25, 118, 210, 0.05)'
+                }
+              }}
+            >
+              Clear Search
+            </Button>
+          )}
+        </Box>
+      </Box>
+
       {/* Pagination Controls */}
       <Box 
         sx={{ 
@@ -315,43 +386,51 @@ export default function Sales() {
           gap: 3
         }}
       >
-        <Button 
-          variant="outlined" 
-          disabled={loading || page <= 1} 
-          onClick={() => { const p = Math.max(1, page - 1); setPage(p); fetchSales(p); }}
-          sx={{
-            borderColor: '#1976d2',
-            color: '#1976d2',
-            fontWeight: 600,
-            px: 3,
-            '&:hover': {
-              borderColor: '#1565c0',
-              background: 'rgba(25, 118, 210, 0.05)'
-            }
-          }}
-        >
-          Previous
-        </Button>
-        <Typography variant="body1" sx={{ fontWeight: 600, color: '#1976d2' }}>
-          Page {page} of {totalPages}
-        </Typography>
-        <Button 
-          variant="outlined" 
-          disabled={loading || page >= totalPages} 
-          onClick={() => { const p = Math.min(totalPages, page + 1); setPage(p); fetchSales(p); }}
-          sx={{
-            borderColor: '#1976d2',
-            color: '#1976d2',
-            fontWeight: 600,
-            px: 3,
-            '&:hover': {
-              borderColor: '#1565c0',
-              background: 'rgba(25, 118, 210, 0.05)'
-            }
-          }}
-        >
-          Next
-        </Button>
+        {searchItem ? (
+          <Typography variant="body1" sx={{ fontWeight: 600, color: '#1976d2' }}>
+            Found {sales.length} invoice{sales.length !== 1 ? 's' : ''} containing the selected item
+          </Typography>
+        ) : (
+          <>
+            <Button 
+              variant="outlined" 
+              disabled={loading || page <= 1} 
+              onClick={() => { const p = Math.max(1, page - 1); setPage(p); fetchSales(p); }}
+              sx={{
+                borderColor: '#1976d2',
+                color: '#1976d2',
+                fontWeight: 600,
+                px: 3,
+                '&:hover': {
+                  borderColor: '#1565c0',
+                  background: 'rgba(25, 118, 210, 0.05)'
+                }
+              }}
+            >
+              Previous
+            </Button>
+            <Typography variant="body1" sx={{ fontWeight: 600, color: '#1976d2' }}>
+              Page {page} of {totalPages}
+            </Typography>
+            <Button 
+              variant="outlined" 
+              disabled={loading || page >= totalPages} 
+              onClick={() => { const p = Math.min(totalPages, page + 1); setPage(p); fetchSales(p); }}
+              sx={{
+                borderColor: '#1976d2',
+                color: '#1976d2',
+                fontWeight: 600,
+                px: 3,
+                '&:hover': {
+                  borderColor: '#1565c0',
+                  background: 'rgba(25, 118, 210, 0.05)'
+                }
+              }}
+            >
+              Next
+            </Button>
+          </>
+        )}
       </Box>
 
       {/* Sales Cards */}
