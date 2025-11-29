@@ -4,7 +4,7 @@ import {
   Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, 
   Paper, TextField, CircularProgress, Alert, Grid, Card, CardContent, Chip, InputAdornment,
   IconButton, Tooltip, LinearProgress, alpha, TableSortLabel, Button, Menu, MenuItem,
-  FormControl, InputLabel, Select, Autocomplete
+  FormControl, InputLabel, Select, Autocomplete, Collapse
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -14,7 +14,9 @@ import {
   Warning as WarningIcon,
   Refresh as RefreshIcon,
   FileDownload as DownloadIcon,
-  FilterList as FilterIcon
+  FilterList as FilterIcon,
+  ViewInAr as BoxIcon,
+  ExpandLess as ExpandLessIcon
 } from '@mui/icons-material';
 
 export default function Warehouse() {
@@ -27,6 +29,7 @@ export default function Warehouse() {
   const [filterMenu, setFilterMenu] = useState(null);
   const [stockFilter, setStockFilter] = useState('all'); // all, low, out, in-stock
   const [selectedItem, setSelectedItem] = useState(''); // for specific item filter
+  const [expandedRows, setExpandedRows] = useState({});
 
   useEffect(() => {
     loadInventory();
@@ -42,6 +45,22 @@ export default function Warehouse() {
       setError(e.response?.data?.error || 'Failed to load warehouse inventory');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Toggle row expansion for inline box view
+  const toggleRowExpansion = async (itemId, itemName) => {
+    if (expandedRows[itemId]) {
+      // Collapse
+      setExpandedRows(prev => ({ ...prev, [itemId]: null }));
+    } else {
+      // Expand and load box info
+      try {
+        const response = await api.get(`/warehouse/item/${itemId}/boxes`);
+        setExpandedRows(prev => ({ ...prev, [itemId]: response.data }));
+      } catch (e) {
+        setError(e.response?.data?.error || 'Failed to load box information');
+      }
     }
   };
 
@@ -398,12 +417,23 @@ export default function Warehouse() {
                   >
                     Status
                   </TableCell>
+                  <TableCell 
+                    align="center"
+                    sx={{ 
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      color: '#fff',
+                      fontWeight: 700,
+                      fontSize: '0.95rem'
+                    }}
+                  >
+                    Box Info
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {!loading && filteredStock.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={4} align="center" sx={{ py: 8 }}>
+                    <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
                       <InventoryIcon sx={{ fontSize: 60, color: 'text.disabled', mb: 2 }} />
                       <Typography variant="h6" color="text.secondary">
                         No items found
@@ -418,59 +448,224 @@ export default function Warehouse() {
                   const status = getStockStatus(s.quantity);
                   const maxQuantity = Math.max(...stock.map(item => item.quantity), 100);
                   const stockPercentage = (s.quantity / maxQuantity) * 100;
+                  const isExpanded = expandedRows[s.item?._id];
                   
                   return (
-                    <TableRow 
-                      key={s._id} 
-                      sx={{ 
-                        '&:nth-of-type(odd)': { backgroundColor: alpha('#667eea', 0.02) },
-                        '&:hover': { 
-                          backgroundColor: alpha('#667eea', 0.08),
-                          transform: 'scale(1.001)',
-                          transition: 'all 0.2s'
-                        }
-                      }}
-                    >
-                      <TableCell sx={{ fontWeight: 600, fontSize: '0.95rem' }}>
-                        {s.item?.name || 'Unknown Item'}
-                      </TableCell>
-                      <TableCell align="center">
-                        <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                          {s.quantity.toLocaleString()}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box sx={{ flexGrow: 1 }}>
-                            <LinearProgress 
-                              variant="determinate" 
-                              value={Math.min(stockPercentage, 100)}
+                    <React.Fragment key={s._id}>
+                      <TableRow 
+                        sx={{ 
+                          '&:nth-of-type(odd)': { backgroundColor: alpha('#667eea', 0.02) },
+                          '&:hover': { 
+                            backgroundColor: alpha('#667eea', 0.08),
+                            transform: 'scale(1.001)',
+                            transition: 'all 0.2s'
+                          }
+                        }}
+                      >
+                        <TableCell sx={{ fontWeight: 600, fontSize: '0.95rem' }}>
+                          {s.item?.name || 'Unknown Item'}
+                        </TableCell>
+                        <TableCell align="center">
+                          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                            {s.quantity.toLocaleString()}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ flexGrow: 1 }}>
+                              <LinearProgress 
+                                variant="determinate" 
+                                value={Math.min(stockPercentage, 100)}
+                                sx={{ 
+                                  height: 8, 
+                                  borderRadius: 1,
+                                  backgroundColor: alpha(status.color === 'error' ? '#d32f2f' : status.color === 'warning' ? '#ed6c02' : '#2e7d32', 0.1),
+                                  '& .MuiLinearProgress-bar': {
+                                    backgroundColor: status.color === 'error' ? '#d32f2f' : status.color === 'warning' ? '#ed6c02' : '#2e7d32',
+                                    borderRadius: 1
+                                  }
+                                }}
+                              />
+                            </Box>
+                            <Typography variant="caption" sx={{ minWidth: 40, textAlign: 'right' }}>
+                              {Math.round(stockPercentage)}%
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Chip 
+                            icon={status.icon}
+                            label={status.label}
+                            color={status.color}
+                            size="small"
+                            sx={{ fontWeight: 600 }}
+                          />
+                        </TableCell>
+                        <TableCell align="center">
+                          <Tooltip title={isExpanded ? "Hide box details" : "Show box details"}>
+                            <IconButton 
+                              size="small"
+                              onClick={() => toggleRowExpansion(s.item?._id, s.item?.name)}
                               sx={{ 
-                                height: 8, 
-                                borderRadius: 1,
-                                backgroundColor: alpha(status.color === 'error' ? '#d32f2f' : status.color === 'warning' ? '#ed6c02' : '#2e7d32', 0.1),
-                                '& .MuiLinearProgress-bar': {
-                                  backgroundColor: status.color === 'error' ? '#d32f2f' : status.color === 'warning' ? '#ed6c02' : '#2e7d32',
-                                  borderRadius: 1
+                                color: '#667eea',
+                                '&:hover': { 
+                                  backgroundColor: alpha('#667eea', 0.1),
+                                  transform: 'scale(1.1)'
                                 }
                               }}
-                            />
-                          </Box>
-                          <Typography variant="caption" sx={{ minWidth: 40, textAlign: 'right' }}>
-                            {Math.round(stockPercentage)}%
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Chip 
-                          icon={status.icon}
-                          label={status.label}
-                          color={status.color}
-                          size="small"
-                          sx={{ fontWeight: 600 }}
-                        />
-                      </TableCell>
-                    </TableRow>
+                            >
+                              {isExpanded ? <ExpandLessIcon /> : <BoxIcon />}
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+
+                      {/* Expanded Box Information Row */}
+                      <TableRow>
+                        <TableCell 
+                          colSpan={5} 
+                          sx={{ 
+                            p: 0, 
+                            borderBottom: isExpanded ? '1px solid rgba(224, 224, 224, 1)' : 'none' 
+                          }}
+                        >
+                          <Collapse in={!!isExpanded} timeout="auto" unmountOnExit>
+                            <Box sx={{ 
+                              p: 3, 
+                              backgroundColor: alpha('#667eea', 0.03),
+                              borderLeft: `4px solid #667eea`
+                            }}>
+                              {isExpanded ? (
+                                <>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                    <BoxIcon sx={{ color: '#667eea', fontSize: 28 }} />
+                                    <Typography variant="h6" sx={{ fontWeight: 700, color: '#667eea' }}>
+                                      Box Distribution for {s.item?.name}
+                                    </Typography>
+                                  </Box>
+                                  
+                                  {isExpanded.boxes && isExpanded.boxes.length > 0 ? (
+                                    <>
+                                      <Grid container spacing={2} sx={{ mb: 2 }}>
+                                        <Grid item xs={12} sm={4}>
+                                          <Card sx={{ 
+                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                            color: '#fff'
+                                          }}>
+                                            <CardContent>
+                                              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                                                Total Boxes
+                                              </Typography>
+                                              <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                                                {isExpanded.totalBoxes}
+                                              </Typography>
+                                            </CardContent>
+                                          </Card>
+                                        </Grid>
+                                        <Grid item xs={12} sm={4}>
+                                          <Card sx={{ 
+                                            background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+                                            color: '#fff'
+                                          }}>
+                                            <CardContent>
+                                              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                                                Total in Boxes
+                                              </Typography>
+                                              <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                                                {isExpanded.totalQuantity}
+                                              </Typography>
+                                            </CardContent>
+                                          </Card>
+                                        </Grid>
+                                        <Grid item xs={12} sm={4}>
+                                          <Card sx={{ 
+                                            background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                                            color: '#fff'
+                                          }}>
+                                            <CardContent>
+                                              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                                                Warehouse Total
+                                              </Typography>
+                                              <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                                                {s.quantity}
+                                              </Typography>
+                                            </CardContent>
+                                          </Card>
+                                        </Grid>
+                                      </Grid>
+
+                                      <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
+                                        <Table size="small">
+                                          <TableHead>
+                                            <TableRow sx={{ backgroundColor: alpha('#667eea', 0.1) }}>
+                                              <TableCell sx={{ fontWeight: 700 }}>Box Number</TableCell>
+                                              <TableCell align="center" sx={{ fontWeight: 700 }}>Quantity</TableCell>
+                                              <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                                              <TableCell sx={{ fontWeight: 700 }}>Notes</TableCell>
+                                            </TableRow>
+                                          </TableHead>
+                                          <TableBody>
+                                            {isExpanded.boxes.map((box, idx) => (
+                                              <TableRow 
+                                                key={box.boxId}
+                                                sx={{ 
+                                                  '&:hover': { backgroundColor: alpha('#667eea', 0.05) },
+                                                  backgroundColor: idx % 2 === 0 ? '#fff' : alpha('#667eea', 0.02)
+                                                }}
+                                              >
+                                                <TableCell>
+                                                  <Chip 
+                                                    icon={<BoxIcon />}
+                                                    label={`Box ${box.boxNumber}`}
+                                                    size="small"
+                                                    color="primary"
+                                                    variant="outlined"
+                                                  />
+                                                </TableCell>
+                                                <TableCell align="center">
+                                                  <Typography variant="body1" sx={{ fontWeight: 700 }}>
+                                                    {box.quantity}
+                                                  </Typography>
+                                                </TableCell>
+                                                <TableCell>
+                                                  <Chip 
+                                                    label={box.boxStatus}
+                                                    size="small"
+                                                    color={
+                                                      box.boxStatus === 'Active' ? 'success' :
+                                                      box.boxStatus === 'Full' ? 'warning' : 'default'
+                                                    }
+                                                  />
+                                                </TableCell>
+                                                <TableCell>
+                                                  <Typography variant="body2" color="text.secondary">
+                                                    {box.notes || box.boxDescription || '-'}
+                                                  </Typography>
+                                                </TableCell>
+                                              </TableRow>
+                                            ))}
+                                          </TableBody>
+                                        </Table>
+                                      </Paper>
+                                    </>
+                                  ) : (
+                                    <Alert severity="info" sx={{ borderRadius: 2 }}>
+                                      <Typography variant="body2">
+                                        This item is not currently stored in any boxes in Warehouse.
+                                      </Typography>
+                                    </Alert>
+                                  )}
+                                </>
+                              ) : (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                                  <CircularProgress size={24} />
+                                </Box>
+                              )}
+                            </Box>
+                          </Collapse>
+                        </TableCell>
+                      </TableRow>
+                    </React.Fragment>
                   );
                 })}
               </TableBody>

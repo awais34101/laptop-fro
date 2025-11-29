@@ -6,6 +6,7 @@ export default function Settings() {
   const [settings, setSettings] = useState({ 
     low_stock_days: '', 
     slow_moving_days: '',
+    inactive_customer_days: '',
     auto_delete_sales_days: '',
     auto_delete_purchase_days: '',
     auto_delete_transfer_days: '',
@@ -34,6 +35,7 @@ export default function Settings() {
       await api.put('/settings', {
         low_stock_days: Number(settings.low_stock_days),
         slow_moving_days: Number(settings.slow_moving_days),
+        inactive_customer_days: Number(settings.inactive_customer_days),
         auto_delete_sales_days: Number(settings.auto_delete_sales_days),
         auto_delete_purchase_days: Number(settings.auto_delete_purchase_days),
         auto_delete_transfer_days: Number(settings.auto_delete_transfer_days),
@@ -109,6 +111,25 @@ export default function Settings() {
             helperText="Days to consider items as slow moving"
           />
         </Box>
+
+        <Divider sx={{ my: 3 }} />
+
+        {/* Customer Settings */}
+        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 600 }}>
+          Customer Alert Settings
+        </Typography>
+        <TextField 
+          margin="dense" 
+          label="Inactive Customer Days" 
+          name="inactive_customer_days" 
+          value={settings.inactive_customer_days} 
+          onChange={handleChange} 
+          type="number" 
+          fullWidth 
+          required 
+          helperText="Alert if customer hasn't made a purchase in this many days"
+          sx={{ mb: 3 }}
+        />
 
         <Divider sx={{ my: 3 }} />
 

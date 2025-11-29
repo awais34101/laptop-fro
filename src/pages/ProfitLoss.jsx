@@ -35,9 +35,7 @@ import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import axios from 'axios';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+import api from '../services/api';
 
 export default function ProfitLoss() {
   const [tabValue, setTabValue] = useState(0);
@@ -69,16 +67,14 @@ export default function ProfitLoss() {
   const fetchCustomers = useCallback(async () => {
     setLoadingCustomers(true);
     try {
-      const response = await axios.get(`${API_URL}/api/customers`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/customers');
       setCustomers(response.data);
     } catch (err) {
       console.error('Error fetching customers:', err);
     } finally {
       setLoadingCustomers(false);
     }
-  }, [token]);
+  }, []);
 
   const fetchStore1Data = useCallback(async () => {
     setLoadingStore1(true);
@@ -92,8 +88,7 @@ export default function ProfitLoss() {
 
       console.log('Fetching Store 1 data...');
 
-      const response = await axios.get(`${API_URL}/api/profit-loss/store1`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await api.get('/profit-loss/store1', {
         params,
         timeout: 60000 // 60 second timeout
       });
@@ -120,8 +115,7 @@ export default function ProfitLoss() {
 
       console.log('Fetching Store 2 data...');
 
-      const response = await axios.get(`${API_URL}/api/profit-loss/store2`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await api.get('/profit-loss/store2', {
         params,
         timeout: 60000 // 60 second timeout
       });
@@ -146,8 +140,7 @@ export default function ProfitLoss() {
 
       console.log('Fetching combined data...');
 
-      const response = await axios.get(`${API_URL}/api/profit-loss/combined`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await api.get('/profit-loss/combined', {
         params,
         timeout: 60000 // 60 second timeout
       });

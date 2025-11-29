@@ -625,9 +625,29 @@ export default function Sales() {
           {error && <Alert severity="error" sx={{ mb: 3, whiteSpace: 'pre-line' }} onClose={() => setError('')}>{error}</Alert>}
           {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
           <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-            <TextField select label="Customer" value={customer} onChange={e => setCustomer(e.target.value)} fullWidth required>
-              {customers.map(c => <MenuItem key={c._id} value={c._id}>{c.name}</MenuItem>)}
-            </TextField>
+            <Autocomplete
+              options={customers}
+              getOptionLabel={(option) => option.name || ''}
+              value={customers.find(c => c._id === customer) || null}
+              onChange={(_, value) => setCustomer(value?._id || '')}
+              filterOptions={(options, state) => {
+                if (!state.inputValue) return [];
+                return options.filter(option => 
+                  option.name.toLowerCase().includes(state.inputValue.toLowerCase())
+                );
+              }}
+              renderInput={(params) => (
+                <TextField 
+                  {...params} 
+                  label="Customer *" 
+                  placeholder="Type to search customer..."
+                  helperText="Start typing to search customers"
+                />
+              )}
+              fullWidth
+              isOptionEqualToValue={(option, value) => option._id === value._id}
+              noOptionsText="Type to search customers"
+            />
             <TextField label="Invoice Number" value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} fullWidth required />
           </Box>
           {rows.map((row, idx) => (

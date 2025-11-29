@@ -629,11 +629,27 @@ export default function SalesStore2() {
           <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
             <Autocomplete
               options={customers}
-              getOptionLabel={option => option.name || ''}
+              getOptionLabel={(option) => option.name || ''}
               value={customers.find(c => c._id === customer) || null}
-              onChange={(_, v) => setCustomer(v?._id || '')}
-              renderInput={params => <TextField {...params} label="Customer" fullWidth />}
-              sx={{ width: 300 }}
+              onChange={(_, value) => setCustomer(value?._id || '')}
+              filterOptions={(options, state) => {
+                if (!state.inputValue) return [];
+                return options.filter(option => 
+                  option.name.toLowerCase().includes(state.inputValue.toLowerCase())
+                );
+              }}
+              renderInput={(params) => (
+                <TextField 
+                  {...params} 
+                  label="Customer *" 
+                  placeholder="Type to search customer..."
+                  helperText="Start typing to search customers"
+                  fullWidth
+                />
+              )}
+              fullWidth
+              isOptionEqualToValue={(option, value) => option._id === value._id}
+              noOptionsText="Type to search customers"
             />
             <TextField
               label="Invoice Number"

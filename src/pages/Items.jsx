@@ -18,6 +18,7 @@ export default function Items() {
   const [success, setSuccess] = useState('');
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
   const { warehouse, store, store2, fetchInventory } = useInventory();
 
   const fetchItems = async () => {
@@ -189,38 +190,74 @@ export default function Items() {
     <Box sx={{ 
       background: 'linear-gradient(135deg, #f8fafc 0%, #e3f2fd 50%, #f3e5f5 100%)', 
       minHeight: '100vh',
-      p: { xs: 2, sm: 3, md: 4 }
+      p: { xs: 1, sm: 1.5, md: 2 }
     }}>
       {/* Header Section with Modern Design */}
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 1.5 }}>
         <Box sx={{ 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: 2,
-          mb: 3
+          gap: 1.5,
+          mb: 1.5
         }}>
           <Box>
             <Typography 
-              variant="h3" 
+              variant="h4" 
               sx={{ 
                 fontWeight: 800, 
                 background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 letterSpacing: '-0.5px',
-                mb: 0.5
+                mb: 0.3,
+                fontSize: '1.75rem'
               }}
             >
               📦 Items Management
             </Typography>
-            <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500 }}>
+            <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500, fontSize: '0.85rem' }}>
               Manage your inventory items and track stock levels across all locations
             </Typography>
           </Box>
           
-          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Box sx={{ 
+              background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)', 
+              px: 2.5, 
+              py: 1.2, 
+              borderRadius: 3, 
+              border: '2px solid #e2e8f0',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5
+            }}>
+              <Box sx={{ 
+                width: 36, 
+                height: 36, 
+                borderRadius: 2,
+                background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '18px'
+              }}>
+                📊
+              </Box>
+              <Box>
+                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: 0.5 }}>
+                  Displaying
+                </Typography>
+                <Typography variant="h6" sx={{ fontWeight: 800, color: '#1e293b', lineHeight: 1, fontSize: '1.1rem' }}>
+                  <Box component="span" sx={{ color: '#1976d2' }}>{filteredItems.length}</Box>
+                  <Box component="span" sx={{ fontSize: '0.85rem', color: '#94a3b8', mx: 0.5 }}>/</Box>
+                  <Box component="span" sx={{ fontSize: '0.95rem', color: '#64748b' }}>{items.length}</Box>
+                </Typography>
+              </Box>
+            </Box>
+
             <Tooltip title="Export to Excel">
               <Button
                 variant="outlined"
@@ -297,6 +334,32 @@ export default function Items() {
                 ➕ Add New Item
               </Button>
             )}
+
+            {categoryFilter && (
+              <Chip 
+                label={`📂 ${categoryFilter.toLowerCase()}`}
+                onDelete={() => setCategoryFilter('')}
+                sx={{
+                  background: 'linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%)',
+                  color: '#1e40af',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  height: 38,
+                  borderRadius: 3,
+                  px: 2,
+                  border: '2px solid #bfdbfe',
+                  boxShadow: '0 4px 16px rgba(59, 130, 246, 0.2)',
+                  '& .MuiChip-deleteIcon': {
+                    color: '#3b82f6',
+                    fontSize: '20px',
+                    '&:hover': {
+                      color: '#1e40af',
+                      transform: 'scale(1.2)'
+                    }
+                  }
+                }}
+              />
+            )}
           </Box>
         </Box>
 
@@ -316,87 +379,22 @@ export default function Items() {
             {error}
           </Alert>
         )}
-
-        {/* Stats Cards */}
-        <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-          <Box sx={{ 
-            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)', 
-            px: 4, 
-            py: 2.5, 
-            borderRadius: 4, 
-            border: '2px solid #e2e8f0',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
-            minWidth: 280
-          }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Box sx={{ 
-                width: 48, 
-                height: 48, 
-                borderRadius: 3,
-                background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '24px'
-              }}>
-                📊
-              </Box>
-              <Box>
-                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: 1 }}>
-                  Displaying Items
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 800, color: '#1e293b', lineHeight: 1.2 }}>
-                  <Box component="span" sx={{ color: '#1976d2' }}>{filteredItems.length}</Box>
-                  <Box component="span" sx={{ fontSize: '1rem', color: '#94a3b8', mx: 1 }}>/</Box>
-                  <Box component="span" sx={{ fontSize: '1.2rem', color: '#64748b' }}>{items.length}</Box>
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-          
-          
-          {categoryFilter && (
-            <Chip 
-              label={`📂 ${categoryFilter.toLowerCase()}`}
-              onDelete={() => setCategoryFilter('')}
-              sx={{
-                background: 'linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%)',
-                color: '#1e40af',
-                fontWeight: 700,
-                fontSize: '0.95rem',
-                height: 42,
-                borderRadius: 4,
-                px: 2,
-                border: '2px solid #bfdbfe',
-                boxShadow: '0 4px 16px rgba(59, 130, 246, 0.2)',
-                '& .MuiChip-deleteIcon': {
-                  color: '#3b82f6',
-                  fontSize: '22px',
-                  '&:hover': {
-                    color: '#1e40af',
-                    transform: 'scale(1.2)'
-                  }
-                }
-              }}
-            />
-          )}
-        </Box>
       </Box>
 
       {/* Filters and Search Section */}
       <Box sx={{ 
         background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-        borderRadius: 4,
-        p: 3,
-        mb: 4,
+        borderRadius: 3,
+        p: 2,
+        mb: 2,
         border: '2px solid #e2e8f0',
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)'
       }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, color: '#1e293b', mb: 2.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: '#1e293b', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1, fontSize: '1rem' }}>
           🔍 Search & Filter
         </Typography>
         
-        <Box sx={{ display: 'flex', gap: 2.5, flexWrap: 'wrap', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
           <TextField
             label="Search Items"
             placeholder="Search by name or category..."
@@ -658,9 +656,11 @@ export default function Items() {
           <Table 
             stickyHeader
             sx={{ 
-              minWidth: 1200,
+              tableLayout: 'fixed',
+              width: '100%',
               '& .MuiTableCell-root': {
-                fontSize: '0.95rem'
+                fontSize: '1.05rem',
+                padding: '14px 10px'
               }
             }}
           >
@@ -673,34 +673,31 @@ export default function Items() {
                     fontWeight: 800,
                     fontSize: '1rem',
                     textTransform: 'uppercase',
-                    letterSpacing: 0.5,
-                    py: 2.5,
+                    letterSpacing: 0.3,
+                    py: 2,
+                    px: 2,
                     borderBottom: '3px solid #0d47a1',
-                    minWidth: 220,
-                    maxWidth: 320,
+                    width: '28%',
                     position: 'sticky',
                     top: 0,
                     zIndex: 100
                   }}
                 >
-                  📝 Item Name
+                  📝 Name
                 </TableCell>
-                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.5, py: 2.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100 }}>📏 Unit</TableCell>
-                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.5, py: 2.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100 }}>🏷️ Category</TableCell>
-                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.5, py: 2.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100 }}>💰 Avg Price</TableCell>
-                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.5, py: 2.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100 }}>🏪 Store</TableCell>
-                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.5, py: 2.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100 }}>🏬 Store 2</TableCell>
-                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.5, py: 2.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100 }}>🏭 Warehouse</TableCell>
-                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.5, py: 2.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100 }}>📊 Total Qty</TableCell>
-                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.5, py: 2.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100 }}>💵 Total Value</TableCell>
-                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.5, py: 2.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100 }}>🛒 Sales</TableCell>
-                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.5, py: 2.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100 }}>⚙️ Actions</TableCell>
+                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.3, py: 2, px: 0.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100, width: '13%', textAlign: 'center' }}>🏷️ Cat.</TableCell>
+                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.3, py: 2, px: 0.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100, width: '10%', textAlign: 'center' }}>💰</TableCell>
+                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.3, py: 2, px: 0.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100, width: '7%', textAlign: 'center' }}>S1</TableCell>
+                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.3, py: 2, px: 0.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100, width: '7%', textAlign: 'center' }}>S2</TableCell>
+                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.3, py: 2, px: 0.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100, width: '7%', textAlign: 'center' }}>WH</TableCell>
+                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.3, py: 2, px: 0.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100, width: '8%', textAlign: 'center' }}>📊 Total</TableCell>
+                <TableCell sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)', color: 'white', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase', letterSpacing: 0.3, py: 2, px: 0.5, borderBottom: '3px solid #0d47a1', position: 'sticky', top: 0, zIndex: 100, width: '20%', textAlign: 'center' }}>💵 Value</TableCell>
               </TableRow>
               </TableHead>
             <TableBody>
               {loading && (
                 <TableRow>
-                  <TableCell colSpan={11} align="center">
+                  <TableCell colSpan={10} align="center">
                     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', justifyContent: 'center', py: 6 }}>
                       <CircularProgress size={32} thickness={4} />
                       <Typography sx={{ fontWeight: 600, color: '#64748b', fontSize: '1.1rem' }}>Loading items...</Typography>
@@ -710,7 +707,7 @@ export default function Items() {
               )}
               {!loading && filteredItems.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={11} align="center">
+                  <TableCell colSpan={10} align="center">
                     <Box sx={{ py: 8 }}>
                       <Typography variant="h6" sx={{ color: '#94a3b8', fontWeight: 600, mb: 1 }}>
                         📭 No items found
@@ -730,14 +727,16 @@ export default function Items() {
                 const avgPrice = item.average_price || 0;
                 const totalValue = totalQty * avgPrice;
                 return (
+                  <React.Fragment key={item._id}>
                   <TableRow 
-                    key={item._id} 
+                    onClick={() => setSelectedItem(selectedItem === item._id ? null : item._id)}
                     sx={{ 
-                      background: index % 2 === 0 ? '#ffffff' : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                      background: selectedItem === item._id ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' : (index % 2 === 0 ? '#ffffff' : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)'),
                       '&:hover': {
                         background: 'linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%)',
                         transform: 'scale(1.001)',
-                        boxShadow: '0 4px 16px rgba(25, 118, 210, 0.15)'
+                        boxShadow: '0 4px 16px rgba(25, 118, 210, 0.15)',
+                        cursor: 'pointer'
                       },
                       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                       borderBottom: '1px solid #e2e8f0'
@@ -746,20 +745,18 @@ export default function Items() {
                     <TableCell 
                       sx={{ 
                         whiteSpace: 'nowrap', 
-                        maxWidth: 320, 
-                        minWidth: 220, 
                         overflow: 'hidden', 
                         textOverflow: 'ellipsis', 
                         fontWeight: 700,
                         color: '#1e293b',
-                        fontSize: '0.95rem',
+                        fontSize: '1.05rem',
+                        px: 2,
                         py: 2.5
                       }}
                     >
                       {item.name}
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#475569', py: 2.5 }}>{item.unit}</TableCell>
-                    <TableCell sx={{ py: 2.5 }}>
+                    <TableCell sx={{ px: 0.5, py: 2.5, textAlign: 'center' }}>
                       <Chip 
                         label={item.category} 
                         size="small"
@@ -768,75 +765,85 @@ export default function Items() {
                           background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)',
                           color: '#0369a1',
                           border: '1px solid #7dd3fc',
-                          textTransform: 'capitalize'
+                          textTransform: 'capitalize',
+                          fontSize: '0.9rem',
+                          height: '28px'
                         }}
                       />
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: '#059669', fontSize: '0.95rem', py: 2.5 }}>
+                    <TableCell sx={{ fontWeight: 700, color: '#059669', fontSize: '1.05rem', px: 0.5, py: 2.5, textAlign: 'center' }}>
                       ${avgPrice.toFixed(2)}
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#6366f1', py: 2.5 }}>{storeQty}</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#8b5cf6', py: 2.5 }}>{store2Qty}</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#f59e0b', py: 2.5 }}>{warehouseQty}</TableCell>
-                    <TableCell sx={{ fontWeight: 800, color: '#1976d2', fontSize: '1rem', py: 2.5 }}>{totalQty}</TableCell>
-                    <TableCell sx={{ fontWeight: 800, color: '#16a34a', fontSize: '1rem', py: 2.5 }}>
+                    <TableCell sx={{ fontWeight: 600, color: '#6366f1', px: 0.5, py: 2.5, textAlign: 'center', fontSize: '1.05rem' }}>{storeQty}</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#8b5cf6', px: 0.5, py: 2.5, textAlign: 'center', fontSize: '1.05rem' }}>{store2Qty}</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#f59e0b', px: 0.5, py: 2.5, textAlign: 'center', fontSize: '1.05rem' }}>{warehouseQty}</TableCell>
+                    <TableCell sx={{ fontWeight: 800, color: '#1976d2', fontSize: '1.1rem', px: 0.5, py: 2.5, textAlign: 'center' }}>{totalQty}</TableCell>
+                    <TableCell sx={{ fontWeight: 800, color: '#16a34a', fontSize: '1.1rem', px: 0.5, py: 2.5, textAlign: 'center' }}>
                       ${totalValue.toFixed(2)}
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#64748b', py: 2.5 }}>{item.sale_count}</TableCell>
-                    <TableCell sx={{ py: 2.5 }}>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        {hasPerm('items','edit') && (
-                          <Button 
-                            size="small" 
-                            variant="outlined"
-                            onClick={() => handleOpen(item)}
-                            sx={{ 
-                              fontWeight: 700,
-                              borderRadius: 2.5,
-                              px: 2.5,
-                              textTransform: 'none',
-                              borderWidth: 2,
-                              borderColor: '#3b82f6',
-                              color: '#3b82f6',
-                              '&:hover': {
-                                borderWidth: 2,
-                                borderColor: '#2563eb',
-                                background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
-                                transform: 'translateY(-1px)',
-                                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
-                              },
-                              transition: 'all 0.2s ease'
-                            }}
-                          >
-                            ✏️ Edit
-                          </Button>
-                        )}
-                        {hasPerm('items','delete') && (
-                          <Button 
-                            size="small" 
-                            variant="contained"
-                            color="error"
-                            onClick={() => handleDelete(item._id)}
-                            sx={{ 
-                              fontWeight: 700,
-                              borderRadius: 2.5,
-                              px: 2.5,
-                              textTransform: 'none',
-                              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                              '&:hover': {
-                                background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
-                                transform: 'translateY(-1px)',
-                                boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)'
-                              },
-                              transition: 'all 0.2s ease'
-                            }}
-                          >
-                            🗑️ Delete
-                          </Button>
-                        )}
-                      </Box>
-                    </TableCell>
                   </TableRow>
+                  {selectedItem === item._id && (
+                    <TableRow>
+                      <TableCell colSpan={9} sx={{ py: 2, px: 3, background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)', borderBottom: '2px solid #3b82f6' }}>
+                        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', alignItems: 'center' }}>
+                          {hasPerm('items','edit') && (
+                            <Button 
+                              size="medium" 
+                              variant="outlined"
+                              onClick={(e) => { e.stopPropagation(); handleOpen(item); }}
+                              sx={{ 
+                                fontWeight: 700,
+                                borderRadius: 2.5,
+                                px: 3,
+                                py: 1,
+                                textTransform: 'none',
+                                borderWidth: 2,
+                                borderColor: '#3b82f6',
+                                color: '#3b82f6',
+                                fontSize: '0.9rem',
+                                '&:hover': {
+                                  borderWidth: 2,
+                                  borderColor: '#2563eb',
+                                  background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                                  transform: 'translateY(-2px)',
+                                  boxShadow: '0 6px 16px rgba(59, 130, 246, 0.4)'
+                                },
+                                transition: 'all 0.2s ease'
+                              }}
+                            >
+                              ✏️ Edit Item
+                            </Button>
+                          )}
+                          {hasPerm('items','delete') && (
+                            <Button 
+                              size="medium" 
+                              variant="contained"
+                              color="error"
+                              onClick={(e) => { e.stopPropagation(); handleDelete(item._id); }}
+                              sx={{ 
+                                fontWeight: 700,
+                                borderRadius: 2.5,
+                                px: 3,
+                                py: 1,
+                                textTransform: 'none',
+                                fontSize: '0.9rem',
+                                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                                '&:hover': {
+                                  background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                                  transform: 'translateY(-2px)',
+                                  boxShadow: '0 6px 16px rgba(220, 38, 38, 0.5)'
+                                },
+                                transition: 'all 0.2s ease'
+                              }}
+                            >
+                              🗑️ Delete Item
+                            </Button>
+                          )}
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  </React.Fragment>
                 );
               })}
             </TableBody>
@@ -859,7 +866,6 @@ export default function Items() {
               </TableCell>
               <TableCell sx={{ background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)', borderTop: '3px solid #1976d2', position: 'sticky', bottom: 0, zIndex: 10 }} />
               <TableCell sx={{ background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)', borderTop: '3px solid #1976d2', position: 'sticky', bottom: 0, zIndex: 10 }} />
-              <TableCell sx={{ background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)', borderTop: '3px solid #1976d2', position: 'sticky', bottom: 0, zIndex: 10 }} />
               {/* Store Inventory Total */}
               <TableCell 
                 sx={{ 
@@ -871,7 +877,8 @@ export default function Items() {
                   borderTop: '3px solid #1976d2',
                   position: 'sticky',
                   bottom: 0,
-                  zIndex: 10
+                  zIndex: 10,
+                  textAlign: 'center'
                 }}
               >
                 {filteredItems.reduce((sum, item) => sum + getStoreQty(item._id), 0)}
@@ -887,7 +894,8 @@ export default function Items() {
                   borderTop: '3px solid #1976d2',
                   position: 'sticky',
                   bottom: 0,
-                  zIndex: 10
+                  zIndex: 10,
+                  textAlign: 'center'
                 }}
               >
                 {filteredItems.reduce((sum, item) => sum + getStore2Qty(item._id), 0)}
@@ -903,7 +911,8 @@ export default function Items() {
                   borderTop: '3px solid #1976d2',
                   position: 'sticky',
                   bottom: 0,
-                  zIndex: 10
+                  zIndex: 10,
+                  textAlign: 'center'
                 }}
               >
                 {filteredItems.reduce((sum, item) => sum + getWarehouseQty(item._id), 0)}
@@ -920,7 +929,8 @@ export default function Items() {
                   position: 'sticky',
                   bottom: 0,
                   zIndex: 10,
-                  border: '2px solid #93c5fd'
+                  border: '2px solid #93c5fd',
+                  textAlign: 'center'
                 }}
               >
                 {filteredItems.reduce((sum, item) => {
@@ -940,7 +950,8 @@ export default function Items() {
                   position: 'sticky',
                   bottom: 0,
                   zIndex: 10,
-                  border: '2px solid #6ee7b7'
+                  border: '2px solid #6ee7b7',
+                  textAlign: 'center'
                 }}
               >
                 ${filteredItems.reduce((sum, item) => {
