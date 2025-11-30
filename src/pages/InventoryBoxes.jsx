@@ -26,6 +26,7 @@ const InventoryBoxes = () => {
   const [items, setItems] = useState([]);
   const [availableItems, setAvailableItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchItemSummary, setSearchItemSummary] = useState(null);
   const [stats, setStats] = useState({});
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -279,15 +280,18 @@ const InventoryBoxes = () => {
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
       fetchBoxesByLocation(selectedLocation);
+      setSearchItemSummary(null);
       return;
     }
     try {
       setLoading(true);
-      const response = await api.get(`/inventory-boxes/search?query=${searchQuery}`);
-      const filtered = response.data.filter(box => box.location === selectedLocation);
+      const response = await api.get(`/inventory-boxes/search?query=${searchQuery}&location=${selectedLocation}`);
+      const filtered = (response.data.boxes || response.data).filter(box => box.location === selectedLocation);
       setBoxes(filtered);
+      setSearchItemSummary(response.data.itemSummary || null);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to search');
+      setSearchItemSummary(null);
     } finally {
       setLoading(false);
     }
@@ -922,7 +926,7 @@ const InventoryBoxes = () => {
                 startAdornment: <InputAdornment position="start"><SearchIcon /></InputAdornment>,
                 endAdornment: searchQuery && (
                   <InputAdornment position="end">
-                    <IconButton size="small" onClick={() => { setSearchQuery(''); fetchBoxesByLocation(selectedLocation); }}>
+                    <IconButton size="small" onClick={() => { setSearchQuery(''); setSearchItemSummary(null); fetchBoxesByLocation(selectedLocation); }}>
                       <ClearIcon />
                     </IconButton>
                   </InputAdornment>
@@ -998,6 +1002,67 @@ const InventoryBoxes = () => {
           </Grid>
         </Grid>
       </Paper>
+
+      {/* Search Item Summary */}
+      {searchItemSummary && searchItemSummary.length > 0 && (
+        <Paper 
+          elevation={2}
+          sx={{ 
+            p: 3, 
+            mb: 3, 
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white'
+          }}
+        >
+          <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <SearchIcon /> Search Results for "{searchQuery}"
+          </Typography>
+          {searchItemSummary.map((item, index) => (
+            <Box key={index} sx={{ mt: 2, p: 2, bgcolor: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} md={3}>
+                  <Typography variant="subtitle1" fontWeight="bold">
+                    {item.itemName}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6} md={2}>
+                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    Total Available
+                  </Typography>
+                  <Typography variant="h6" fontWeight="bold">
+                    {item.totalAvailable}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6} md={2}>
+                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    In Boxes
+                  </Typography>
+                  <Typography variant="h6" fontWeight="bold">
+                    {item.quantityInBoxes}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6} md={2}>
+                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    Not in Boxes
+                  </Typography>
+                  <Typography variant="h6" fontWeight="bold">
+                    {item.unassigned}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6} md={2}>
+                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    Number of Boxes
+                  </Typography>
+                  <Typography variant="h6" fontWeight="bold">
+                    {item.numberOfBoxes}
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Box>
+          ))}
+        </Paper>
+      )}
 
       {availableItems.length > 0 && (
         <Alert severity="info" sx={{ mb: 3 }}>
