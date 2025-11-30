@@ -62,6 +62,7 @@ export default function Sheets() {
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [currentAssignment, setCurrentAssignment] = useState(null);
   const [statusForm, setStatusForm] = useState({ status: '', notes: '' });
+  const [technicianStats, setTechnicianStats] = useState(null);
   
 
   const PAGE_SIZE = 12;
@@ -85,6 +86,13 @@ export default function Sheets() {
   setTotalPages(result.totalPages || 1);
   setTotalCount(result.total || 0);
       setPage(pageNum);
+
+      // Use aggregate statistics from backend
+      if (result.aggregateStats) {
+        setTechnicianStats(result.aggregateStats);
+      } else {
+        setTechnicianStats(null);
+      }
     } catch (err) {
       console.error('Error fetching sheets:', err);
       const errorMessage = err.response?.data?.error || err.message || 'Failed to load sheets';
@@ -628,7 +636,82 @@ export default function Sheets() {
             <MenuItem value="completed">Completed</MenuItem>
           </Select>
         </FormControl>
-      </Box>      {/* Pagination */}
+      </Box>
+
+      {/* Technician Statistics */}
+      {technicianStats && selectedTechnician && (
+        <Card sx={{ mb: 3, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+          <CardContent>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+              📊 Selected Technician Summary
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6} md={3}>
+                <Box sx={{ 
+                  backgroundColor: 'rgba(255,255,255,0.2)', 
+                  p: 2, 
+                  borderRadius: 2,
+                  textAlign: 'center' 
+                }}>
+                  <Typography variant="h4" sx={{ fontWeight: 900 }}>
+                    {technicianStats.totalSheets}
+                  </Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+                    Total Sheets
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Box sx={{ 
+                  backgroundColor: 'rgba(255,255,255,0.2)', 
+                  p: 2, 
+                  borderRadius: 2,
+                  textAlign: 'center' 
+                }}>
+                  <Typography variant="h4" sx={{ fontWeight: 900 }}>
+                    {technicianStats.totalQuantity}
+                  </Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+                    Total Quantity
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Box sx={{ 
+                  backgroundColor: 'rgba(255,255,255,0.2)', 
+                  p: 2, 
+                  borderRadius: 2,
+                  textAlign: 'center' 
+                }}>
+                  <Typography variant="h4" sx={{ fontWeight: 900 }}>
+                    {technicianStats.totalTransferred}
+                  </Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+                    Total Transferred
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Box sx={{ 
+                  backgroundColor: 'rgba(255,255,255,0.2)', 
+                  p: 2, 
+                  borderRadius: 2,
+                  textAlign: 'center' 
+                }}>
+                  <Typography variant="h4" sx={{ fontWeight: 900, color: '#ffeb3b' }}>
+                    {technicianStats.totalBalance}
+                  </Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+                    Total Balance
+                  </Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Pagination */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
         <Button 
           variant="outlined" 
