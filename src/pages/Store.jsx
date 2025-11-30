@@ -41,10 +41,23 @@ export default function Store() {
   const [boxInfo, setBoxInfo] = useState(null);
   const [boxLoading, setBoxLoading] = useState(false);
   const [expandedRows, setExpandedRows] = useState({});
+  const [lowStockThreshold, setLowStockThreshold] = useState(3);
 
   useEffect(() => {
     loadInventory();
+    loadSettings();
   }, []);
+
+  const loadSettings = async () => {
+    try {
+      const response = await api.get('/settings');
+      if (response.data) {
+        setLowStockThreshold(response.data.low_stock_threshold_store || 3);
+      }
+    } catch (err) {
+      console.error('Error loading settings:', err);
+    }
+  };
 
   const loadInventory = async () => {
     setLoading(true);
@@ -101,8 +114,8 @@ export default function Store() {
   // Calculate statistics
   const stats = {
     totalItems: inventory.length,
-    inStock: inventory.filter(s => s.remaining_quantity > 20).length,
-    lowStock: inventory.filter(s => s.remaining_quantity > 0 && s.remaining_quantity <= 20).length,
+    inStock: inventory.filter(s => s.remaining_quantity > lowStockThreshold).length,
+    lowStock: inventory.filter(s => s.remaining_quantity > 0 && s.remaining_quantity <= lowStockThreshold).length,
     outOfStock: inventory.filter(s => s.remaining_quantity === 0).length,
     slowMoving: slowMoving.length,
     totalQuantity: inventory.reduce((sum, s) => sum + s.remaining_quantity, 0)
@@ -112,7 +125,7 @@ export default function Store() {
   const getStockStatus = (quantity, itemId) => {
     if (slowIds.has(itemId)) return { label: 'Slow Moving', color: 'warning', icon: <SlowMovingIcon /> };
     if (quantity === 0) return { label: 'Out of Stock', color: 'error', icon: <WarningIcon /> };
-    if (quantity <= 20) return { label: 'Low Stock', color: 'warning', icon: <WarningIcon /> };
+    if (quantity > 0 && quantity <= lowStockThreshold) return { label: 'Low Stock', color: 'warning', icon: <WarningIcon /> };
     return { label: 'In Stock', color: 'success', icon: <InStockIcon /> };
   };
 
@@ -122,7 +135,7 @@ export default function Store() {
       const matchesSearch = s.item?.name?.toLowerCase().includes(search.toLowerCase());
       const matchesFilter = 
         stockFilter === 'all' ? true :
-        stockFilter === 'low' ? (s.remaining_quantity > 0 && s.remaining_quantity <= 20) :
+        stockFilter === 'low' ? (s.remaining_quantity > 0 && s.remaining_quantity <= lowStockThreshold) :
         stockFilter === 'out' ? s.remaining_quantity === 0 :
         stockFilter === 'slow' ? slowIds.has(s.item?._id) : true;
       return matchesSearch && matchesFilter;

@@ -35,10 +35,23 @@ export default function Store2() {
   const [order, setOrder] = useState('asc');
   const [stockFilter, setStockFilter] = useState('all'); // all, low, out, slow
   const [expandedRows, setExpandedRows] = useState({});
+  const [lowStockThreshold, setLowStockThreshold] = useState(3);
 
   useEffect(() => {
     loadInventory();
+    loadSettings();
   }, []);
+
+  const loadSettings = async () => {
+    try {
+      const response = await api.get('/settings');
+      if (response.data) {
+        setLowStockThreshold(response.data.low_stock_threshold_store2 || 3);
+      }
+    } catch (err) {
+      console.error('Error loading settings:', err);
+    }
+  };
 
   const loadInventory = async () => {
     setLoading(true);
@@ -90,7 +103,7 @@ export default function Store2() {
   const getStockStatus = (quantity, itemId) => {
     if (slowIds.has(itemId)) return { label: 'Slow Moving', color: 'warning', icon: <SlowMovingIcon /> };
     if (quantity === 0) return { label: 'Out of Stock', color: 'error', icon: <WarningIcon /> };
-    if (quantity <= 20) return { label: 'Low Stock', color: 'warning', icon: <WarningIcon /> };
+    if (quantity > 0 && quantity <= lowStockThreshold) return { label: 'Low Stock', color: 'warning', icon: <WarningIcon /> };
     return { label: 'In Stock', color: 'success', icon: <InStockIcon /> };
   };
 

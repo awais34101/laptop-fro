@@ -30,9 +30,11 @@ export default function Warehouse() {
   const [stockFilter, setStockFilter] = useState('all'); // all, low, out, in-stock
   const [selectedItem, setSelectedItem] = useState(''); // for specific item filter
   const [expandedRows, setExpandedRows] = useState({});
+  const [lowStockThreshold, setLowStockThreshold] = useState(50); // default 50
 
   useEffect(() => {
     loadInventory();
+    loadSettings();
   }, []);
 
   const loadInventory = async () => {
@@ -45,6 +47,17 @@ export default function Warehouse() {
       setError(e.response?.data?.error || 'Failed to load warehouse inventory');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSettings = async () => {
+    try {
+      const response = await api.get('/settings');
+      if (response.data.low_stock_threshold?.warehouse) {
+        setLowStockThreshold(response.data.low_stock_threshold.warehouse);
+      }
+    } catch (e) {
+      console.error('Failed to load settings:', e);
     }
   };
 
@@ -67,8 +80,8 @@ export default function Warehouse() {
   // Calculate statistics
   const stats = {
     totalItems: stock.length,
-    inStock: stock.filter(s => s.quantity > 50).length,
-    lowStock: stock.filter(s => s.quantity > 0 && s.quantity <= 50).length,
+    inStock: stock.filter(s => s.quantity > lowStockThreshold).length,
+    lowStock: stock.filter(s => s.quantity > 0 && s.quantity <= lowStockThreshold).length,
     outOfStock: stock.filter(s => s.quantity === 0).length,
     totalQuantity: stock.reduce((sum, s) => sum + s.quantity, 0)
   };
@@ -76,7 +89,7 @@ export default function Warehouse() {
   // Get stock status
   const getStockStatus = (quantity) => {
     if (quantity === 0) return { label: 'Out of Stock', color: 'error', icon: <WarningIcon /> };
-    if (quantity <= 50) return { label: 'Low Stock', color: 'warning', icon: <LowStockIcon /> };
+    if (quantity > 0 && quantity <= lowStockThreshold) return { label: 'Low Stock', color: 'warning', icon: <LowStockIcon /> };
     return { label: 'In Stock', color: 'success', icon: <InStockIcon /> };
   };
 
@@ -86,9 +99,9 @@ export default function Warehouse() {
       const matchesSearch = s.item?.name?.toLowerCase().includes(search.toLowerCase());
       const matchesFilter = 
         stockFilter === 'all' ? true :
-        stockFilter === 'low' ? (s.quantity > 0 && s.quantity <= 50) :
+        stockFilter === 'low' ? (s.quantity > 0 && s.quantity <= lowStockThreshold) :
         stockFilter === 'out' ? s.quantity === 0 :
-        stockFilter === 'in-stock' ? s.quantity > 50 : true;
+        stockFilter === 'in-stock' ? s.quantity > lowStockThreshold : true;
       const matchesSelectedItem = selectedItem ? s.item?.name === selectedItem : true;
       return matchesSearch && matchesFilter && matchesSelectedItem;
     })
