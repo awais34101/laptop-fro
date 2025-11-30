@@ -79,7 +79,7 @@ const navSections = [
     label: 'Sheets',
     items: [
       { text: 'Purchase Sheets', icon: <AssignmentIcon />, path: '/sheets', perm: { section: 'purchaseSheets', action: 'view' } },
-      { text: 'Transfer Sheets', icon: <CompareArrowsIcon />, path: '/transfer-sheets', perm: { section: 'transfers', action: 'view' } },
+      { text: 'Transfer Sheets', icon: <CompareArrowsIcon />, path: '/transfer-sheets', perm: { section: 'transferSheets', action: 'view' } },
     ]
   },
   {

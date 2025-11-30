@@ -130,13 +130,13 @@ function App() {
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/items" element={<ProtectedRoute permission={{ section: 'items', action: 'view' }}><Items /></ProtectedRoute>} />
             <Route path="/inventory-boxes" element={<ProtectedRoute permission={{ section: 'inventoryBoxes', action: 'view' }}><InventoryBoxes /></ProtectedRoute>} />
-            <Route path="/checklists" element={<ProtectedRoute><ChecklistEnhanced /></ProtectedRoute>} />
-            <Route path="/checklist-reports" element={<ProtectedRoute><ChecklistReports /></ProtectedRoute>} />
-            <Route path="/purchases" element={<ProtectedRoute><Purchases /></ProtectedRoute>} />
+            <Route path="/checklists" element={<ProtectedRoute permission={{ section: 'checklists', action: 'view' }}><ChecklistEnhanced /></ProtectedRoute>} />
+            <Route path="/checklist-reports" element={<ProtectedRoute permission={{ section: 'checklists', action: 'view' }}><ChecklistReports /></ProtectedRoute>} />
+            <Route path="/purchases" element={<ProtectedRoute permission={{ section: 'purchases', action: 'view' }}><Purchases /></ProtectedRoute>} />
             {/* <Route path="/returns" element={<ProtectedRoute><Returns /></ProtectedRoute>} /> */}
-            <Route path="/returns-store" element={<ProtectedRoute><ReturnsStore /></ProtectedRoute>} />
-            <Route path="/returns-store2" element={<ProtectedRoute><ReturnsStore2 /></ProtectedRoute>} />
-            <Route path="/warehouse" element={<ProtectedRoute><Warehouse /></ProtectedRoute>} />
+            <Route path="/returns-store" element={<ProtectedRoute permission={{ section: 'returnsStore', action: 'view' }}><ReturnsStore /></ProtectedRoute>} />
+            <Route path="/returns-store2" element={<ProtectedRoute permission={{ section: 'returnsStore2', action: 'view' }}><ReturnsStore2 /></ProtectedRoute>} />
+            <Route path="/warehouse" element={<ProtectedRoute permission={{ section: 'warehouse', action: 'view' }}><Warehouse /></ProtectedRoute>} />
             {/* Require explicit permission to view Transfers */}
             <Route
               path="/transfers"
@@ -146,8 +146,8 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/store" element={<ProtectedRoute><Store /></ProtectedRoute>} />
-            <Route path="/store2" element={<ProtectedRoute><Store2 /></ProtectedRoute>} />
+            <Route path="/store" element={<ProtectedRoute permission={{ section: 'store', action: 'view' }}><Store /></ProtectedRoute>} />
+            <Route path="/store2" element={<ProtectedRoute permission={{ section: 'store2', action: 'view' }}><Store2 /></ProtectedRoute>} />
             <Route
               path="/sales"
               element={
@@ -159,13 +159,13 @@ function App() {
             <Route
               path="/sales-store2"
               element={
-                <ProtectedRoute permission={{ section: 'sales', action: 'view' }}>
+                <ProtectedRoute permission={{ section: 'salesStore2', action: 'view' }}>
                   <SalesStore2 />
                 </ProtectedRoute>
               }
             />
-            <Route path="/parts-inventory" element={<ProtectedRoute><PartsInventory /></ProtectedRoute>} />
-            <Route path="/parts-requests" element={<ProtectedRoute><PartsRequests /></ProtectedRoute>} />
+            <Route path="/parts-inventory" element={<ProtectedRoute permission={{ section: 'partsInventory', action: 'view' }}><PartsInventory /></ProtectedRoute>} />
+            <Route path="/parts-requests" element={<ProtectedRoute permission={{ section: 'parts', action: 'view' }}><PartsRequests /></ProtectedRoute>} />
             <Route 
               path="/sheets" 
               element={
@@ -177,15 +177,22 @@ function App() {
             <Route 
               path="/transfer-sheets" 
               element={
-                <ProtectedRoute permission={{ section: 'transfers', action: 'view' }}>
+                <ProtectedRoute permission={{ section: 'transferSheets', action: 'view' }}>
                   <TransferSheets />
                 </ProtectedRoute>
               } 
             />
-            <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
-            <Route path="/time" element={<ProtectedRoute><Time /></ProtectedRoute>} />
-            <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
-            <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
+            <Route path="/documents" element={<ProtectedRoute permission={{ section: 'documents', action: 'view' }}><Documents /></ProtectedRoute>} />
+            <Route 
+              path="/time" 
+              element={
+                <ProtectedRoute permission={{ section: 'time', action: 'view' }}>
+                  <Time />
+                </ProtectedRoute>
+              } 
+            />
+            <Route path="/expenses" element={<ProtectedRoute permission={{ section: 'expenses', action: 'view' }}><Expenses /></ProtectedRoute>} />
+            <Route path="/customers" element={<ProtectedRoute permission={{ section: 'customers', action: 'view' }}><Customers /></ProtectedRoute>} />
             <Route
               path="/technicians"
               element={
@@ -194,10 +201,10 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route path="/profit-loss" element={<ProtectedRoute><ProfitLoss /></ProtectedRoute>} />
-            <Route path="/closing/store1" element={<ProtectedRoute><Closing storeType="store1" /></ProtectedRoute>} />
-            <Route path="/closing/store2" element={<ProtectedRoute><Closing storeType="store2" /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute permission={{ section: 'settings', action: 'view' }}><Settings /></ProtectedRoute>} />
+            <Route path="/profit-loss" element={<ProtectedRoute permission={{ section: 'sales', action: 'view' }}><ProfitLoss /></ProtectedRoute>} />
+            <Route path="/closing/store1" element={<ProtectedRoute permission={{ section: 'closingStore1', action: 'view' }}><Closing storeType="store1" /></ProtectedRoute>} />
+            <Route path="/closing/store2" element={<ProtectedRoute permission={{ section: 'closingStore2', action: 'view' }}><Closing storeType="store2" /></ProtectedRoute>} />
           </Routes>
         </Box>
       </Box>

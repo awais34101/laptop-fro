@@ -93,6 +93,7 @@ export default function UsersList() {
     // Purchasing group - separate sections
     { key: 'purchases', label: 'Purchases', actions: ['view', 'add', 'edit', 'delete'] },
     { key: 'purchaseSheets', label: 'Purchase Sheets', actions: ['view', 'add', 'edit', 'delete'] },
+    { key: 'transferSheets', label: 'Transfer Sheets', actions: ['view', 'add', 'edit', 'delete'] },
     { key: 'returnsStore', label: 'Returns Store', actions: ['view', 'add', 'edit', 'delete'] },
     { key: 'returnsStore2', label: 'Returns Store2', actions: ['view', 'add', 'edit', 'delete'] },
     { key: 'warehouse', label: 'Warehouse', actions: ['view', 'add', 'edit', 'delete'] },

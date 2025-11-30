@@ -27,7 +27,12 @@ import { clockIn, clockOut, listTimeEntries, updateEntry, deleteEntry } from '..
 
 export default function Time() {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const permissions = user.permissions || {};
+  const isAdmin = user.role === 'admin';
   const isManager = ['admin','manager'].includes(user.role);
+  
+  // Check if user has permission to view time page
+  const hasTimeViewPermission = isAdmin || permissions.time?.view;
 
   // State management
   const [from, setFrom] = useState('');
@@ -64,6 +69,11 @@ export default function Time() {
 
   // Load data
   const load = async (p = page) => {
+    // Don't fetch if user doesn't have permission
+    if (!hasTimeViewPermission) {
+      return;
+    }
+    
     try {
       setLoading(true);
       const res = await listTimeEntries({ 
@@ -132,7 +142,11 @@ export default function Time() {
     return () => clearInterval(interval);
   }, [clockedIn, currentEntry]);
 
-  useEffect(() => { load(1); }, []);
+  useEffect(() => { 
+    if (hasTimeViewPermission) {
+      load(1); 
+    }
+  }, []);
 
   const doClockIn = async () => {
     setError('');
@@ -243,6 +257,37 @@ export default function Time() {
 
   return (
     <Box sx={{ p: 3, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', minHeight: '100vh' }}>
+      {/* Permission Check */}
+      {!hasTimeViewPermission && (
+        <Paper
+          elevation={0}
+          sx={{
+            p: 4,
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: 3,
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            textAlign: 'center'
+          }}
+        >
+          <Avatar sx={{ bgcolor: 'error.main', width: 80, height: 80, mx: 'auto', mb: 2 }}>
+            <ClockIcon sx={{ fontSize: 40 }} />
+          </Avatar>
+          <Typography variant="h5" fontWeight="bold" color="error" gutterBottom>
+            Access Denied
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            You do not have permission to view the Time Tracking page.
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Please contact your administrator if you believe this is an error.
+          </Typography>
+        </Paper>
+      )}
+      
+      {/* Main Content - Only show if user has permission */}
+      {hasTimeViewPermission && (
+        <>
       {/* Header with Glass Morphism */}
       <Paper
         elevation={0}
@@ -696,6 +741,8 @@ export default function Time() {
           </Button>
         </DialogActions>
       </Dialog>
+        </>
+      )}
     </Box>
   );
 }
