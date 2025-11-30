@@ -1695,32 +1695,55 @@ const InventoryBoxes = () => {
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             <Autocomplete
-              options={items}
-              getOptionLabel={(option) => `${option.name} (${option.unit || 'pcs'})`}
-              onChange={(e, value) => setAddItemForm({ ...addItemForm, itemId: value?._id || '' })}
+              options={availableItems}
+              getOptionLabel={(option) => `${option.itemName} - Available: ${option.availableForBoxing} ${option.unit || 'pcs'}`}
+              onChange={(e, value) => {
+                if (value) {
+                  const currentItems = selectedBox?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+                  const availableSpace = (selectedBox?.capacity || 0) - currentItems;
+                  const autoQuantity = Math.min(value.availableForBoxing, availableSpace);
+                  
+                  setAddItemForm({ 
+                    itemId: value.itemId || '', 
+                    quantity: autoQuantity,
+                    notes: `Auto-filled: ${autoQuantity} of ${value.availableForBoxing} available`
+                  });
+                } else {
+                  setAddItemForm({ itemId: '', quantity: 0, notes: '' });
+                }
+              }}
               renderInput={(params) => (
-                <TextField {...params} label="Select Item" required />
+                <TextField {...params} label="Select Item *" required />
               )}
               renderOption={(props, option) => (
                 <li {...props}>
                   <Box>
-                    <Typography variant="body1">{option.name}</Typography>
+                    <Typography variant="body1" fontWeight="bold">{option.itemName}</Typography>
                     <Typography variant="caption" color="textSecondary">
-                      Category: {option.category} | Unit: {option.unit || 'pcs'}
+                      Available: {option.availableForBoxing} {option.unit || 'pcs'} | Total: {option.totalQuantity} {option.unit || 'pcs'}
                     </Typography>
                   </Box>
                 </li>
               )}
             />
 
+            {addItemForm.itemId && (
+              <Alert severity="success" icon={<CheckCircleIcon />}>
+                <Typography variant="body2" fontWeight="bold">Auto-filled {addItemForm.quantity} pcs</Typography>
+                <Typography variant="caption">
+                  System automatically calculated based on available inventory and box capacity
+                </Typography>
+              </Alert>
+            )}
+
             <TextField
-              label="Quantity"
+              label="Quantity (Auto-calculated)"
               type="number"
               value={addItemForm.quantity}
               onChange={(e) => setAddItemForm({ ...addItemForm, quantity: parseInt(e.target.value) || 0 })}
-              required
               fullWidth
               InputProps={{ inputProps: { min: 0 } }}
+              helperText="Quantity is auto-filled, but you can adjust if needed"
             />
 
             <TextField
@@ -1733,18 +1756,21 @@ const InventoryBoxes = () => {
             />
 
             <Alert severity="info">
-              Current box capacity: {selectedBox?.capacity} pcs<br />
-              Current items: {selectedBox?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0} pcs<br />
-              Available space: {(selectedBox?.capacity || 0) - (selectedBox?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0)} pcs
+              <Typography variant="body2">
+                <strong>Box Capacity:</strong> {selectedBox?.capacity} pcs<br />
+                <strong>Current Items:</strong> {selectedBox?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0} pcs<br />
+                <strong>Available Space:</strong> {(selectedBox?.capacity || 0) - (selectedBox?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0)} pcs
+              </Typography>
             </Alert>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenAddItemDialog(false)}>Cancel</Button>
+          <Button onClick={() => { setOpenAddItemDialog(false); setAddItemForm({ itemId: '', quantity: 0, notes: '' }); }}>Cancel</Button>
           <Button 
             variant="contained" 
             onClick={handleAddItemToBox} 
             disabled={!addItemForm.itemId || addItemForm.quantity <= 0 || loading}
+            startIcon={<AddIcon />}
           >
             Add Item
           </Button>
