@@ -79,6 +79,7 @@ const navSections = [
     label: 'Sheets',
     items: [
       { text: 'Purchase Sheets', icon: <AssignmentIcon />, path: '/sheets', perm: { section: 'purchaseSheets', action: 'view' } },
+      { text: 'Transfer Sheets', icon: <CompareArrowsIcon />, path: '/transfer-sheets', perm: { section: 'transfers', action: 'view' } },
     ]
   },
   {
@@ -141,83 +142,48 @@ export default function Sidebar({ mobileOpen, onDrawerToggle }) {
       {/* Header with Logo */}
       <Box 
         sx={{ 
-          p: 3,
+          p: 0.5,
           background: 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)',
           backdropFilter: 'blur(10px)',
           borderBottom: '1px solid rgba(255,255,255,0.1)',
           boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, px: 1, py: 0.5 }}>
           <Box
             sx={{
-              width: 48,
-              height: 48,
-              borderRadius: 3,
+              width: 24,
+              height: 24,
+              borderRadius: 1,
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
               fontWeight: 900,
-              fontSize: '1.5rem'
+              fontSize: '0.75rem'
             }}
           >
             💼
           </Box>
           <Box>
-            <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: 0.5, color: '#fff', fontSize: '1.5rem' }}>
+            <Typography variant="h6" sx={{ fontWeight: 900, letterSpacing: 0.5, color: '#fff', fontSize: '0.75rem', lineHeight: 1.1 }}>
               PRO CRM
             </Typography>
-            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600, fontSize: '0.9rem' }}>
-              Laptop Business
-            </Typography>
           </Box>
-        </Box>
-        
-        {/* User Info */}
-        <Box 
-          sx={{ 
-            mt: 2,
-            p: 2,
-            borderRadius: 2,
-            background: 'rgba(255,255,255,0.08)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5
-          }}
-        >
+          <Box sx={{ flex: 1 }} />
           <Avatar 
             sx={{ 
-              width: 40, 
-              height: 40,
+              width: 24, 
+              height: 24,
               bgcolor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               fontWeight: 700,
-              fontSize: '1rem',
-              border: '2px solid rgba(255,255,255,0.3)'
+              fontSize: '0.65rem',
+              border: '1px solid rgba(255,255,255,0.3)'
             }}
           >
             {user.username?.charAt(0)?.toUpperCase() || 'U'}
           </Avatar>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="body1" sx={{ fontWeight: 700, color: '#fff', fontSize: '1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {user.username || 'User'}
-            </Typography>
-            <Chip 
-              label={isAdmin ? 'Admin' : 'Staff'} 
-              size="small"
-              sx={{ 
-                height: 22,
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                background: isAdmin ? 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' : 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                color: '#fff',
-                border: '1px solid rgba(255,255,255,0.3)',
-                mt: 0.5
-              }}
-            />
-          </Box>
         </Box>
       </Box>
       
@@ -260,7 +226,7 @@ export default function Sidebar({ mobileOpen, onDrawerToggle }) {
                         color: '#90caf9', 
                         fontWeight: 800, 
                         letterSpacing: 1.5,
-                        fontSize: '0.85rem',
+                        fontSize: '0.7rem',
                         textTransform: 'uppercase'
                       }
                     }}
@@ -318,7 +284,7 @@ export default function Sidebar({ mobileOpen, onDrawerToggle }) {
                             primaryTypographyProps={{
                               sx: { 
                                 fontWeight: isActive ? 700 : 600,
-                                fontSize: '1rem',
+                                fontSize: '0.95rem',
                                 color: isActive ? '#fff' : 'rgba(255,255,255,0.9)'
                               }
                             }}

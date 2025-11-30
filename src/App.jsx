@@ -26,6 +26,7 @@ import UsersList from './pages/UsersList';
 import Documents from './pages/Documents';
 import Time from './pages/Time';
 import Sheets from './pages/Sheets';
+import TransferSheets from './pages/TransferSheets';
 import ChecklistEnhanced from './pages/ChecklistEnhanced';
 import ChecklistReports from './pages/ChecklistReports';
 import InventoryBoxes from './pages/InventoryBoxes';
@@ -170,6 +171,14 @@ function App() {
               element={
                 <ProtectedRoute permission={{ section: 'purchaseSheets', action: 'view' }}>
                   <Sheets />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/transfer-sheets" 
+              element={
+                <ProtectedRoute permission={{ section: 'transfers', action: 'view' }}>
+                  <TransferSheets />
                 </ProtectedRoute>
               } 
             />

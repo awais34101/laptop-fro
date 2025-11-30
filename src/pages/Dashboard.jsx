@@ -154,20 +154,20 @@ export default function Dashboard() {
       <Box sx={{ 
         background: 'linear-gradient(135deg, rgba(102,126,234,0.95) 0%, rgba(118,75,162,0.95) 100%)',
         color: 'white',
-        py: 4,
+        py: 2,
         px: 3,
         mb: 3,
         boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
       }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Box>
-            <Typography variant="h3" sx={{ fontWeight: 900, mb: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Avatar sx={{ width: 56, height: 56, bgcolor: 'rgba(255,255,255,0.2)' }}>
-                <TrendingUpIcon sx={{ fontSize: 32 }} />
+            <Typography variant="h4" sx={{ fontWeight: 900, mb: 0.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Avatar sx={{ width: 40, height: 40, bgcolor: 'rgba(255,255,255,0.2)' }}>
+                <TrendingUpIcon sx={{ fontSize: 24 }} />
               </Avatar>
               Dashboard
             </Typography>
-            <Typography variant="h6" sx={{ opacity: 0.9, fontWeight: 500 }}>
+            <Typography variant="body1" sx={{ opacity: 0.9, fontWeight: 500 }}>
               📊 Business Overview & Analytics
             </Typography>
           </Box>
@@ -178,8 +178,8 @@ export default function Dashboard() {
               bgcolor: 'rgba(255,255,255,0.2)', 
               color: 'white',
               fontWeight: 700,
-              fontSize: '1rem',
-              py: 3,
+              fontSize: '0.875rem',
+              py: 2.5,
               px: 1
             }}
           />
